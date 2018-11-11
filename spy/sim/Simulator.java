@@ -91,6 +91,8 @@ public class Simulator {
 
     private static ArrayList<Point> observableOffsets;
     
+    private static List<Point> waterCells;
+    private static List<Point> muddyCells;
     private static Point targetLocation;
     private static Point packageLocation;
     
@@ -113,7 +115,8 @@ public class Simulator {
         }
         
         num_players = playerNames.size();
-        spyID = rand.nextInt(num_players + 1);
+        spyID = rand.nextInt(num_players);
+        System.out.println("Player " + spyID + " is spy");
         
         observableOffsets = new ArrayList<Point>();
         observableOffsets.add(new Point(0, -3));
@@ -148,8 +151,8 @@ public class Simulator {
         
         mapGen = loadMapGenerator(mapGenName);
         
-        List<Point> waterCells = mapGen.waterCells();
-        List<Point> muddyCells = mapGen.muddyCells();
+        waterCells = mapGen.waterCells();
+        muddyCells = mapGen.muddyCells();
         packageLocation = mapGen.packageLocation();
         targetLocation = mapGen.targetLocation();
         List<Point> startingLocations = mapGen.startingLocations();
@@ -211,6 +214,11 @@ public class Simulator {
             }
             
             gui(server, state(fps));
+        }
+        
+        for (int i = 0; i < num_players; i++)
+        {
+            players.get(i).init(num_players, i, t, playerLocations.get(i), waterCells, i == spyID);
         }
         
         boolean victory = false;
@@ -276,7 +284,7 @@ public class Simulator {
                 Point loc = new Point(playerLoc.x + offset.x, playerLoc.y + offset.y);
                 if (loc.x > 99 || loc.x < 0 || loc.y > 99 || loc.y < 0)
                 {
-                    return;
+                    continue;
                 }
                 
                 observations.put(loc, new InternalCellStatus(map.get(loc.x).get(loc.y)));
@@ -304,6 +312,7 @@ public class Simulator {
                 {
                     copy.add(new Record(r));
                 }
+                System.out.println("Player " + i + " to Player " + j + ": " + records);
                 communications.put(new Point(i, j), copy);
             }
         }
@@ -333,7 +342,10 @@ public class Simulator {
         for (int i : playersPresent)
         {
             List<Point> proposal = players.get(i).proposePath();
-            proposals.put(i, proposal);
+            if (proposal != null)
+            {
+                proposals.put(i, proposal);
+            }
         }
         
         HashMap<Integer, Integer> results = new HashMap<Integer, Integer>();
@@ -341,8 +353,11 @@ public class Simulator {
         for (int i : playersPresent)
         {
             Integer vote = players.get(i).getVote(proposals);
-            counts.put(vote, (counts.get(vote) == null) ? 1 : counts.get(vote) + 1);
-            results.put(i, vote);
+            if (proposals.get(vote) != null)
+            {
+                counts.put(vote, (counts.get(vote) == null) ? 1 : counts.get(vote) + 1);
+                results.put(i, vote);
+            }
         }
         
         List<Point> winningPath = null;
@@ -523,6 +538,45 @@ public class Simulator {
         }
         
         json += "]";
+        
+        json += ",\"water\":[";
+        
+        for (int i = 0; i < waterCells.size(); i++)
+        {
+            json += "{";
+            
+            Point loc = waterCells.get(i);
+            json += "\"x\":" + loc.x + ",\"y\":" + loc.y;
+            
+            json += "}";
+            if (i != waterCells.size() - 1)
+            {
+                json += ",";
+            }
+        }
+        
+        json += "]";
+        
+        json += ",\"mud\":[";
+        
+        for (int i = 0; i < muddyCells.size(); i++)
+        {
+            json += "{";
+            
+            Point loc = muddyCells.get(i);
+            json += "\"x\":" + loc.x + ",\"y\":" + loc.y;
+            
+            json += "}";
+            if (i != muddyCells.size() - 1)
+            {
+                json += ",";
+            }
+        }
+        
+        json += "]";
+        
+        json += ",\"package\": { \"x\":" + packageLocation.x + ",\"y\":" + packageLocation.y + "}";
+        json += ",\"target\": { \"x\":" + targetLocation.x + ",\"y\":" + targetLocation.y + "}";
         
         json += "}";
         

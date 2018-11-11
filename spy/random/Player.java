@@ -3,13 +3,16 @@ package spy.random;
 import java.util.List;
 import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.HashMap;
+import java.util.Map;
 
 import spy.sim.Point;
 import spy.sim.Record;
 import spy.sim.CellStatus;
 import spy.sim.Simulator;
+import spy.sim.Observation;
 
 public class Player implements spy.sim.Player {
     
@@ -19,15 +22,15 @@ public class Player implements spy.sim.Player {
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
         this.id = id;
-        this.records = new ArrayList<ArrayList<ArrayList<Record>>>();
+        this.records = new ArrayList<ArrayList<Record>>();
         for (int i = 0; i < 100; i++)
         {
-            ArrayList<ArrayList<Record> row = new ArrayList<ArrayList<Record>>();
+            ArrayList<Record> row = new ArrayList<Record>();
             for (int j = 0; j < 100; j++)
             {
                 row.add(null);
             }
-            this.records.add(entry);
+            this.records.add(row);
         }
     }
     
@@ -42,7 +45,7 @@ public class Player implements spy.sim.Player {
             {
                 ArrayList<Observation> observations = new ArrayList<Observation>();
                 record = new Record(loc, status.getC(), status.getPT(), observations);
-                recods.get(loc.x).set(loc.y, record);
+                records.get(loc.x).set(loc.y, record);
             }
             record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
         }
@@ -76,6 +79,10 @@ public class Player implements spy.sim.Player {
     
     public int getVote(HashMap<Integer, List<Point>> paths)
     {
+        for (Map.Entry<Integer, List<Point>> entry : paths.entrySet())
+        {
+            return entry.getKey();
+        }
         return -1;
     }
     

@@ -74,6 +74,34 @@ function drawPlayers(ctx, players)
     }
 }
 
+function drawRects(ctx, coords, color)
+{
+    for (var i = 0; i < coords.length; i++)
+    {
+        var c = coords[i];
+        ctx.fillStyle = color;
+        
+        ctx.beginPath();
+        ctx.rect(c.x * 10, c.y * 10, 10, 10);
+        ctx.fill();
+    }
+}
+
+function drawPackage(ctx, point)
+{
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.rect(point.x * 10 + 2.5, point.y * 10 + 2.5, 5, 5);
+    ctx.fill();
+}
+
+function drawTarget(ctx, point)
+{
+    ctx.strokeStyle = "black";
+    drawLine(ctx, point.x * 10, point.y * 10, point.x * 10 + 10, point.y * 10 + 10);
+    drawLine(ctx, point.x * 10, point.y * 10 + 10, point.x * 10 + 10, point.y * 10);
+}
+
 function process(data) {
     console.log(data);
     var result = JSON.parse(data)
@@ -88,8 +116,14 @@ function process(data) {
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    drawGrid(ctx);
+    drawRects(ctx, result.water, "blue");
+    drawRects(ctx, result.mud, "brown");
+    
+    drawPackage(ctx, result.package);
+    drawTarget(ctx, result.target);
+    
     drawPlayers(ctx, result.players);
+    drawGrid(ctx);
     
     timeElement = document.getElementById('time');
     timeElement.innerHTML = "Time: " + elapsed.toFixed(2) + "/" + t;

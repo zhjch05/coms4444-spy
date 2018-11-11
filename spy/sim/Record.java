@@ -42,4 +42,9 @@ public class Record {
     public ArrayList<Observation> getObservations() {
         return this.observations;
     }
+    
+    public String toString()
+    {
+        return "(Record for " + this.loc + ": " + (this.c == 1 ? "muddy" : "clear") + ", " + (this.pt == 0 ? "none" : (this.pt == 1 ? "package" : "target")) + ", " + observations + ")\n";
+    }
 }

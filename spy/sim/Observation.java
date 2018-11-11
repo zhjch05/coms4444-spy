@@ -20,4 +20,9 @@ public class Observation {
     {
         return this.t;
     }
+    
+    public String toString()
+    {
+        return "(id " + this.id + ", t " + this.t + ")";
+    }
 }
