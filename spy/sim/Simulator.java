@@ -352,11 +352,17 @@ public class Simulator {
         HashMap<Integer, Integer> counts = new HashMap<Integer, Integer>();
         for (int i : playersPresent)
         {
-            Integer vote = players.get(i).getVote(proposals);
-            if (proposals.get(vote) != null)
+            List<Integer> votes = players.get(i).getVotes(proposals);
+            if (votes != null)
             {
-                counts.put(vote, (counts.get(vote) == null) ? 1 : counts.get(vote) + 1);
-                results.put(i, vote);
+                for (int vote : votes)
+                {
+                    if (proposals.get(vote) != null)
+                    {
+                        counts.put(vote, (counts.get(vote) == null) ? 1 : counts.get(vote) + 1);
+                        results.put(i, vote);
+                    }
+                }
             }
         }
         

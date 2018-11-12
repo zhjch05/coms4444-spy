@@ -77,13 +77,15 @@ public class Player implements spy.sim.Player {
         return null;
     }
     
-    public int getVote(HashMap<Integer, List<Point>> paths)
+    public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
     {
         for (Map.Entry<Integer, List<Point>> entry : paths.entrySet())
         {
+            ArrayList<Integer> toReturn = new ArrayList<Integer>();
+            toReturn.add(entry.getKey());
             return entry.getKey();
         }
-        return -1;
+        return null;
     }
     
     public void receiveResults(HashMap<Integer, Integer> results)

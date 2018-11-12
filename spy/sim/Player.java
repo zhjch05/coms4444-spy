@@ -29,8 +29,8 @@ public interface Player {
     // Gets a proposed path from a player at the package
     public List<Point> proposePath();
     
-    // Gives a map from player ID to a path that player proposed
-    public int getVote(HashMap<Integer, List<Point>> paths);
+    // Gives a map from player ID to a path that player proposed. Returns the IDs which the player supports
+    public List<Integer> getVotes(HashMap<Integer, List<Point>> paths);
     
     // Recieves the results (in the event that no path succeeds).
     public void receiveResults(HashMap<Integer, Integer> results);

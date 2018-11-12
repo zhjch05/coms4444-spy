@@ -47,10 +47,10 @@ public class PlayerWrapper {
         return path;
     }
     
-    public int getVote(HashMap<Integer, List<Point>> paths)
+    public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
     {
-        int vote = player.getVote(paths);
-        return vote;
+        List<Integer> votes = player.getVotes(paths);
+        return votes;
     }
     
     public void receiveResults(HashMap<Integer, Integer> results)
