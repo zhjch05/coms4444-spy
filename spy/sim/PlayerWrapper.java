@@ -25,9 +25,9 @@ public class PlayerWrapper {
         player.init(n, id, t, startingPos, waterCells, isSpy);
     }
     
-    public void observe(HashMap<Point, CellStatus> statuses)
+    public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
-        player.observe(statuses);
+        player.observe(loc, statuses);
     }
     
     public List<Record> sendRecords(int id)

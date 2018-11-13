@@ -10,5 +10,5 @@ public interface MapGenerator {
     public List<Point> muddyCells();
     public Point packageLocation();
     public Point targetLocation();
-    public List<Point> startingLocations();
+    public List<Point> startingLocations(List<Point> waterCells);
 }

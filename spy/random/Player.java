@@ -18,6 +18,7 @@ public class Player implements spy.sim.Player {
     
     private ArrayList<ArrayList<Record>> records;
     private int id;
+    private Point loc;
     
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
@@ -34,18 +35,20 @@ public class Player implements spy.sim.Player {
         }
     }
     
-    public void observe(HashMap<Point, CellStatus> statuses)
+    public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
+        this.loc = loc;
+
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
-            Point loc = entry.getKey();
+            Point p = entry.getKey();
             CellStatus status = entry.getValue();
-            Record record = records.get(loc.x).get(loc.y);
+            Record record = records.get(p.x).get(p.y);
             if (record == null || record.getC() != status.getC() || record.getPT() != status.getPT())
             {
                 ArrayList<Observation> observations = new ArrayList<Observation>();
-                record = new Record(loc, status.getC(), status.getPT(), observations);
-                records.get(loc.x).set(loc.y, record);
+                record = new Record(p, status.getC(), status.getPT(), observations);
+                records.get(p.x).set(p.y, record);
             }
             record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
         }

@@ -3,6 +3,7 @@ package spy.default_map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Random;
 
 import spy.sim.Point;
 
@@ -54,12 +55,18 @@ public class MapGenerator implements spy.sim.MapGenerator {
     {
         return new Point(99, 99);
     }
-    public List<Point> startingLocations()
+    public List<Point> startingLocations(List<Point> waterCells)
     {
         ArrayList<Point> startingLocations = new ArrayList<Point>();
+        Random rand = new Random();
         for (int i = 0; i < 30; i++)
         {
-            startingLocations.add(new Point(50, i));
+            Point p = new Point(rand.nextInt(100), rand.nextInt(100));
+            while (waterCells.contains(p))
+            {
+                p = new Point(rand.nextInt(100), rand.nextInt(100));
+            }
+            startingLocations.add(p);
         }
         return startingLocations;
     }

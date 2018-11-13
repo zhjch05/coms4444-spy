@@ -18,7 +18,8 @@ public interface Player {
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy);
 
     // Gives a HashMap of the observable cells along with the status of each sell.
-    public void observe(HashMap<Point, CellStatus> statuses);
+    // loc: The player's current location
+    public void observe(Point loc, HashMap<Point, CellStatus> statuses);
     
     // Gets the records to send to player with a particular ID
     public List<Record> sendRecords(int id);

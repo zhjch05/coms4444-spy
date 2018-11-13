@@ -55,6 +55,7 @@ function drawLine(ctx, x_start, y_start, x_end, y_end) {
 
 function drawPlayers(ctx, players)
 {
+    var colors = ["aqua", "chartreuse", "blue", "darkblue", "darkgreen", "darkmagenta", "salmon", "gold", "deeppink"]
     for (var i = 0; i < players.length; i++)
     {
         var p = players[i];
@@ -65,12 +66,16 @@ function drawPlayers(ctx, players)
         }
         else
         {
-            ctx.fillStyle="green";
+            ctx.fillStyle=colors[i];
         }
         
         ctx.beginPath();
         ctx.arc(p.x * 10 + 5, p.y * 10 + 5, 4, 0, 2*Math.PI);
+        ctx.arc(1030, 50 * i + 20, 10, 0, 2*Math.PI);
         ctx.fill();
+        
+        ctx.font = "30px Arial";
+        ctx.fillText(p.name + (p.spy ? " (SPY)" : ""),1060,50*i + 30);
     }
 }
 
@@ -102,6 +107,19 @@ function drawTarget(ctx, point)
     drawLine(ctx, point.x * 10, point.y * 10 + 10, point.x * 10 + 10, point.y * 10);
 }
 
+function drawPath(ctx, path, color)
+{
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (var i = 1; i < path.length; i++)
+    {
+        ctx.moveTo(path[i - 1].x * 10 + 5, path[i - 1].y * 10 + 5);
+        ctx.lineTo(path[i].x * 10 + 5, path[i].y * 10 + 5);
+    }
+    ctx.stroke();
+}
+
 function process(data) {
     console.log(data);
     var result = JSON.parse(data)
@@ -125,8 +143,22 @@ function process(data) {
     drawPlayers(ctx, result.players);
     drawGrid(ctx);
     
-    timeElement = document.getElementById('time');
-    timeElement.innerHTML = "Time: " + elapsed.toFixed(2) + "/" + t;
+    if (result.final_path != -1)
+    {
+        drawPath(ctx, result.final_path, (result.victory ? "green" : "red"));
+        timeElement = document.getElementById('time');
+        timeElement.innerHTML = "Score: " + (result.victory ? elapsed : (2 * t));
+    }
+    else if (elapsed == t)
+    {
+        timeElement = document.getElementById('time');
+        timeElement.innerHTML = "Score: " + elapsed;
+    }
+    else
+    {
+        timeElement = document.getElementById('time');
+        timeElement.innerHTML = "Time: " + elapsed + "/" + t;
+    }
 
     return refresh;
 }
