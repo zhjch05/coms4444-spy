@@ -1,4 +1,4 @@
-# Project 2: Make Hay While the Sun Shines
+# Project 4: Soldier, Soldier, Soldier, Spy
 Course: COMS 4444 Programming and Problem Solving (F2018)
 Uni: Columbia University
 Instructor: Prof. Kenneth Ross
