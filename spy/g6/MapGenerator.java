@@ -1,7 +1,6 @@
-package spy.g1;
+package spy.g6;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
@@ -12,7 +11,7 @@ import spy.sim.Point;
 
 public class MapGenerator implements spy.sim.MapGenerator {
 	
-	public static final String PATH = "spy/g1/map.txt";
+	public static final String PATH = "spy/g6/map.txt";
 	
 	protected List<Point> waterCells;
 	protected List<Point> muddyCells;
