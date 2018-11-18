@@ -86,11 +86,10 @@ public class Player implements spy.sim.Player {
         {
             ArrayList<Integer> toReturn = new ArrayList<Integer>();
             toReturn.add(entry.getKey());
-            return entry.getKey();
+            return new ArrayList<Integer>(entry.getKey());
         }
         return null;
     }
-    
     public void receiveResults(HashMap<Integer, Integer> results)
     {
         
