@@ -31,10 +31,10 @@ public class MapGenerator implements spy.sim.MapGenerator {
 				for (int j = 0; j < line.length(); ++j) {
 					switch (line.charAt(j)) {
 						case 'n': break;
-						case 'm': muddyCells.add(new Point(j, i)); break;
-						case 'w': waterCells.add(new Point(j, i)); break;
-						case 'p': packageCell = new Point(j, i); break;
-						case 't': targetCell = new Point(j, i); break;
+						case 'm': muddyCells.add(new Point(i, j)); break;
+						case 'w': waterCells.add(new Point(i, j)); break;
+						case 'p': packageCell = new Point(i, j); break;
+						case 't': targetCell = new Point(i, j); break;
 						default : throw new IOException("Invalid map token");
 					}
 				}
