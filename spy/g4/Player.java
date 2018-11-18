@@ -19,9 +19,17 @@ public class Player implements spy.sim.Player {
     private ArrayList<ArrayList<Record>> records;
     private int id;
     private Point loc;
+
+    private int spy; // player who we think is the spy
+    //private HashMap<Integer, Integer> possibleSpies; // all players who could potentially be the spy
+    //private ArrayList<ArrayList<>> trueRecords;
     
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
+        System.out.println("Player g4 number " + id);
+        System.out.println("Am I spy? " + isSpy);
+        System.out.println("Starting at: " + startingPos);
+
         this.id = id;
         this.records = new ArrayList<ArrayList<Record>>();
         for (int i = 0; i < 100; i++)
@@ -72,6 +80,10 @@ public class Player implements spy.sim.Player {
     
     public void receiveRecords(int id, List<Record> records)
     {
+        // Compare their records against ours
+        /*for (Record rec_r : records) {
+            
+        }*/
         
     }
     
