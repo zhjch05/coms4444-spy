@@ -1,4 +1,4 @@
-package spy.g1;
+package spy.g6;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -12,7 +12,7 @@ import spy.sim.Point;
 
 public class MapGenerator implements spy.sim.MapGenerator {
 	
-	public static final String PATH = "spy/g1/map.txt";
+	public static final String PATH = "spy/g6/map.txt";
 	
 	protected List<Point> waterCells;
 	protected List<Point> muddyCells;
@@ -32,10 +32,10 @@ public class MapGenerator implements spy.sim.MapGenerator {
 				for (int j = 0; j < line.length(); ++j) {
 					switch (line.charAt(j)) {
 						case 'n': break;
-						case 'm': muddyCells.add(new Point(i, j)); break;
-						case 'w': waterCells.add(new Point(i, j)); break;
-						case 'p': packageCell = new Point(i, j); break;
-						case 't': targetCell = new Point(i, j); break;
+						case 'm': muddyCells.add(new Point(j, i)); break;
+						case 'w': waterCells.add(new Point(j, i)); break;
+						case 'p': packageCell = new Point(j, i); break;
+						case 't': targetCell = new Point(j, i); break;
 						default : throw new IOException("Invalid map token");
 					}
 				}
