@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Arrays;
 
 import spy.sim.Point;
 import spy.sim.Record;
@@ -21,8 +22,8 @@ public class Player implements spy.sim.Player {
     private Point loc;
 
     private int spy; // player who we think is the spy
-    //private HashMap<Integer, Integer> possibleSpies; // all players who could potentially be the spy
-    //private ArrayList<ArrayList<>> trueRecords;
+    private HashMap<Integer, Integer> possibleSpies; // all players who could potentially be the spy
+    private HashMap<Point, ArrayList<Integer>> trueRecords;
     
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
@@ -41,6 +42,8 @@ public class Player implements spy.sim.Player {
             }
             this.records.add(row);
         }
+
+        trueRecords = new HashMap<Point, ArrayList<Integer>>();
     }
     
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
@@ -57,6 +60,8 @@ public class Player implements spy.sim.Player {
                 ArrayList<Observation> observations = new ArrayList<Observation>();
                 record = new Record(p, status.getC(), status.getPT(), observations);
                 records.get(p.x).set(p.y, record);
+                trueRecords.put(p, new ArrayList<Integer>(Arrays.asList(status.getC(), status.getPT())));
+                System.out.println("observed a record at " + p);
             }
             record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
         }
