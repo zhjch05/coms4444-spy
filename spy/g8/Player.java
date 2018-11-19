@@ -40,7 +40,7 @@ public class Player implements spy.sim.Player {
         this.move = new Point(0,0);
 
 
-        System.out.println("watersize:"+waterCells.size());
+        //System.out.println("watersize:"+waterCells.size());
         for (int i = 0; i < 100; i++)
         {
             ArrayList<Record> row = new ArrayList<Record>();
@@ -54,7 +54,8 @@ public class Player implements spy.sim.Player {
             }
             this.records.add(row);
         }
-        System.out.println("CHECK" + notobserved.size());
+        System.out.println("INIT"+records.get(loc.x).get(loc.y));
+        //System.out.println("CHECK" + notobserved.size());
     }
 
     private double distance(Point p1, Point p2) 
@@ -174,11 +175,15 @@ public class Player implements spy.sim.Player {
 
     public Point getMove()
     {
+        //System.out.println("GETMOVE"+records.get(loc.x).get(loc.y));
 
         // DO observation stuff here
-        System.out.println("CURR LOC:"+loc.x + " " + loc.y);
+        //System.out.println("CURR LOC:"+loc.x + " " + loc.y);
         List<Point> neighbors = getSurrounding(loc);
         for(Point n:neighbors) {
+            // check if any neighbors contain mud, pacakge, target, or any players
+            // if other player detected, move towards that player
+
             if(notobserved.contains(n)) {
                 int i = notobserved.indexOf(n);
                 notobserved.remove(i);
@@ -187,11 +192,11 @@ public class Player implements spy.sim.Player {
         }
 
 
-        System.out.println("curr n_obs size: "+notobserved.size());
+        //System.out.println("curr n_obs size: "+notobserved.size());
         if(notobserved.size() > 0) {
             Collections.sort(notobserved, pointComparator);
             destination = notobserved.get(0);
-            System.out.println("DEST:"+destination.x + " " + destination.y);
+            //System.out.println("DEST:"+destination.x + " " + destination.y);
             if(destination.x > loc.x) { 
                 move = new Point(1,0);
             } else if (destination.x < loc.x) {
@@ -220,7 +225,7 @@ public class Player implements spy.sim.Player {
             loc = new Point(loc.x + move.x, loc.y + move.y);
         }
 
-        System.out.println("NEW LOC:"+loc.x + " " + loc.y);
+        //System.out.println("NEW LOC:"+loc.x + " " + loc.y);
         return move;
 
     }
