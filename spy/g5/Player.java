@@ -15,13 +15,14 @@ import spy.sim.Simulator;
 import spy.sim.Observation;
 
 
-//public Map<Integer, ArrayList<Record>> landInfo = new HashMap<Integer, ArrayList<Record>>(); 
-
 public class Player implements spy.sim.Player {
     
-    private ArrayList<ArrayList<Record>> records;
+    private ArrayList<ArrayList<Record>> records; // 2-dim list of cells on map (personal records)
     private int id;
-    private Point loc;
+    private Point loc; // Current location on map
+
+    private ArrayList<ArrayList<Record>> landInfo; // similar to 'records' but global for dry land claims
+    private ArrayList<ArrayList<Record>> mudInfo; // similar to 'records' but global for muddy land claims
     
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
@@ -42,12 +43,14 @@ public class Player implements spy.sim.Player {
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
         this.loc = loc;
-
+	System.out.println("Called observe function =========");
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
             Point p = entry.getKey();
             CellStatus status = entry.getValue();
             Record record = records.get(p.x).get(p.y);
+
+	    System.out.println(p + " " + status + " " );
             if (record == null || record.getC() != status.getC() || record.getPT() != status.getPT())
             {
                 ArrayList<Observation> observations = new ArrayList<Observation>();
@@ -60,6 +63,7 @@ public class Player implements spy.sim.Player {
     
     public List<Record> sendRecords(int id)
     {
+        System.out.println("Called sendRecords ======");	  
         ArrayList<Record> toSend = new ArrayList<Record>();
         for (ArrayList<Record> row : records)
         {
@@ -76,7 +80,7 @@ public class Player implements spy.sim.Player {
     
     public void receiveRecords(int id, List<Record> records)
     {
-        
+	System.out.println("Called receiveRecords Command ========");
     }
     
     public List<Point> proposePath()
@@ -97,11 +101,12 @@ public class Player implements spy.sim.Player {
     
     public void receiveResults(HashMap<Integer, Integer> results)
     {
-        
+       	System.out.println("Called receiveResults Command =======");
     }
     
     public Point getMove()
     {
+	System.out.println("Called getMove Command =======");
         Random rand = new Random();
         int x = rand.nextInt(2) * 2 - 1;
         int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
