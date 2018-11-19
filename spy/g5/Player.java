@@ -81,7 +81,6 @@ public class Player implements spy.sim.Player
         for (int i = 0; i < waterCells.size(); i++)
         {
         	Point p = waterCells.get(i);
-		System.out.printf("%d, %d\n", p.x, p.y);
         	// Technically speaking everyone knows at t = 0 water.
         	ArrayList<Observation> observations = new ArrayList<Observation>();
         	for(int j = 0; j < n; j++)
@@ -99,7 +98,8 @@ public class Player implements spy.sim.Player
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
     	// Update current solider location
-        this.current = loc;
+        current = loc;
+	//System.out.println("Updaing loc");
 
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
@@ -350,10 +350,10 @@ public class Player implements spy.sim.Player
     		}
     	}
 	else {
-	    System.out.printf("At point %d, %d\n", current.x, current.y);
+	    //System.out.printf("At point %d, %d\n", current.x, current.y);
 	    //TODO: modify this to navigate over diagonal bridges
 	    if( package_loc != null || target_loc != null){
-		System.out.println("Target FOUND");
+		//System.out.println("Target FOUND");
 		int possible_y = current.y;
 		int possible_x = current.x;
 		while (possible_y+1 < SIZE && records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1){
@@ -407,7 +407,7 @@ public class Player implements spy.sim.Player
 		while (possible_y+1 < SIZE && records.get(current.x).get(possible_y).getC() != 2){
 		    possible_y++;
 		    if (records.get(current.x).get(possible_y) == null) {
-      			System.out.printf("should return %d, %d\n", current.x, current.y+1);
+      			//System.out.printf("should return %d, %d\n", current.x, current.y+1);
 			return new Point(current.x, current.y+1);
 		    }
 		}
@@ -416,7 +416,7 @@ public class Player implements spy.sim.Player
 		while (possible_x+1 < SIZE && records.get(possible_x).get(current.y).getC() != 2){
 		    possible_x++;
 		    if (records.get(possible_x).get(current.y) == null) {
-			System.out.printf("should return %d, %d\n", current.x+1, current.y);
+			///System.out.printf("should return %d, %d\n", current.x+1, current.y);
 		        return new Point(current.x+1, current.y);
 		    }
 		}
@@ -425,7 +425,7 @@ public class Player implements spy.sim.Player
 		while (possible_y-1 >= 0 && records.get(current.x).get(possible_y).getC() != 2){
 		    possible_y--;
 		    if (records.get(current.x).get(possible_y) == null) {
-			System.out.printf("should return %d, %d\n", current.x, current.y-1);
+			//System.out.printf("should return %d, %d\n", current.x, current.y-1);
 			return new Point(current.x, current.y-1);
 		    }
 		}
@@ -434,7 +434,7 @@ public class Player implements spy.sim.Player
 		while (possible_x-1 >= 0 && records.get(possible_x).get(current.y).getC() != 2){
 		    possible_x--;
 		    if (records.get(possible_x).get(current.y) == null) {
-			System.out.printf("should return %d, %d\n", current.x-1, current.y);
+			//System.out.printf("should return %d, %d\n", current.x-1, current.y);
 			return new Point(current.x-1, current.y);
 		    }
 		}
