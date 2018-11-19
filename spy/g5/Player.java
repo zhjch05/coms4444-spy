@@ -316,6 +316,7 @@ public class Player implements spy.sim.Player
     	int y = 0;
     	
     	// If we know location of both target and package, we must go to target ASAP!
+	//TODO: modify this movement function so that it successfully navigates around water instead of getting stuck
     	if(target_loc != null && package_loc != null)
     	{
     		if(target_loc.x > current.x)
@@ -347,17 +348,121 @@ public class Player implements spy.sim.Player
     			return new Point(x, y);
     		}
     	}
+	else {
+	    //TODO: modify this to navigate over diagonal bridges
+	    if( package_loc != null || target_loc != null){
+		System.out.println("Target FOUND");
+		int possible_y = current.y;
+		int possible_x = current.x;
+		while (possible_y < SIZE && records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1){
+		    possible_y++;
+		    if (records.get(current.x).get(possible_y) == null) {
+			return new Point(current.x, current.y+1);
+		    }
+		}
+		possible_y = current.y;
+		possible_x = current.x;
+		while (possible_x < SIZE && records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1){
+		    possible_x++;
+		    if (records.get(possible_x).get(current.y) == null) {
+			return new Point(current.x+1, current.y);
+		    }
+		}
+		possible_y = current.y;
+		possible_x = current.x;
+		while (possible_y >= 0 && records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1){
+		    possible_y--;
+		    if (records.get(current.x).get(possible_y) == null) {
+			return new Point(current.x, current.y-1);
+		    }
+		}
+		possible_y = current.y;
+		possible_x = current.x;
+		while (possible_x >= 0 && records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1){
+		    possible_x--;
+		    if (records.get(possible_x).get(current.y) == null) {
+			return new Point(current.x+1, current.y);
+		    }
+		}
+		if (current.x+1 < SIZE && current.y+1 < SIZE && records.get(current.x+1).get(current.y+1).getC() != 2 && records.get(current.x+1).get(current.y+1).getC() != 1){
+		    return new Point(current.x+1, current.y+1);
+		} else if (current.x+1 < SIZE && current.y+1 >= 0 && records.get(current.x+1).get(current.y-1).getC() != 2 && records.get(current.x+1).get(current.y-1).getC() != 1){
+		    return new Point(current.x+1, current.y-1);
+		    
+		} else if (current.x-1 >= 0 && current.y+1 < SIZE && records.get(current.x-1).get(current.y+1).getC() != 2 && records.get(current.x-1).get(current.y+1).getC() != 1){
+		    return new Point(current.x-1, current.y+1);
+		} else if (current.x-1 >= 0 && current.y-1 >= 0 && records.get(current.x-1).get(current.y-1).getC() != 2 && records.get(current.x-1).get(current.y-1).getC() != 1){
+		    return new Point(current.x-1, current.y-1);
+		} else {
+		    return new Point(current.x, current.y);
+		}
+
+
+	    } else { //target has not been found
+		System.out.println("Target unfound");
+		int possible_y = current.y;
+		int possible_x = current.x;
+		while (possible_y < SIZE && records.get(current.x).get(possible_y).getC() != 2){
+		    possible_y++;
+		    if (records.get(current.x).get(possible_y) == null) {
+			System.out.println("should return");
+			return new Point(current.x, current.y+1);
+		    }
+		}
+		possible_y = current.y;
+		possible_x = current.x;
+		while (possible_x < SIZE && records.get(possible_x).get(current.y).getC() != 2){
+		    possible_x++;
+		    if (records.get(possible_x).get(current.y) == null) {
+			System.out.println("should return");
+			return new Point(current.x+1, current.y);
+		    }
+		}
+		possible_y = current.y;
+		possible_x = current.x;
+		while (possible_y >= 0 && records.get(current.x).get(possible_y).getC() != 2){
+		    possible_y--;
+		    if (records.get(current.x).get(possible_y) == null) {
+			System.out.println("should return");
+			return new Point(current.x, current.y-1);
+		    }
+		}
+		possible_y = current.y;
+		possible_x = current.x;
+		while (possible_x >= 0 && records.get(possible_x).get(current.y).getC() != 2){
+		    possible_x--;
+		    if (records.get(possible_x).get(current.y) == null) {
+			System.out.println("should return");
+			return new Point(current.x-1, current.y);
+		    }
+		}
+		System.out.println("Can't make simple move");
+		if (current.x+1 < SIZE && current.y+1 < SIZE && records.get(current.x+1).get(current.y+1).getC() != 2){
+		    return new Point(current.x+1, current.y+1);
+		} else if (current.x+1 < SIZE && current.y+1 >= 0 && records.get(current.x+1).get(current.y-1).getC() != 2){
+		    return new Point(current.x+1, current.y-1);
+		    
+		} else if (current.x-1 >= 0 && current.y+1 < SIZE && records.get(current.x-1).get(current.y+1).getC() != 2){
+		    return new Point(current.x-1, current.y+1);
+		} else if (current.x-1 >= 0 && current.y-1 >= 0 && records.get(current.x-1).get(current.y-1).getC() != 2){
+		return new Point(current.x-1, current.y-1);
+		} else {
+		    return new Point(current.x, current.y);
+		}
+	    }
+
+	}
     	
     	// Lets always sweep left to right?
-    	if(sweep_complete)
-    	{
+	//    	if(sweep_complete)
+    	//{
     		// If done sweeping, move up!
-    		return new Point(0, 0);
-    	}
-    	else
-    	{
-    		return new Point(0, 0);
-    	}
+    	//	return new Point(0, 0);
+    	//}
+	//	else
+    	//{
+    	//	return new Point(0, 0);
+		//}
     	
     	// Double check I am not walking to water
     	/*
