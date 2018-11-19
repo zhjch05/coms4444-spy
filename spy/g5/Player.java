@@ -207,7 +207,7 @@ public class Player implements spy.sim.Player
     			// Deny Spy information!
     			return toSend;
     		}
-            for (ArrayList<Record> row : records)
+            for (ArrayList<Record> row : truth_table)
             {
                 for (Record record : row)
                 {
@@ -240,12 +240,16 @@ public class Player implements spy.sim.Player
     		for(int i = 0; i < records.size(); i++)
     		{
     			Record r = records.get(i);
+                Point p = r.getLoc();
+                r.getObservations().add(new Observation (id, Simulator.getElapsedT()));
+                records.get(p.x).set(p.y, r);
     			if(is_lying(r) == 1)
     			{
     				// BLOCK EVERYYTHING!
     				// SPY IS FOUND!
     				SPY_ID = id;
     			}
+
     		}
     		
     		// Append to current observations? 
