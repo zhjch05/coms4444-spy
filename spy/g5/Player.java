@@ -41,6 +41,9 @@ public class Player implements spy.sim.Player
     // Keep Location of Target and Package
     private Point target_loc;
     private Point package_loc;
+    
+    // Exploration function
+    private boolean sweep_complete = false;
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
@@ -49,7 +52,12 @@ public class Player implements spy.sim.Player
         this.time = t; // time out argument
         this.current = startingPos;// Current Position
         this.waterCells = waterCells; //Water, Can't pass them 
-        this.isSpy = isSpy;//Am I spying?\
+        
+        if(isSpy)
+        {
+        	SPY_ID = id;
+        }
+        this.isSpy = isSpy;//Am I spying?
         
         // Initialize Maps
         this.records = new ArrayList<ArrayList<Record>>();
@@ -67,6 +75,22 @@ public class Player implements spy.sim.Player
             this.records.add(row);
             this.truth_table.add(true_row);
         }
+        
+    	// It is critical for truth_table to know water tiles
+    	// to catch spies saying a water tile is a mud/clear tile!
+        for (int i = 0; i < waterCells.size(); i++)
+        {
+        	Point p = waterCells.get(i);
+        	// Technically speaking everyone knows at t = 0 water.
+        	ArrayList<Observation> observations = new ArrayList<Observation>();
+        	for(int j = 0; j < n; j++)
+        	{
+        		observations.add(new Observation(i, 0));
+        	}
+        	// c = 2 is water, pt = 0, regular
+        	truth_table.get(p.x).set(p.y, new Record(p, 2, 0, observations));
+        }
+        
     }
     
     // This is our observation, so we know this is factual.
@@ -83,8 +107,7 @@ public class Player implements spy.sim.Player
             List<Integer> players = status.getPresentSoldiers();
             if(players != null)
             {
-            	//Oh shit we found at least one other player, lets hit em up?
-            	
+
             }
             
             int condition = status.getC();
@@ -178,6 +201,11 @@ public class Player implements spy.sim.Player
     	}
     	else
     	{
+    		if(id == SPY_ID)
+    		{
+    			// Deny Spy information!
+    			return toSend;
+    		}
             for (ArrayList<Record> row : records)
             {
                 for (Record record : row)
@@ -196,6 +224,11 @@ public class Player implements spy.sim.Player
     // Another idea is if we are sure one ID is a soy, we can just ignore...
     public void receiveRecords(int id, List<Record> records)
     {
+    	// Who seriously is trying to send me a null pointer?
+    	if(records == null)
+    	{
+    		return;
+    	}
     	if(id == SPY_ID)
     	{
     		// Yeah fuck this I am not trusting a spy...
@@ -276,12 +309,112 @@ public class Player implements spy.sim.Player
         
     }
     
-    // Move to next location
+    // How much to shift to next location...
     public Point getMove()
     {
-        Random rand = new Random();
-        int x = rand.nextInt(2) * 2 - 1;
-        int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
-        return new Point(x, y);
+    	int x = 0;
+    	int y = 0;
+    	
+    	// If we know location of both target and package, we must go to target ASAP!
+    	if(target_loc != null && package_loc != null)
+    	{
+    		if(target_loc.x > current.x)
+    		{
+    			--x;
+    			return new Point(x, y);
+    		}
+    		else if(target_loc.x == current.x)
+    		{
+    	  		if(target_loc.y > current.y)
+        		{
+        			--y;
+        			return new Point(x, y);
+        		}
+        		else if(target_loc.y == current.y)
+        		{
+           			// At location! DONT MOVE
+        			return new Point(x, y);
+        		}
+        		else
+        		{
+        			++y;
+        			return new Point(x, y);
+        		}    			
+    		}
+    		else
+    		{
+    			++x;
+    			return new Point(x, y);
+    		}
+    	}
+    	
+    	// Lets always sweep left to right?
+    	if(sweep_complete)
+    	{
+    		// If done sweeping, move up!
+    		return new Point(0, 0);
+    	}
+    	else
+    	{
+    		return new Point(0, 0);
+    	}
+    	
+    	// Double check I am not walking to water
+    	/*
+    	if(playerMoveIsValid(p))
+    	{
+    		if(playerLocationIsValid(p))
+    		{
+        		return p;
+    		}
+    		else
+    		{
+    			// Error
+    			return new Point(0, 0);
+    		}
+    	}
+    	else
+    	{
+    		// ERROR
+    		return new Point(0, 0);
+    	}
+    	*/
+    }
+    
+    private boolean playerMoveIsValid(Point move)
+    {
+        return Math.abs(move.x) <= 1 && Math.abs(move.y) <= 1;
+    }
+    
+    private boolean playerLocationIsValid(Point loc)
+    {
+        if (loc.x <= 99 && loc.x >= 0 && loc.y <= 99 && loc.y >= 0)
+        {
+            // CHeck if in water
+        	if(in_water(loc))
+        	{
+        		return false;
+        	}
+        	else
+        	{
+        		return true;
+        	}
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    private boolean in_water(Point loc)
+    {
+    	if(waterCells.contains(loc))
+    	{
+    		return true;
+    	}
+    	else
+    	{
+    		return false;
+    	}
     }
 }
