@@ -86,7 +86,7 @@ public class Player implements spy.sim.Player {
         {
             ArrayList<Integer> toReturn = new ArrayList<Integer>();
             toReturn.add(entry.getKey());
-            return entry.getKey();
+            return toReturn;
         }
         return null;
     }
