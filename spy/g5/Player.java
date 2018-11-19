@@ -359,7 +359,7 @@ public class Player implements spy.sim.Player
 		while (possible_y+1 < SIZE && records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1){
 		    possible_y++;
 		    if (records.get(current.x).get(possible_y) == null) {
-			return new Point(current.x, current.y+1);
+			return new Point(0, 1);
 		    }
 		}
 		possible_y = current.y;
@@ -367,7 +367,7 @@ public class Player implements spy.sim.Player
 		while (possible_x+1 < SIZE && records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1){
 		    possible_x++;
 		    if (records.get(possible_x).get(current.y) == null) {
-			return new Point(current.x+1, current.y);
+			return new Point(1, 0);
 		    }
 		}
 		possible_y = current.y;
@@ -375,7 +375,7 @@ public class Player implements spy.sim.Player
 		while (possible_y-1 >= 0 && records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1){
 		    possible_y--;
 		    if (records.get(current.x).get(possible_y) == null) {
-			return new Point(current.x, current.y-1);
+			return new Point(0, -1);
 		    }
 		}
 		possible_y = current.y;
@@ -383,20 +383,20 @@ public class Player implements spy.sim.Player
 		while (possible_x-1 >= 0 && records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1){
 		    possible_x--;
 		    if (records.get(possible_x).get(current.y) == null) {
-			return new Point(current.x+1, current.y);
+			return new Point(-1, 0);
 		    }
 		}
 		if (current.x+1 < SIZE && current.y+1 < SIZE && records.get(current.x+1).get(current.y+1).getC() != 2 && records.get(current.x+1).get(current.y+1).getC() != 1){
-		    return new Point(current.x+1, current.y+1);
+		    return new Point(1,1);
 		} else if (current.x+1 < SIZE && current.y+1 >= 0 && records.get(current.x+1).get(current.y-1).getC() != 2 && records.get(current.x+1).get(current.y-1).getC() != 1){
-		    return new Point(current.x+1, current.y-1);
+		    return new Point(1, -1);
 		    
 		} else if (current.x-1 >= 0 && current.y+1 < SIZE && records.get(current.x-1).get(current.y+1).getC() != 2 && records.get(current.x-1).get(current.y+1).getC() != 1){
-		    return new Point(current.x-1, current.y+1);
+		    return new Point(-1, 1);
 		} else if (current.x-1 >= 0 && current.y-1 >= 0 && records.get(current.x-1).get(current.y-1).getC() != 2 && records.get(current.x-1).get(current.y-1).getC() != 1){
-		    return new Point(current.x-1, current.y-1);
+		    return new Point(-1, -1);
 		} else {
-		    return new Point(current.x, current.y);
+		    return new Point(0, 0);
 		}
 
 
@@ -408,7 +408,7 @@ public class Player implements spy.sim.Player
 		    possible_y++;
 		    if (records.get(current.x).get(possible_y) == null) {
       			//System.out.printf("should return %d, %d\n", current.x, current.y+1);
-			return new Point(current.x, current.y+1);
+			return new Point(0, 1);
 		    }
 		}
 		possible_y = current.y;
@@ -417,7 +417,7 @@ public class Player implements spy.sim.Player
 		    possible_x++;
 		    if (records.get(possible_x).get(current.y) == null) {
 			///System.out.printf("should return %d, %d\n", current.x+1, current.y);
-		        return new Point(current.x+1, current.y);
+		        return new Point(1, 0);
 		    }
 		}
 		possible_y = current.y;
@@ -426,7 +426,7 @@ public class Player implements spy.sim.Player
 		    possible_y--;
 		    if (records.get(current.x).get(possible_y) == null) {
 			//System.out.printf("should return %d, %d\n", current.x, current.y-1);
-			return new Point(current.x, current.y-1);
+			return new Point(0, -1);
 		    }
 		}
 		possible_y = current.y;
@@ -435,21 +435,21 @@ public class Player implements spy.sim.Player
 		    possible_x--;
 		    if (records.get(possible_x).get(current.y) == null) {
 			//System.out.printf("should return %d, %d\n", current.x-1, current.y);
-			return new Point(current.x-1, current.y);
+			return new Point(-1, 0);
 		    }
 		}
 		System.out.println("Can't make simple move");
 		if (current.x+1 < SIZE && current.y+1 < SIZE && records.get(current.x+1).get(current.y+1).getC() != 2){
-		    return new Point(current.x+1, current.y+1);
+		    return new Point(1, 1);
 		} else if (current.x+1 < SIZE && current.y+1 >= 0 && records.get(current.x+1).get(current.y-1).getC() != 2){
-		    return new Point(current.x+1, current.y-1);
+		    return new Point(1, -1);
 		    
 		} else if (current.x-1 >= 0 && current.y+1 < SIZE && records.get(current.x-1).get(current.y+1).getC() != 2){
-		    return new Point(current.x-1, current.y+1);
+		    return new Point(-1, 1);
 		} else if (current.x-1 >= 0 && current.y-1 >= 0 && records.get(current.x-1).get(current.y-1).getC() != 2){
-		return new Point(current.x-1, current.y-1);
+		    return new Point(-1, -1);
 		} else {
-		    return new Point(current.x, current.y);
+		    return new Point(0, 0);
 		}
 	    }
 
