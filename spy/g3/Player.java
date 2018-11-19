@@ -14,17 +14,21 @@ import spy.sim.CellStatus;
 import spy.sim.Simulator;
 import spy.sim.Observation;
 
+
 public class Player implements spy.sim.Player {
     
-    private ArrayList<ArrayList<Record>> records;
+    private ArrayList<ArrayList<Record>> records; // 2-dim list of cells on map (personal records)
     private int id;
-    private Point loc;
+    private Point loc; // Current location on map
+
+    private ArrayList<ArrayList<Record>> landInfo; // similar to 'records' but global for dry land claims
+    private ArrayList<ArrayList<Record>> mudInfo; // similar to 'records' but global for muddy land claims
 
     private int x_dir = 1;
     private int y_dir = 0;
     private int num_moves = 0;
     private List<Point> water;
-
+    
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
         this.id = id;
@@ -36,6 +40,7 @@ public class Player implements spy.sim.Player {
             {
                 row.add(null);
             }
+	    System.out.println(row);
             this.records.add(row);
         }
 
@@ -45,12 +50,14 @@ public class Player implements spy.sim.Player {
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
         this.loc = loc;
-
+	System.out.println("Called observe function =========");
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
             Point p = entry.getKey();
             CellStatus status = entry.getValue();
             Record record = records.get(p.x).get(p.y);
+
+	    System.out.println(p + " " + status + " " );
             if (record == null || record.getC() != status.getC() || record.getPT() != status.getPT())
             {
                 ArrayList<Observation> observations = new ArrayList<Observation>();
@@ -63,6 +70,7 @@ public class Player implements spy.sim.Player {
     
     public List<Record> sendRecords(int id)
     {
+        System.out.println("Called sendRecords ======");	  
         ArrayList<Record> toSend = new ArrayList<Record>();
         for (ArrayList<Record> row : records)
         {
@@ -79,7 +87,7 @@ public class Player implements spy.sim.Player {
     
     public void receiveRecords(int id, List<Record> records)
     {
-        
+	System.out.println("Called receiveRecords Command ========");
     }
     
     public List<Point> proposePath()
@@ -100,9 +108,9 @@ public class Player implements spy.sim.Player {
     
     public void receiveResults(HashMap<Integer, Integer> results)
     {
-        
+       	System.out.println("Called receiveResults Command =======");
     }
-
+    
     public List<Point> line(Point a, Point b)
     {
         Integer dx = b.x - a.x;
@@ -163,12 +171,11 @@ public class Player implements spy.sim.Player {
     
     public Point getMove()
     {
+	    System.out.println("Called getMove Command =======");
+
         Integer x_prop = loc.x + x_dir;
         Integer y_prop = loc.y + y_dir;
-        Point candidate = new Point(x_prop, y_prop);
-        while ((water.contains(candidate) || (x_prop < 2) || (x_prop > 97) || (y_prop < 2) || (y_prop > 97)))
-        {
-            if (x_dir == 1)
+        Point candidate = new Point(x_prop, y_prop); while ((water.contains(candidate) || (x_prop < 2) || (x_prop > 97) || (y_prop < 2) || (y_prop > 97))) { if (x_dir == 1)
             {
                 x_dir = 0;
                 y_dir = 1;
@@ -195,7 +202,6 @@ public class Player implements spy.sim.Player {
         }
 
         return new Point(x_dir, y_dir);
-
 
         //if ((!water.contains(new Point(loc.x + 1, loc.y))) && (loc.x + 1 <= 97))
         //{
