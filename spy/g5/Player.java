@@ -438,7 +438,7 @@ public class Player implements spy.sim.Player
 			return new Point(-1, 0);
 		    }
 		}
-		System.out.println("Can't make simple move");
+		//		System.out.println("Can't make simple move");
 		if (current.x+1 < SIZE && current.y+1 < SIZE && records.get(current.x+1).get(current.y+1).getC() != 2){
 		    return new Point(1, 1);
 		} else if (current.x+1 < SIZE && current.y+1 >= 0 && records.get(current.x+1).get(current.y-1).getC() != 2){
