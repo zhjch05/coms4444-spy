@@ -90,7 +90,6 @@ public class Player implements spy.sim.Player {
         }
         return null;
     }
-    
     public void receiveResults(HashMap<Integer, Integer> results)
     {
         
