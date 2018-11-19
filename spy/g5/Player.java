@@ -354,7 +354,7 @@ public class Player implements spy.sim.Player
 		System.out.println("Target FOUND");
 		int possible_y = current.y;
 		int possible_x = current.x;
-		while (possible_y < SIZE && records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1){
+		while (possible_y+1 < SIZE && records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1){
 		    possible_y++;
 		    if (records.get(current.x).get(possible_y) == null) {
 			return new Point(current.x, current.y+1);
@@ -362,7 +362,7 @@ public class Player implements spy.sim.Player
 		}
 		possible_y = current.y;
 		possible_x = current.x;
-		while (possible_x < SIZE && records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1){
+		while (possible_x+1 < SIZE && records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1){
 		    possible_x++;
 		    if (records.get(possible_x).get(current.y) == null) {
 			return new Point(current.x+1, current.y);
@@ -370,7 +370,7 @@ public class Player implements spy.sim.Player
 		}
 		possible_y = current.y;
 		possible_x = current.x;
-		while (possible_y >= 0 && records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1){
+		while (possible_y-1 >= 0 && records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1){
 		    possible_y--;
 		    if (records.get(current.x).get(possible_y) == null) {
 			return new Point(current.x, current.y-1);
@@ -378,7 +378,7 @@ public class Player implements spy.sim.Player
 		}
 		possible_y = current.y;
 		possible_x = current.x;
-		while (possible_x >= 0 && records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1){
+		while (possible_x-1 >= 0 && records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1){
 		    possible_x--;
 		    if (records.get(possible_x).get(current.y) == null) {
 			return new Point(current.x+1, current.y);
@@ -402,7 +402,7 @@ public class Player implements spy.sim.Player
 		System.out.println("Target unfound");
 		int possible_y = current.y;
 		int possible_x = current.x;
-		while (possible_y < SIZE && records.get(current.x).get(possible_y).getC() != 2){
+		while (possible_y+1 < SIZE && records.get(current.x).get(possible_y).getC() != 2){
 		    possible_y++;
 		    if (records.get(current.x).get(possible_y) == null) {
 			System.out.println("should return");
@@ -411,7 +411,7 @@ public class Player implements spy.sim.Player
 		}
 		possible_y = current.y;
 		possible_x = current.x;
-		while (possible_x < SIZE && records.get(possible_x).get(current.y).getC() != 2){
+		while (possible_x+1 < SIZE && records.get(possible_x).get(current.y).getC() != 2){
 		    possible_x++;
 		    if (records.get(possible_x).get(current.y) == null) {
 			System.out.println("should return");
@@ -420,7 +420,7 @@ public class Player implements spy.sim.Player
 		}
 		possible_y = current.y;
 		possible_x = current.x;
-		while (possible_y >= 0 && records.get(current.x).get(possible_y).getC() != 2){
+		while (possible_y-1 >= 0 && records.get(current.x).get(possible_y).getC() != 2){
 		    possible_y--;
 		    if (records.get(current.x).get(possible_y) == null) {
 			System.out.println("should return");
@@ -429,7 +429,7 @@ public class Player implements spy.sim.Player
 		}
 		possible_y = current.y;
 		possible_x = current.x;
-		while (possible_x >= 0 && records.get(possible_x).get(current.y).getC() != 2){
+		while (possible_x-1 >= 0 && records.get(possible_x).get(current.y).getC() != 2){
 		    possible_x--;
 		    if (records.get(possible_x).get(current.y) == null) {
 			System.out.println("should return");
