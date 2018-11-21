@@ -186,18 +186,18 @@ public class Player implements spy.sim.Player {
                 min_y = n.y;
         }
 
-        // x x x o x x x
-        // x o o o o o x
-        // x o o o o o x
+        //       o      
+        //   o o o o o  
+        //   o o o o o  
         // o o o p o o o
-        // x o o o o o x
-        // x o o o o o x
-        // x x x o x x x
+        //   o o o o o  
+        //   o o o o o  
+        //       o      
 
         // p = Player
         // o = normal cells
         // x = water (death)
-        // m = mud (Still working on this one)
+        // m = mud
         // S = source
         // T = target
 
