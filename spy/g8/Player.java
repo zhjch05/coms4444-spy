@@ -83,6 +83,8 @@ public class Player implements spy.sim.Player {
                 }
             }
     };
+
+
     
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
@@ -173,6 +175,84 @@ public class Player implements spy.sim.Player {
         return neighbors;
     }
 
+    public void whatISee(List<Point> neighbors){
+
+        int min_x = 200;
+        int min_y = 200;
+        for(Point n:neighbors){
+            if(n.x < min_x)
+                min_x = n.x;
+            if(n.y < min_y)
+                min_y = n.y;
+        }
+
+        // x x x o x x x
+        // x o o o o o x
+        // x o o o o o x
+        // o o o p o o o
+        // x o o o o o x
+        // x o o o o o x
+        // x x x o x x x
+
+        // p = Player
+        // o = normal cells
+        // x = water (death)
+        // m = mud (Still working on this one)
+        // S = source
+        // T = target
+
+        char[][] vision = new char[7][7];
+        for(int i=0; i<7; i++){
+            for(int j=0; j<7; j++){
+                vision[i][j] = ' ';
+            }
+        }
+
+        for(Point n:neighbors){
+            // default symbol for what we can see
+            char symbol = 'o';
+
+            // if we see water
+            if(waterCells.contains(n))
+                symbol = 'x';
+
+            if(records.get(n.x).get(n.y) != null){
+                Record cur_record = records.get(n.x).get(n.y);
+                
+                if(cur_record.getPT() == 0)
+                    symbol = symbol;                   //normal cell
+                else if(cur_record.getPT() == 1)
+                    symbol = 'S';                   // source
+                else
+                    symbol = 'T';                   // target
+
+                if(cur_record.getC() == 1)
+                    symbol = 'm';
+
+            }
+
+            vision[n.x - min_x][n.y - min_y] = symbol;
+        }
+        vision[3][3] = 'p';
+
+        for(int i=0; i<7; i++){
+            for(int j=0; j<7; j++){
+                System.out.print(vision[i][j] + " ");
+            }
+            System.out.println("");
+        }
+    }
+
+    public void printRecords(){
+        for(ArrayList<Record> row:records){
+            for(Record record:row){
+                if(record != null){
+                    System.out.println(record.toString());
+                }
+            }
+        }
+    }
+
     public Point getMove()
     {
         //System.out.println("GETMOVE"+records.get(loc.x).get(loc.y));
@@ -180,6 +260,10 @@ public class Player implements spy.sim.Player {
         // DO observation stuff here
         //System.out.println("CURR LOC:"+loc.x + " " + loc.y);
         List<Point> neighbors = getSurrounding(loc);
+
+        whatISee(neighbors);
+        //printRecords();
+
         for(Point n:neighbors) {
             // check if any neighbors contain mud, pacakge, target, or any players
             // if other player detected, move towards that player
