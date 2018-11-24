@@ -1,3 +1,5 @@
+package spy.g1;
+
 public class Edge {
 
   public double distance;

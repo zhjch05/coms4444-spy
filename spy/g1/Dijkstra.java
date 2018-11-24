@@ -1,3 +1,5 @@
+package spy.g1;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -285,7 +287,7 @@ public class Dijkstra {
 
     System.out.print("Shortest path between "+startCity+" and "+endCity+": ");
     System.out.println(path);
-    */
-  }
 
+  }
+  */
 }
