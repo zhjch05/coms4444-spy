@@ -15,7 +15,7 @@ import spy.sim.Simulator;
 import spy.sim.Observation;
 
 public class Player implements spy.sim.Player {
-    
+
     private ArrayList<ArrayList<Record>> records;
     private int id;
     private int player_num;
@@ -40,18 +40,18 @@ public class Player implements spy.sim.Player {
         }
     }
     class Vote{
-       Integer id;
-       Integer number;
-       Vote(int id, int number){
-           this.id = id;
-           this.number = number;
-       }
-       public Integer getId() {
+        Integer id;
+        Integer number;
+        Vote(int id, int number){
+            this.id = id;
+            this.number = number;
+        }
+        public Integer getId() {
             return id;
-       }
-       public Integer getNumber() {
+        }
+        public Integer getNumber() {
             return number;
-       }
+        }
     }
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
@@ -150,7 +150,7 @@ public class Player implements spy.sim.Player {
         }
         return send;
     }
-    
+
     public void receiveRecords(int id, List<Record> records)
     {
         for(Record r: records){
@@ -208,7 +208,7 @@ public class Player implements spy.sim.Player {
 //        }
 
     }
-    
+
     public List<Point> proposePath()
     {
         return null;
@@ -231,17 +231,17 @@ public class Player implements spy.sim.Player {
         }
         return null;
     }
-    
+
     public void receiveResults(HashMap<Integer, Integer> results)
     {
         lastResult = new PriorityQueue<Vote>((x, y) -> y.getNumber() - x.getNumber());
         for (Map.Entry<Integer, Integer> entry : results.entrySet()) {
-           Vote v= new Vote(entry.getKey(), entry.getValue());
-           lastResult.add(v);
+            Vote v= new Vote(entry.getKey(), entry.getValue());
+            lastResult.add(v);
         }
 
     }
-    
+
     public Point getMove() {
         System.out.println(loc.x);
         Random rand = new Random();
@@ -256,7 +256,7 @@ public class Player implements spy.sim.Player {
             location = new Point(x, y);
         }
         return location;
-        
+
     }
 
 }
