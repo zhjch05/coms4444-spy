@@ -22,7 +22,7 @@ public class Player implements spy.sim.Player
 	private ArrayList<ArrayList<Record>> truth_table;
 	
 	// This Matrix has a <= 100% Turthful map because
-	// we can't trust others.
+	// we can't trust others records of the map.
     private ArrayList<ArrayList<Record>> records;
     
     // Parse Init
@@ -35,17 +35,16 @@ public class Player implements spy.sim.Player
     private int n_players;
     
     // Spy functions
-    private boolean spy_detected;
     private int SPY_ID = -1;
-    
     
     // Keep Location of Target and Package
     private Point target_loc;
     private Point package_loc;
     
-    // Exploration function
+    // Movement functions
     private boolean sweep_complete = false;
-
+    private ArrayList<Point> go_to = new ArrayList<Point>();
+    
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
         this.n_players = n;// n = number of players
@@ -58,7 +57,7 @@ public class Player implements spy.sim.Player
         {
         	SPY_ID = id;
         }
-        this.isSpy = isSpy;//Am I spying?
+        this.isSpy = isSpy;
         
         // Initialize Maps
         this.records = new ArrayList<ArrayList<Record>>();
@@ -109,7 +108,6 @@ public class Player implements spy.sim.Player
             if(players != null)
             {
             	// Initialize Contact!
-
             }
             
             int condition = status.getC();
@@ -147,7 +145,14 @@ public class Player implements spy.sim.Player
             {
             	// In a truth table, only we add our oberservation ourselves? 
             	// As a spy we may need to start lying here?
-            	record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
+            	if(isSpy)
+            	{
+            		record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
+            	}
+            	else
+            	{
+            		record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));		
+            	}
             }
         }
     }
@@ -199,7 +204,6 @@ public class Player implements spy.sim.Player
     	if(isSpy)
     	{
     		// We should lie mwahahaha
-    		
     	}
     	else
     	{
@@ -242,8 +246,8 @@ public class Player implements spy.sim.Player
     		{
     			Record r = records.get(i);
                 Point p = r.getLoc();
-                r.getObservations().add(new Observation (id, Simulator.getElapsedT()));
-                records.get(p.x).set(p.y, r);
+                r.getObservations().add(new Observation (this.id, Simulator.getElapsedT()));
+                this.records.get(p.x).set(p.y, r);
     			if(is_lying(r) == 1)
     			{
     				// BLOCK EVERYTHING!
@@ -377,17 +381,31 @@ public class Player implements spy.sim.Player
     }
     
     
-    private 
-    
+    // Recieves the results (in the event that no path succeeds).
     public void receiveResults(HashMap<Integer, Integer> results)
     {
-        
+    	for(int i = 0; i < n_players; i++)
+    	{
+    		Integer num_votes = results.get(i);
+    		if(num_votes != null)
+    		{
+    			System.out.println("G"+i+ " got " + num_votes + " votes");
+    		}
+    	}
     }
     
 	
     // How much to shift to next location...
 	public Point getMove()
 	{
+		// You have a pre-determined path from BFS
+		// Just find your next move step!
+		if(!go_to.isEmpty())
+		{
+			Point next_step = go_to.remove(0);
+			// Given current, find how to get to next!
+			return new Point(next_step.x - current.x, next_step.y - current.y);
+		}
 		int x = 0;
 		int y = 0;
 
@@ -574,18 +592,70 @@ public class Player implements spy.sim.Player
 			}
 		}
 	}
+	
+	private ArrayList<Point> all_valid_moves(Point current)
+	{
+		ArrayList<Point> valid = new ArrayList<Point>();
+		/*
+		 * All moves are: X is current
+		 * (-1,  1) , (0, 1)	, (1, 1)
+		 * (-1,  0) , X			, (1, 0)
+		 * (-1, -1) , (0. -1)	, (1, -1)
+		 * 
+		 * The for loops should force the absolute value constraint easily.
+		 */
+		
+		for (int x = -1; x < 2; x++)
+		{
+			for(int y = -1; y < 2; y++)
+			{
+				if(valid_step(current, x, y))
+				{
+					valid.add(new Point(x, y));
+				}
+			}
+		}
+		// Probably should remove the point 0, 0?
+		valid.remove(new Point(0, 0));
+		return valid;
+	}
     
-    private boolean playerMoveIsValid(Point move)
+    private boolean valid_step(Point loc, int x, int y)
     {
-        return Math.abs(move.x) <= 1 && Math.abs(move.y) <= 1;
+        if (loc.x + x <= SIZE - 1 && loc.x + x >= 0 && loc.y + y <= SIZE - 1 && loc.y + y >= 0)
+        {
+            // Check if in water using the truth_table
+        	Record r = truth_table.get(loc.x + x).get(loc.y + y);
+        	// Can't be water here since no entry exists!
+        	if(r == null)
+        	{
+        		return true;
+        	}
+        	else
+        	{
+        		// It is a water tile! Not Valid!
+        		if(r.getC() == 2)
+        		{
+        			return false;
+        		}
+        		else
+        		{
+        			return true;
+        		}
+        	}
+        }
+        else
+        {
+            return false;
+        }
     }
     
-    
+    /*
     private boolean playerLocationIsValid(Point loc)
     {
         if (loc.x <= SIZE - 1 && loc.x >= 0 && loc.y <= SIZE - 1 && loc.y >= 0)
         {
-            // CHeck if in water
+            // Check if in water
         	if(in_water(loc))
         	{
         		return false;
@@ -600,17 +670,7 @@ public class Player implements spy.sim.Player
             return false;
         }
     }
+    */
     
    
-    private boolean in_water(Point loc)
-    {
-    	if(waterCells.contains(loc))
-    	{
-    		return true;
-    	}
-    	else
-    	{
-    		return false;
-    	}
-    }
 }
