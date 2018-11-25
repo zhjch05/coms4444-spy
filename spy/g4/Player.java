@@ -25,16 +25,17 @@ public class Player implements spy.sim.Player {
     private boolean isSpy;
 
     private int spy = -1; // player who we think is the spy
-    private HashMap<Integer, HashSet<Point>> possibleSpies; // all players who could potentially be the spy
-    private HashMap<Integer, Integer> suspicionScore;
+    private HashMap<Integer, HashSet<Point>> possibleSpies; // each players mapped to suspicion count
+    //private HashMap<Integer, Integer> suspicionScore;
     private HashMap<Point, Record> trueRecords;
+
+    private HashMap<Point, CellStatus> previousStatuses;
+    private boolean packageKnown = false;
+    private boolean targetKnown = false;
+    private boolean pathKnown = false;
     
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
-        //System.out.println("Player g4 number " + id);
-        //System.out.println("Am I spy? " + isSpy);
-        //System.out.println("Starting at: " + startingPos);
-
         this.id = id;
         this.records = new ArrayList<ArrayList<Record>>();
         for (int i = 0; i < 100; i++)
@@ -50,11 +51,15 @@ public class Player implements spy.sim.Player {
         this.isSpy = isSpy;
         trueRecords = new HashMap<Point, Record>();
         possibleSpies = new HashMap<Integer, HashSet<Point>>();
-        suspicionScore = new HashMap<Integer, Integer>();
+        //suspicionScore = new HashMap<Integer, Integer>();
+        previousStatuses = new HashMap<Point, CellStatus>();
     }
     
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
+
+        previousStatuses = statuses;
+
         this.loc = loc;
 
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
@@ -83,10 +88,10 @@ public class Player implements spy.sim.Player {
     
     public List<Record> sendRecords(int id)
     {
-        if ((possibleSpies.get(id).size() > 30) || (id == spy)) {
-            return null;
+        ArrayList<Record> toSend = new ArrayList<Record>();
+        if ( (possibleSpies.size() > 0) && ((possibleSpies.get(id).size() > 30) || (id == spy))) {
+            return toSend;
         } else {
-            ArrayList<Record> toSend = new ArrayList<Record>();
             if (!isSpy) {
                 for (ArrayList<Record> row : records)
                 {
@@ -157,22 +162,24 @@ public class Player implements spy.sim.Player {
         // If not first in chain: compare sequence of observations with the corresponding sequence of observations in records
         
     }
+
+    public List<Point> calculatePath() {
+        
+        // ##########################
+        // ### Quincy's code here ###
+        // ##########################
+
+        List<Point> finalPath = new ArrayList<Point>();
+
+        // if there is a complete path, set pathKnown to true
+
+        return finalPath;
+    }
     
     public List<Point> proposePath()
     {
         return null;
     }
-    
-    /*public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
-    {
-        for (Map.Entry<Integer, List<Point>> entry : paths.entrySet())
-        {
-            ArrayList<Integer> toReturn = new ArrayList<Integer>();
-            toReturn.add(entry.getKey());
-            return entry.getKey();
-        }
-        return null;
-    } ^THIS HAS AN ERROR^ */
 
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
     {
@@ -192,9 +199,58 @@ public class Player implements spy.sim.Player {
     
     public Point getMove()
     {
-        Random rand = new Random();
-        int x = rand.nextInt(2) * 2 - 1;
-        int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
-        return new Point(x, y);
+        if (pathKnown) {
+
+            // ### MOVE TO PACKAGE ###
+
+            // ##########################
+            // ### Ashley's code here ###
+            // ##########################
+
+            return new Point(0, 0); // change this
+
+            // probably will need to calculate the shortest path from current location to target first--store as a list of points
+            // then each time getMove is called, iterate through the list of points and remove each one you visit until soldier has reached last point in list which should be the package location
+
+        } else if (packageKnown || targetKnown) {
+
+            // ### KEEP EXPLORING (currently might time out) ###
+
+            // ##########################
+            // ### Shandu's code here ###
+            // ##########################
+
+            //System.out.println("cellStatus from previous observation:");
+            for (Point p : previousStatuses.keySet()) {
+                CellStatus cs = previousStatuses.get(p);
+                //System.out.println(p + ": " + cs.getC() + ", " + cs.getPT() + ", " + cs.getPresentSoldiers());
+            }
+
+            Random rand = new Random();
+            int x = rand.nextInt(2) * 2 - 1;
+            int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
+            return new Point(x, y);
+
+        } else {
+
+            // ### KEEP EXPLORING ###
+
+            // ##########################
+            // ### Shandu's code here ###
+            // ##########################
+
+            //System.out.println("cellStatus from previous observation:");
+            for (Point p : previousStatuses.keySet()) {
+                CellStatus cs = previousStatuses.get(p);
+                //System.out.println(p + ": " + cs.getC() + ", " + cs.getPT() + ", " + cs.getPresentSoldiers());
+            }
+
+            Random rand = new Random();
+            int x = rand.nextInt(2) * 2 - 1;
+            int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
+            return new Point(x, y);
+
+        }
+        // ***NOTE*** currently both exploration blocks will do the same thing (the else-if and else statements)
     }
 }
