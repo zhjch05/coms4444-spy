@@ -24,19 +24,21 @@ public class Player implements spy.sim.Player
 	// This Matrix has a <= 100% Turthful map because
 	// we can't trust others records of the map.
     private ArrayList<ArrayList<Record>> records;
-    
+    public boolean playerDetect;
     // Parse Init
     private int id;
+    public ArrayList<Integer> justMet = new ArrayList<Integer>();
     private Point current;
     private boolean isSpy;
     private List<Point> waterCells;
     private int time;
     private final static int SIZE = 100;
     private int n_players;
-    
+    public boolean stay;
     // Spy functions
     private int SPY_ID = -1;
-    
+    public Point movePosition;
+    public boolean moveToPlayer;
     // Keep Location of Target and Package
     private Point target_loc;
     private Point package_loc;
@@ -52,13 +54,13 @@ public class Player implements spy.sim.Player
         this.time = t; // time out argument
         this.current = startingPos;// Current Position
         this.waterCells = waterCells; //Water, Can't pass them 
-        
+        stay = false;
         if(isSpy)
         {
         	SPY_ID = id;
         }
         this.isSpy = isSpy;
-        
+        moveToPlayer = false;
         // Initialize Maps
         this.records = new ArrayList<ArrayList<Record>>();
         this.truth_table = new ArrayList<ArrayList<Record>>();
@@ -92,24 +94,77 @@ public class Player implements spy.sim.Player
         }
     }
     
+    public boolean checkLoc(Point soilder, Point us){
+        if(soilder.y>us.y) return true;
+        else if (soilder.y==us.y){
+            if(soilder.x<us.x){
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+
+    public Point playerDetectedMove(){
+        Point ret = new Point(0,0);
+        if(stay){
+            stay = false;
+            ret = current;
+        }
+        else if (moveToPlayer){
+            ret = movePosition;
+        }
+        return ret;
+    }
+
     // This is our observation, so we know this is factual.
     // Like do I really need to check if Package mismatched? Or Condition?
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
     	// Update current solider location
         current = loc;
-        
+        playerDetect = false;
+        stay = false;
+        moveToPlayer = false;
         //System.out.println("Updaing loc");
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
             Point p = entry.getKey();
+            int flag = 1;
             CellStatus status = entry.getValue();
             List<Integer> players = status.getPresentSoldiers();
-            if(players != null)
-            {
-            	// Initialize Contact!
+            for(Integer player:players){
+                if(justMet.contains(player)){
+                    flag = 1;
+                }
+                else{
+                    flag = 0;
+                }
             }
-            
+
+            if((players != null)&&(flag==0))
+            {
+                if(((p.x==current.x)&&(p.y==current.y))||(Math.abs(p.x-current.x)*Math.abs(p.y-current.y)>1)){
+                }
+                else{
+                    playerDetect = true;
+                    if(checkLoc(p,loc)){
+                        stay = true;
+                        moveToPlayer = false;
+                        movePosition = p;
+                    }
+                    else{
+                        stay = false;
+                        moveToPlayer = true;
+                        movePosition = p;
+                    }
+                }
+            }
+
             int condition = status.getC();
             int type = status.getPT();
             if(condition == 0)
@@ -200,8 +255,9 @@ public class Player implements spy.sim.Player
     
     public List<Record> sendRecords(int id)
     {
+        justMet.add(id);
         ArrayList<Record> toSend = new ArrayList<Record>();
-    	if(isSpy)
+        if(isSpy)
     	{
     		// We should lie mwahahaha
     	}
@@ -398,6 +454,15 @@ public class Player implements spy.sim.Player
     // How much to shift to next location...
 	public Point getMove()
 	{
+
+        
+        if(playerDetect){
+            Point x = new Point(0,0);
+            x = playerDetectedMove();
+            return x;
+        }
+        
+        
 		// You have a pre-determined path from BFS
 		// Just find your next move step!
 		if(!go_to.isEmpty())
