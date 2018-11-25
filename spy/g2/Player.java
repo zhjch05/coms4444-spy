@@ -23,6 +23,13 @@ public class Player implements spy.sim.Player {
     private List<Point> water;
     private boolean package_found;
     private Point package_loc;
+    private Point target_loc;
+    private ArrayList<ArrayList<Boolean>> visited;
+    private List<Point> route;
+    private boolean readyForRoute;
+    private boolean routeFound;
+    private Point start;
+    private Point destination;
 
 
     // use a integer to keep track of state of the board, 0 represent empty, 1 represent muddy, 2 represent water
@@ -32,23 +39,34 @@ public class Player implements spy.sim.Player {
         this.id = id;
         this.records = new ArrayList<ArrayList<Record>>();
         this.map = new ArrayList<ArrayList<Record>>();
+        this.visited = new ArrayList<ArrayList<Boolean>>();
+        this.route = new ArrayList<Point>();
         
         for (int i = 0; i < 100; i++)
         {
             ArrayList<Record> row = new ArrayList<Record>();
             ArrayList<Record> r = new ArrayList<Record>();
+            ArrayList<Boolean> v = new ArrayList<Boolean>();
             for (int j = 0; j < 100; j++)
             {
                 row.add(null);
                 r.add(null);
+                v.add(false);
             }
             this.records.add(row);
             this.map.add(r);
+            this.visited.add(v);
         }
         this.loc = startingPos;
         this.water = waterCells;
         this.package_found = false;
         this.package_loc = null;
+        this.package_loc = new Point(0, 0);
+        this.target_loc = null;
+        this.readyForRoute = false;
+        this.routeFound = false;
+        this.start = null;
+        this.destination = null;
     }
     
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
@@ -69,7 +87,20 @@ public class Player implements spy.sim.Player {
             if (status.getPT() == 1){
                 this.package_found = true;
                 this.package_loc = p;
+                if (start != null && this.target_loc != null && start.equals(this.target_loc)) {
+                    destination = this.package_loc;
+                }
             }
+            else if (status.getPT() == 2) {
+                // System.out.println("target found");
+                this.target_loc = p;
+                if (start != null && this.package_loc != null && start.equals(this.package_loc)) {
+                    // System.out.println("destination assigned");
+                    destination = this.target_loc;
+                    // System.out.println("destination: x = " + destination.x + ", y = " + destination.y);
+                }
+            }
+
             record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
             map.get(p.x).set(p.y, new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>()));
         }
@@ -97,7 +128,16 @@ public class Player implements spy.sim.Player {
     
     public List<Point> proposePath()
     {
-        return null;
+        if (!routeFound) {
+            return null;
+        }
+        
+        if (route.get(0) == package_loc) {
+            return route;
+        }
+
+        Collections.reverse(route);
+        return route;
     }
     
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
@@ -120,9 +160,59 @@ public class Player implements spy.sim.Player {
         Map<Point, Integer> possible_move = new HashMap<Point, Integer>();
         Point loc = this.loc;
 
-        if (package_found){
-            return move_toward(package_loc);
+        if (routeFound) {
+            // System.out.println("route found");
+            if (!loc.equals(package_loc)) {
+                // System.out.println("moving towards package location");
+                return move_toward(package_loc);
+            }
+            else {
+                // propose route
+            }
         }
+
+        if (!readyForRoute && (loc.equals(package_loc) || loc.equals(target_loc))) {
+            // System.out.println("package or target found");
+            readyForRoute = true;
+            if (loc.equals(package_loc)) {
+                start = package_loc;
+                destination = target_loc;
+            }
+            else {
+                start = target_loc;
+                destination = package_loc;
+            }
+        }
+
+        if (readyForRoute) {
+            // System.out.println("moving towards destination");
+            // System.out.println("loc x = " + this.loc.x + ", y = " + this.loc.y);
+            Point next = findValidPathOneMove(loc);
+            // System.out.println("x = " + next.x + ", y = " + next.y);
+            // target found
+            if (next == null) {
+                return move_toward(package_loc);
+            }
+
+            // this.loc = next;
+            //System.out.println("x = " + next.x + ", y = " + next.y);
+            // System.out.println("x = " + this.loc.x + ", y = " + this.loc.y);
+            return next;
+        }
+
+        if (package_loc != null && !loc.equals(package_loc)){
+            // System.out.println("moving toward package");
+            // return move_toward(package_loc);
+            Point next = move_toward(package_loc);
+            // System.out.println("x = " + next.x + ", y = " + next.y);
+            return next;
+
+        }
+
+        if (target_loc != null && !loc.equals(target_loc)) {
+            return move_toward(target_loc);
+        }
+
         for (int i=0; i<3; i++){
             for (int j=0; j<3; j++){
                 int dx = loc.x+i-1;
@@ -225,5 +315,80 @@ public class Player implements spy.sim.Player {
             dy = -1;
         }
         return new Point (dx, dy);
+    }
+
+    // private void findValidPath(Point start) {
+    //     Point curr = start;
+    //     Point destination = null;
+    //     if (curr == package_loc) {
+    //         destination = target_loc;
+    //     }
+    //     else {
+    //         destination = package_loc;
+    //     }
+    //     route.add(curr);
+    //     visited.get(curr.x).set(curr.y, true);
+    //     while (target_loc == null || curr != destination) {
+    //         Point next = getNextPos(curr);
+    //         if (next != null) {
+    //             route.add(next);
+    //             visited.get(next.x).set(next.y, true);
+    //             curr = next;
+    //         }
+    //         else {
+    //             route.remove(this.route.size() - 1);
+    //             curr = route.get(this.route.size() - 1);
+    //         }
+    //     }
+    // }
+
+    private Point findValidPathOneMove(Point p) {
+        // System.out.println("find valid path begins");
+        // System.out.println("p: x = " + p.x + ", y = " + p.y);
+        if (destination != null && p.equals(destination)) {
+            routeFound = true;
+            // System.out.println("destination is not null or current point equals to destination");
+            return null;
+        }
+
+        route.add(p);
+        visited.get(p.x).set(p.y, true);
+        Point next = getNextPos(p);
+        if (next != null) {
+            return new Point(next.x - p.x, next.y - p.y);
+            // return next;
+        }
+
+        route.remove(route.size() - 1);
+        // return route.remove(route.size() - 1);
+        Point prev = route.remove(route.size() - 1);
+        return new Point(prev.x - p.x, prev.y - p.y);
+    }
+
+    private Point getNextPos(Point curr) {
+        // if not visited, not muddy, then go, otherwise return null
+        for (int i = -1; i < 2; i++) {
+            for (int j = -1; j < 2; j++) {
+                Point next = new Point(curr.x + i, curr.y + j);
+                if (next.x < 0 || next.y < 0 || next.x > 99 || next.y > 99) {
+                    continue;
+                }
+                if (visited.get(next.x).get(next.y)) {
+                    continue;
+                }
+
+                if (map.get(next.x).get(next.y).getC() == 1) {
+                    continue;
+                }
+
+                if (water.contains(next)) {
+                    continue;
+                }
+
+                return next;
+            }
+        }
+
+        return null;
     }
 }
