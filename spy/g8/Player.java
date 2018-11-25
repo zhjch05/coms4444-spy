@@ -23,6 +23,7 @@ public class Player implements spy.sim.Player {
     private int id;
     public Point loc;
     private List<Point> waterCells;
+    private List<Point> muddyCells=new ArrayList<Point>();
     private List<Point> observed;
     private List<Point> notobserved;
     private Point destination;
@@ -34,6 +35,8 @@ public class Player implements spy.sim.Player {
     private List<Integer> meetSoldiers;
     private boolean trymeeting = false;
     private int trySoldier;
+    private Point dest = null;
+    private Point pack = null;
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
@@ -55,9 +58,6 @@ public class Player implements spy.sim.Player {
                 waitTime.put(i,wait);
             }
         }
-
-
-
 
         //System.out.println("watersize:"+waterCells.size());
         for (int i = 0; i < 100; i++)
@@ -134,6 +134,10 @@ public class Player implements spy.sim.Player {
                     seeSoldiers.put(see.get(i),p);
                 }
             }
+            // record directly observed muddy cells
+            if (status.getC()==1) muddyCells.add(p);
+            if (status.getPT()==1) pack = p;
+            if (status.getPT()!=0 && status.getPT()!=1) dest = p;
 
             Record record = records.get(p.x).get(p.y);
             if (record == null || record.getC() != status.getC() || record.getPT() != status.getPT())
@@ -169,7 +173,47 @@ public class Player implements spy.sim.Player {
     
     public List<Point> proposePath()
     {
-        return null;
+        if (pack == null || dest == null) return null;
+        WeightedGraph g = buildGraph();
+        int source = g.getVertex(pack.x+","+pack.y);
+        int target = g.getVertex(dest.x+","+dest.y);
+        int[][] prev = Dijkstra.dijkstra(g, source);
+        List<Integer> path = Dijkstra.getPaths(g, prev, target).get(0);
+        List<Point> toReturn = new ArrayList<Point>();
+        for(Integer i : path){
+            String[] coordinate = g.getLabel(i).split(",");
+            toReturn.add(new Point(Integer.parseInt(coordinate[0]),Integer.parseInt(coordinate[1])));
+        }
+        return toReturn;
+    }
+
+    public WeightedGraph buildGraph(){
+        WeightedGraph g = new WeightedGraph(10000);
+        for (int i=0 ; i<100 ; i++){
+            for (int j=0 ; j<100 ; j++){
+                g.setLabel(i+","+j);
+            }
+        }
+        for (int i=0 ; i<99 ; i++){
+            for (int j=0 ; j<99 ; j++){
+                Point p = new Point(i,j);
+                if (!waterCells.contains(p) && ! muddyCells.contains(p)){
+                    Point p1 = new Point(i+1,j);
+                    Point p2 = new Point(i,j+1);
+                    Point p3 = new Point(i+1,j+1);
+                    if (!waterCells.contains(p1) && ! muddyCells.contains(p1)){
+                        g.addEdge(i+","+j,(i+1)+","+j,1);
+                    }
+                    if (!waterCells.contains(p2) && ! muddyCells.contains(p2)){
+                        g.addEdge(i+","+j,i+","+(j+1),1);
+                    }
+                    if (!waterCells.contains(p3) && ! muddyCells.contains(p3)){
+                        g.addEdge(i+","+j,(i+1)+","+(j+1),1);
+                    }
+                }
+            }
+        }
+        return g;
     }
     
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
