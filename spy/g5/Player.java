@@ -406,6 +406,12 @@ public class Player implements spy.sim.Player
 			// Given current, find how to get to next!
 			return new Point(next_step.x - current.x, next_step.y - current.y);
 		}
+		
+		ArrayList<Point> moves = all_valid_moves(current);
+		// TODO: Combine a sweeping algorithm to select the correct move for player to use
+		// Please note this method doesn't consider muddy tiles!
+		// Also, it only checks adjacent tiles! So you can be walking into a swamp!
+		
 		int x = 0;
 		int y = 0;
 
@@ -567,7 +573,8 @@ public class Player implements spy.sim.Player
 				}
 				//		System.out.println("Can't make simple move");
 				if (current.x+1 < SIZE && current.y+1 < SIZE 
-						&& records.get(current.x+1).get(current.y+1).getC() != 2){
+						&& records.get(current.x+1).get(current.y+1).getC() != 2)
+				{
 					return new Point(1, 1);
 				} 
 				else if (current.x+1 < SIZE && current.y+1 >= 0 
@@ -649,28 +656,4 @@ public class Player implements spy.sim.Player
             return false;
         }
     }
-    
-    /*
-    private boolean playerLocationIsValid(Point loc)
-    {
-        if (loc.x <= SIZE - 1 && loc.x >= 0 && loc.y <= SIZE - 1 && loc.y >= 0)
-        {
-            // Check if in water
-        	if(in_water(loc))
-        	{
-        		return false;
-        	}
-        	else
-        	{
-        		return true;
-        	}
-        }
-        else
-        {
-            return false;
-        }
-    }
-    */
-    
-   
 }
