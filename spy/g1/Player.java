@@ -30,6 +30,8 @@ public class Player implements spy.sim.Player {
     private HashSet water = new HashSet();
     private HashSet existingEdges = new HashSet();
     private Dijkstra djk = new Dijkstra();
+    private int state;
+    private boolean targetFound, packageFound;
 
     private Point packageLocation;
     private Point targetLocation;
@@ -39,6 +41,8 @@ public class Player implements spy.sim.Player {
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
+        state = 0; // exploring
+
         // Hashmap of water cells for more efficient check
         for (Point w : waterCells){
           int x = w.x;
@@ -108,7 +112,10 @@ public class Player implements spy.sim.Player {
                 Vertex target = djk.getVertex(name);
                 Vertex[] key = {target, source};
                 double weight = (k%2==0) ? 3 : 2;
-                if (isMuddy) {weight *= 2;}
+                if (isMuddy) {
+                  if (state==0) {weight *= 2;}
+                  if (state==1) {weight = Double.POSITIVE_INFINITY;}
+                }
                 djk.setEdge(target.name, source.name, weight);
                 //existingEdges.add(key);
             }
@@ -124,6 +131,8 @@ public class Player implements spy.sim.Player {
         {
             Point p = entry.getKey();
             CellStatus status = entry.getValue();
+
+            // record the data learned
             Record record = records.get(p.x).get(p.y);
             if (record == null || record.getC() != status.getC() || record.getPT() != status.getPT())
             {
@@ -143,6 +152,8 @@ public class Player implements spy.sim.Player {
             }
             map.get(p.x).set(p.y, new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>()));
             record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
+
+            // update the graph to reflect new information
             String name = Integer.toString(p.x) + "," + Integer.toString(p.y);
             Vertex v = djk.getVertex(name);
             v.explored = true;
@@ -168,7 +179,7 @@ public class Player implements spy.sim.Player {
                     state = 2;
                 }
             }
-          }
+        }
     }
 
     public List<Record> sendRecords(int id)
