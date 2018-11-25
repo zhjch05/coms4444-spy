@@ -32,6 +32,7 @@ public class Player implements spy.sim.Player
     private List<Point> waterCells;
     private int time;
     private final static int SIZE = 100;
+    private int n_players;
     
     // Spy functions
     private boolean spy_detected;
@@ -47,7 +48,7 @@ public class Player implements spy.sim.Player
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
-        // n = number of players
+        this.n_players = n;// n = number of players
         this.id = id;// id is our Player id (G5)
         this.time = t; // time out argument
         this.current = startingPos;// Current Position
@@ -90,7 +91,6 @@ public class Player implements spy.sim.Player
         	// c = 2 is water, pt = 0, regular
         	truth_table.get(p.x).set(p.y, new Record(p, 2, 0, observations));
         }
-        
     }
     
     // This is our observation, so we know this is factual.
@@ -99,8 +99,8 @@ public class Player implements spy.sim.Player
     {
     	// Update current solider location
         current = loc;
-	//System.out.println("Updaing loc");
-
+        
+        //System.out.println("Updaing loc");
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
             Point p = entry.getKey();
@@ -108,6 +108,7 @@ public class Player implements spy.sim.Player
             List<Integer> players = status.getPresentSoldiers();
             if(players != null)
             {
+            	// Initialize Contact!
 
             }
             
@@ -245,16 +246,14 @@ public class Player implements spy.sim.Player
                 records.get(p.x).set(p.y, r);
     			if(is_lying(r) == 1)
     			{
-    				// BLOCK EVERYYTHING!
+    				// BLOCK EVERYTHING!
     				// SPY IS FOUND!
     				SPY_ID = id;
     			}
-
     		}
     		
     		// Append to current observations? 
     		// Check contradicting claims?
-    		
     		// For now, just copy it to records?
     	}
     }
@@ -269,12 +268,12 @@ public class Player implements spy.sim.Player
     	}
     	else
     	{
-    		// Lie detected
+    		// Lie detected about Muddy/Not Muddy/Water!
     		if(truth.getC() != unknown.getC())
     		{
     			return 1;
     		}
-    		// Lie detected
+    		// Lie detected about Locaion of Package/Target
     		if(truth.getPT() != unknown.getPT())
     		{
     			return 1;
@@ -284,222 +283,307 @@ public class Player implements spy.sim.Player
     	}
     }
     
+    // Gets a proposed path from a player at the package
     public List<Point> proposePath()
     {
+		MazeSolver solution = new MazeSolver(package_loc, target_loc, truth_table);
+		solution.solve();
     	if(isSpy)
     	{
-    		return null;
+    		// give wrong direction somehow...
+    		return solution.path;
     	}
     	else
     	{
-    		MazeSolver solution = new MazeSolver(package_loc, target_loc, truth_table);
-    		solution.solve();
     		return solution.path;
     	}
     }
     
+    // Gives a map from player ID to a path that player proposed. 
+    // Returns the IDs which the player supports
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
     {
-        for (Map.Entry<Integer, List<Point>> entry : paths.entrySet())
-        {
-            ArrayList<Integer> toReturn = new ArrayList<Integer>();
-            toReturn.add(entry.getKey());
-            return new ArrayList<Integer>(entry.getKey());
-        }
-        return null;
+    	// Initialize List of Player paths I will vote for
+    	ArrayList<Integer> vote_for = new ArrayList<Integer>();
+    	for(int i = 0; i < n_players;i++)
+    	{
+    		List<Point> proposed_path = paths.get(i);
+    		if(proposed_path == null)
+    		{
+    			continue;
+    		}
+    		else
+    		{
+    			// Analyze the Path. For now, just compare with our truth table. 
+    			// If a lie is found, Do NOT vote. Otherwise, vote for it!
+    			if(is_valid_path(proposed_path))
+    			{
+    				vote_for.add(i);
+    			}
+    			else
+    			{
+    				// Who else but the spy would give me a bad path?
+    				SPY_ID = i;
+    			}
+    		}
+    	}
+        return vote_for;
     }
+    
+    private boolean is_valid_path(List<Point> path)
+    {
+    	// Obviously empty path is bad!
+    	if(path.isEmpty())
+    	{
+    		return false;
+    	}
+    	
+    	for (int i = 0; i < path.size(); i++)
+    	{
+         	Point test = path.get(i);
+        	Record verify = truth_table.get(test.x).get(test.y);
+        	if(verify == null)
+        	{
+        		// Sadly you can only just continue...
+        		continue;
+        	}
+        	
+    		if (i == 0)
+    		{
+    	    	// Not Location of Package!
+    	    	if(verify.getPT() != 1)
+    	    	{
+    	    		return false;
+    	    	}
+    		}
+    		else if(i == path.size() - 1)
+    		{
+    	    	// Not Location of Target!
+    	    	if(verify.getPT() != 2)
+    	    	{
+    	    		return false;
+    	    	}
+    		}
+    
+        	// Are any of these tiles muddy?
+        	// Conidtion 1 -> Muddy and 2 -> Water!
+            if(verify.getC() != 0)
+        	{
+        		return false;
+        	}
+    	}
+    	// Well the path looks good according to the truth table
+    	return true;
+    }
+    
+    
+    private 
     
     public void receiveResults(HashMap<Integer, Integer> results)
     {
         
     }
     
+	
     // How much to shift to next location...
-    public Point getMove()
-    {
-    	int x = 0;
-    	int y = 0;
-    	
-    	// If we know location of both target and package, we must go to target ASAP!
-	//TODO: modify this movement function so that it successfully navigates around water instead of getting stuck
-    	if(target_loc != null && package_loc != null)
-    	{
-    		if(target_loc.x > current.x)
-    		{
-    			--x;
-    			return new Point(x, y);
-    		}
-    		else if(target_loc.x == current.x)
-    		{
-    	  		if(target_loc.y > current.y)
-        		{
-        			--y;
-        			return new Point(x, y);
-        		}
-        		else if(target_loc.y == current.y)
-        		{
-           			// At location! DONT MOVE
-        			return new Point(x, y);
-        		}
-        		else
-        		{
-        			++y;
-        			return new Point(x, y);
-        		}    			
-    		}
-    		else
-    		{
-    			++x;
-    			return new Point(x, y);
-    		}
-    	}
-	else {
-	    //System.out.printf("At point %d, %d\n", current.x, current.y);
-	    //TODO: modify this to navigate over diagonal bridges
-	    if( package_loc != null || target_loc != null){
-		//System.out.println("Target FOUND");
-		int possible_y = current.y;
-		int possible_x = current.x;
-		while (possible_y+1 < SIZE && records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1){
-		    possible_y++;
-		    if (records.get(current.x).get(possible_y) == null) {
-			return new Point(0, 1);
-		    }
-		}
-		possible_y = current.y;
-		possible_x = current.x;
-		while (possible_x+1 < SIZE && records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1){
-		    possible_x++;
-		    if (records.get(possible_x).get(current.y) == null) {
-			return new Point(1, 0);
-		    }
-		}
-		possible_y = current.y;
-		possible_x = current.x;
-		while (possible_y-1 >= 0 && records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1){
-		    possible_y--;
-		    if (records.get(current.x).get(possible_y) == null) {
-			return new Point(0, -1);
-		    }
-		}
-		possible_y = current.y;
-		possible_x = current.x;
-		while (possible_x-1 >= 0 && records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1){
-		    possible_x--;
-		    if (records.get(possible_x).get(current.y) == null) {
-			return new Point(-1, 0);
-		    }
-		}
-		if (current.x+1 < SIZE && current.y+1 < SIZE && records.get(current.x+1).get(current.y+1).getC() != 2 && records.get(current.x+1).get(current.y+1).getC() != 1){
-		    return new Point(1,1);
-		} else if (current.x+1 < SIZE && current.y+1 >= 0 && records.get(current.x+1).get(current.y-1).getC() != 2 && records.get(current.x+1).get(current.y-1).getC() != 1){
-		    return new Point(1, -1);
-		    
-		} else if (current.x-1 >= 0 && current.y+1 < SIZE && records.get(current.x-1).get(current.y+1).getC() != 2 && records.get(current.x-1).get(current.y+1).getC() != 1){
-		    return new Point(-1, 1);
-		} else if (current.x-1 >= 0 && current.y-1 >= 0 && records.get(current.x-1).get(current.y-1).getC() != 2 && records.get(current.x-1).get(current.y-1).getC() != 1){
-		    return new Point(-1, -1);
-		} else {
-		    return new Point(0, 0);
-		}
+	public Point getMove()
+	{
+		int x = 0;
+		int y = 0;
 
-
-	    } else { //target has not been found
-		//		System.out.println("Target unfound");
-		int possible_y = current.y;
-		int possible_x = current.x;
-		while (possible_y+1 < SIZE && records.get(current.x).get(possible_y).getC() != 2){
-		    possible_y++;
-		    if (records.get(current.x).get(possible_y) == null) {
-      			//System.out.printf("should return %d, %d\n", current.x, current.y+1);
-			return new Point(0, 1);
-		    }
+		// If we know location of both target and package, we must go to target ASAP!
+		// TODO: modify this movement function so that it successfully navigates around water instead of getting stuck
+		if(target_loc != null && package_loc != null)
+		{
+			if(target_loc.x > current.x)
+			{
+				--x;
+				return new Point(x, y);
+			}
+			else if(target_loc.x == current.x)
+			{
+				if(target_loc.y > current.y)
+				{
+					--y;
+					return new Point(x, y);
+				}
+				else if(target_loc.y == current.y)
+				{
+					// At location! DONT MOVE
+					return new Point(x, y);
+				}
+				else
+				{
+					++y;
+					return new Point(x, y);
+				}    			
+			}
+			else
+			{
+				++x;
+				return new Point(x, y);
+			}
 		}
-		possible_y = current.y;
-		possible_x = current.x;
-		while (possible_x+1 < SIZE && records.get(possible_x).get(current.y).getC() != 2){
-		    possible_x++;
-		    if (records.get(possible_x).get(current.y) == null) {
-			///System.out.printf("should return %d, %d\n", current.x+1, current.y);
-		        return new Point(1, 0);
-		    }
+		else 
+		{
+			//System.out.printf("At point %d, %d\n", current.x, current.y);
+			//TODO: modify this to navigate over diagonal bridges
+			if(package_loc != null || target_loc != null)
+			{
+				//System.out.println("Target FOUND");
+				int possible_y = current.y;
+				int possible_x = current.x;
+				while (possible_y+1 < SIZE 
+						&& records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1)
+				{
+					possible_y++;
+					if (records.get(current.x).get(possible_y) == null)
+					{
+						return new Point(0, 1);
+					}
+				}
+				possible_y = current.y;
+				possible_x = current.x;
+				while (possible_x+1 < SIZE 
+						&& records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1)
+				{
+					possible_x++;
+					if (records.get(possible_x).get(current.y) == null)
+					{
+						return new Point(1, 0);
+					}
+				}
+				possible_y = current.y;
+				possible_x = current.x;
+				while (possible_y-1 >= 0 
+						&& records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1)
+				{
+					possible_y--;
+					if (records.get(current.x).get(possible_y) == null)
+					{
+						return new Point(0, -1);
+					}
+				}
+				possible_y = current.y;
+				possible_x = current.x;
+				while (possible_x-1 >= 0 && records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1)
+				{
+					possible_x--;
+					if (records.get(possible_x).get(current.y) == null)
+					{
+						return new Point(-1, 0);
+					}
+				}
+				if (current.x+1 < SIZE && current.y+1 < SIZE 
+						&& records.get(current.x+1).get(current.y+1).getC() != 2 && records.get(current.x+1).get(current.y+1).getC() != 1)
+				{
+					return new Point(1,1);
+				} 
+				else if (current.x+1 < SIZE && current.y+1 >= 0 
+						&& records.get(current.x+1).get(current.y-1).getC() != 2 && records.get(current.x+1).get(current.y-1).getC() != 1)
+				{
+					return new Point(1, -1);
+				} 
+				else if (current.x-1 >= 0 && current.y+1 < SIZE 
+						&& records.get(current.x-1).get(current.y+1).getC() != 2 && records.get(current.x-1).get(current.y+1).getC() != 1)
+				{
+					return new Point(-1, 1);
+				} 
+				else if (current.x-1 >= 0 && current.y-1 >= 0 
+						&& records.get(current.x-1).get(current.y-1).getC() != 2 && records.get(current.x-1).get(current.y-1).getC() != 1)
+				{
+					return new Point(-1, -1);
+				} 
+				else 
+				{
+					return new Point(0, 0);
+				}
+			} 
+			else 
+			{ 
+				// target has not been found
+				// System.out.println("Target unfound");
+				int possible_y = current.y;
+				int possible_x = current.x;
+				while (possible_y+1 < SIZE && records.get(current.x).get(possible_y).getC() != 2)
+				{
+					possible_y++;
+					if (records.get(current.x).get(possible_y) == null)
+					{
+						//System.out.printf("should return %d, %d\n", current.x, current.y+1);
+						return new Point(0, 1);
+					}
+				}
+				possible_y = current.y;
+				possible_x = current.x;
+				while (possible_x+1 < SIZE && records.get(possible_x).get(current.y).getC() != 2)
+				{
+					possible_x++;
+					if (records.get(possible_x).get(current.y) == null)
+					{
+						///System.out.printf("should return %d, %d\n", current.x+1, current.y);
+						return new Point(1, 0);
+					}
+				}
+				possible_y = current.y;
+				possible_x = current.x;
+				while (possible_y-1 >= 0 && records.get(current.x).get(possible_y).getC() != 2)
+				{
+					possible_y--;
+					if (records.get(current.x).get(possible_y) == null)
+					{
+						//System.out.printf("should return %d, %d\n", current.x, current.y-1);
+						return new Point(0, -1);
+					}
+				}
+				possible_y = current.y;
+				possible_x = current.x;
+				while (possible_x-1 >= 0 && records.get(possible_x).get(current.y).getC() != 2)
+				{
+					possible_x--;
+					if (records.get(possible_x).get(current.y) == null)
+					{
+						//System.out.printf("should return %d, %d\n", current.x-1, current.y);
+						return new Point(-1, 0);
+					}
+				}
+				//		System.out.println("Can't make simple move");
+				if (current.x+1 < SIZE && current.y+1 < SIZE 
+						&& records.get(current.x+1).get(current.y+1).getC() != 2){
+					return new Point(1, 1);
+				} 
+				else if (current.x+1 < SIZE && current.y+1 >= 0 
+						&& records.get(current.x+1).get(current.y-1).getC() != 2)
+				{
+					return new Point(1, -1);
+				} 
+				else if (current.x-1 >= 0 && current.y+1 < SIZE 
+						&& records.get(current.x-1).get(current.y+1).getC() != 2)
+				{
+					return new Point(-1, 1);
+				} 
+				else if (current.x-1 >= 0 && current.y-1 >= 0 
+						&& records.get(current.x-1).get(current.y-1).getC() != 2)
+				{
+					return new Point(-1, -1);
+				} 
+				else 
+				{
+					return new Point(0, 0);
+				}
+			}
 		}
-		possible_y = current.y;
-		possible_x = current.x;
-		while (possible_y-1 >= 0 && records.get(current.x).get(possible_y).getC() != 2){
-		    possible_y--;
-		    if (records.get(current.x).get(possible_y) == null) {
-			//System.out.printf("should return %d, %d\n", current.x, current.y-1);
-			return new Point(0, -1);
-		    }
-		}
-		possible_y = current.y;
-		possible_x = current.x;
-		while (possible_x-1 >= 0 && records.get(possible_x).get(current.y).getC() != 2){
-		    possible_x--;
-		    if (records.get(possible_x).get(current.y) == null) {
-			//System.out.printf("should return %d, %d\n", current.x-1, current.y);
-			return new Point(-1, 0);
-		    }
-		}
-		//		System.out.println("Can't make simple move");
-		if (current.x+1 < SIZE && current.y+1 < SIZE && records.get(current.x+1).get(current.y+1).getC() != 2){
-		    return new Point(1, 1);
-		} else if (current.x+1 < SIZE && current.y+1 >= 0 && records.get(current.x+1).get(current.y-1).getC() != 2){
-		    return new Point(1, -1);
-		    
-		} else if (current.x-1 >= 0 && current.y+1 < SIZE && records.get(current.x-1).get(current.y+1).getC() != 2){
-		    return new Point(-1, 1);
-		} else if (current.x-1 >= 0 && current.y-1 >= 0 && records.get(current.x-1).get(current.y-1).getC() != 2){
-		    return new Point(-1, -1);
-		} else {
-		    return new Point(0, 0);
-		}
-	    }
-
 	}
-    	
-    	// Lets always sweep left to right?
-	//    	if(sweep_complete)
-    	//{
-    		// If done sweeping, move up!
-    	//	return new Point(0, 0);
-    	//}
-	//	else
-    	//{
-    	//	return new Point(0, 0);
-		//}
-    	
-    	// Double check I am not walking to water
-    	/*
-    	if(playerMoveIsValid(p))
-    	{
-    		if(playerLocationIsValid(p))
-    		{
-        		return p;
-    		}
-    		else
-    		{
-    			// Error
-    			return new Point(0, 0);
-    		}
-    	}
-    	else
-    	{
-    		// ERROR
-    		return new Point(0, 0);
-    	}
-    	*/
-    }
     
     private boolean playerMoveIsValid(Point move)
     {
         return Math.abs(move.x) <= 1 && Math.abs(move.y) <= 1;
     }
     
+    
     private boolean playerLocationIsValid(Point loc)
     {
-        if (loc.x <= 99 && loc.x >= 0 && loc.y <= 99 && loc.y >= 0)
+        if (loc.x <= SIZE - 1 && loc.x >= 0 && loc.y <= SIZE - 1 && loc.y >= 0)
         {
             // CHeck if in water
         	if(in_water(loc))
@@ -517,6 +601,7 @@ public class Player implements spy.sim.Player
         }
     }
     
+   
     private boolean in_water(Point loc)
     {
     	if(waterCells.contains(loc))
