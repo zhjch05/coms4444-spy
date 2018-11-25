@@ -89,7 +89,7 @@ public class Player implements spy.sim.Player {
     public List<Record> sendRecords(int id)
     {
         ArrayList<Record> toSend = new ArrayList<Record>();
-        if ( (possibleSpies.size() > 0) && ((possibleSpies.get(id).size() > 30) || (id == spy))) {
+        /*if ( (possibleSpies.size() > 0) && ((possibleSpies.get(id).size() > 30) || (id == spy))) {
             return toSend;
         } else {
             if (!isSpy) {
@@ -121,12 +121,24 @@ public class Player implements spy.sim.Player {
                 }
             }
             return toSend;
+        }*/
+        for (ArrayList<Record> recarray : records) {
+            for (Record ourRecord : recarray) {
+                if (ourRecord != null) {
+                    ArrayList<Observation> observations = ourRecord.getObservations();
+                    if ((observations.size() > 1) && (observations.get(observations.size() - 1).getID() != this.id)) {
+                        observations.add(new Observation(this.id, Simulator.getElapsedT()));
+                    }
+                    toSend.add(ourRecord);
+                }
+            }
         }
+        return toSend;
     }
     
     public void receiveRecords(int id, List<Record> records)
     {
-        if (id != spy) {
+        /*if (id != spy) {
             // Compare received records against those that we have in our trueRecords list
             // If there is a conflict
             for (Record recR : records) {
@@ -152,6 +164,20 @@ public class Player implements spy.sim.Player {
                     } else {
                         //System.out.println("player " + id + " told the TRUTH!");
                     }
+                }
+            }
+        }*/
+
+        // Assuming no spies
+        for (Record recR : records) {
+
+            if (recR != null) {
+                Point p = recR.getLoc();
+                Record ourRecord = this.records.get(p.x).get(p.y);
+
+                if (ourRecord == null) {
+                    ourRecord = new Record(p, recR.getC(), recR.getPT(), recR.getObservations());
+                    this.records.get(p.x).set(p.y, ourRecord);
                 }
             }
         }
