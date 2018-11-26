@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Queue;
+import java.util.LinkedList;
 import java.util.Random;
 import java.util.HashMap;
 import java.util.Map;
@@ -85,7 +87,7 @@ public class Player implements spy.sim.Player {
 
         this.isSpy = isSpy;
         this.waterCells = waterCells;
-        pathToPackage = new Queue<Point>();
+        pathToPackage = new LinkedList<Point>();
         trueRecords = new HashMap<Point, Record>();
         possibleSpies = new HashMap<Integer, HashSet<Point>>();
         //suspicionScore = new HashMap<Integer, Integer>();
@@ -262,18 +264,18 @@ public class Player implements spy.sim.Player {
 
         //private HashMap<Point, Record> trueRecords;
         // find the package and target position first
-        Point target = null;
-        Point package = null;
+        Point tar = null;
+        Point pac = null;
 
         for (Point key : trueRecords.keySet()) {
-            pt = trueRecords.get(key).getPT();
+            int pt = trueRecords.get(key).getPT();
             if (pt == 1) { /* package location */
-                package = key;
+                pac = key;
             }
             if (pt == 2) { /* target location */
-                target = key;
+                tar = key;
             }
-            if (target != null && package != null) {
+            if (tar != null && pac != null) {
                 break;
             }
         }
@@ -282,10 +284,13 @@ public class Player implements spy.sim.Player {
         /* visited contains the point and the path that took to get to that point */
         HashMap<Point, List<Point>> visited = new HashMap<Point, List<Point>>();
         /* keeps track of parent / children pairs */
-        List<List<Point>> queue = new ArrayList<ArrayList<Point>>();
+        List<List<Point>> queue = new ArrayList<List<Point>>();
         Boolean goal_reached = false;
 
-        queue.add(new ArrayList<Point>(package, null));
+        List<Point> tempList = new ArrayList<Point>();
+        tempList.add(pac);
+        tempList.add(null);
+        queue.add(tempList);
 
         while (true) {
             /* dequeue and set to current */
@@ -294,11 +299,11 @@ public class Player implements spy.sim.Player {
             }
             List<Point> temp = queue.get(0);
             queue.remove(temp);
-            Point current = temp[0];
-            Point parent = temp[1];
+            Point current = temp.get(0);
+            Point parent = temp.get(1);
 
             /* goal test */
-            if (current.equals(target)) {
+            if (current.equals(tar)) {
                 goal_reached = true;
             }
             /* add to visited */
@@ -309,7 +314,7 @@ public class Player implements spy.sim.Player {
                 path = visited.get(parent);
                 path.add(current);
             }
-            visited.add(current, path);
+            visited.put(current, path);
 
 
             /* if goal test successful */
@@ -320,7 +325,7 @@ public class Player implements spy.sim.Player {
              * only adds children that are normal condition */
             int x = current.x;
             int y = current.y;
-            List<Point> children = new ArrayList<Point>();
+            //List<Point> children = new ArrayList<Point>();
             for (int i = -1; i < 2; i++) {
                 for (int j = -1; j < 2; j++) {
                     if (i == 0 && j == 0) {
@@ -332,17 +337,20 @@ public class Player implements spy.sim.Player {
                         continue;
                     }
                     /* check visited */
-                    Boolean visited_child == false;
+                    Boolean visited_child = false;
                     for (Point p : visited.keySet()) {
                         if (p.equals(child)) {
-                            visited_child == true;
+                            visited_child = true;
                         }
                     }
                     if (visited_child = true) {
                         continue;
                     }
 
-                    children.add(new ArrayList<Point>(child, current));
+                    tempList = new ArrayList<Point>();
+                    tempList.add(child);
+                    tempList.add(current);
+                    queue.add(tempList);
                 }
             }
         }
@@ -351,26 +359,30 @@ public class Player implements spy.sim.Player {
             finalPath = null;
         } else {
             pathKnown = true;
-            pathToPackage = calculatePath(loc, package);
-            finalPath = visited.get(target);
+            pathToPackage = calculatePath(loc, pac);
+            finalPath = visited.get(tar);
         }
 
 
         return finalPath;
     }
 
-    private Queue<Point> calculatePath(Point loc, Point package) {
+    private Queue<Point> calculatePath(Point loc, Point pac) {
 
-        Queue<Point> finalPath = new Queue<Point>();
+        Queue<Point> finalPath = new LinkedList<Point>();
 
         /* perform BFS */
         /* visited contains the point and the path that took to get to that point */
         HashMap<Point, List<Point>> visited = new HashMap<Point, List<Point>>();
         /* keeps track of parent / children pairs */
-        List<List<Point>> queue = new ArrayList<ArrayList<Point>>();
+        List<List<Point>> queue = new ArrayList<List<Point>>();
         Boolean goal_reached = false;
 
-        queue.add(new ArrayList<Point>(loc, null));
+
+        List<Point> tempList = new ArrayList<Point>();
+        tempList.add(loc);
+        tempList.add(null);
+        queue.add(tempList);
 
         while (true) {
             /* dequeue and set to current */
@@ -379,11 +391,11 @@ public class Player implements spy.sim.Player {
             }
             List<Point> temp = queue.get(0);
             queue.remove(temp);
-            Point current = temp[0];
-            Point parent = temp[1];
+            Point current = temp.get(0);
+            Point parent = temp.get(1);
 
             /* goal test */
-            if (current.equals(package)) {
+            if (current.equals(pac)) {
                 goal_reached = true;
             }
             /* add to visited */
@@ -394,7 +406,7 @@ public class Player implements spy.sim.Player {
                 path = visited.get(parent);
                 path.add(current);
             }
-            visited.add(current, path);
+            visited.put(current, path);
 
 
             /* if goal test successful */
@@ -405,7 +417,7 @@ public class Player implements spy.sim.Player {
              * only adds children that are normal condition */
             int x = current.x;
             int y = current.y;
-            List<Point> children = new ArrayList<Point>();
+            //List<Point> children = new ArrayList<Point>();
             for (int i = -1; i < 2; i++) {
                 for (int j = -1; j < 2; j++) {
                     if (i == 0 && j == 0) {
@@ -417,17 +429,19 @@ public class Player implements spy.sim.Player {
                         continue;
                     }
                     /* check visited */
-                    Boolean visited_child == false;
+                    Boolean visited_child = false;
                     for (Point p : visited.keySet()) {
                         if (p.equals(child)) {
-                            visited_child == true;
+                            visited_child = true;
                         }
                     }
                     if (visited_child = true) {
                         continue;
                     }
-
-                    children.add(new ArrayList<Point>(child, current));
+                    tempList = new ArrayList<Point>();
+                    tempList.add(child);
+                    tempList.add(current);
+                    queue.add(tempList);
                 }
             }
         }
@@ -435,7 +449,7 @@ public class Player implements spy.sim.Player {
         if (goal_reached == false) {
             finalPath = null;
         } else {
-            for (Point p : visited.get(target)) {
+            for (Point p : visited.get(pac)) {
                 finalPath.add(p);
             }
         }
