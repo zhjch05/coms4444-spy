@@ -37,6 +37,7 @@ public class Player implements spy.sim.Player {
     private int trySoldier;
     private Point dest = null;
     private Point pack = null;
+    private HashMap<Integer, List<Record>> receivedRecords;
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
@@ -49,6 +50,7 @@ public class Player implements spy.sim.Player {
         this.notobserved = new ArrayList<Point>();
         this.move = new Point(0,0);
         this.seeSoldiers = new HashMap<Integer,Point>();
+        this.receivedRecords = new HashMap<Integer, List<Record>>();
         this.meetSoldiers = new ArrayList<Integer>();
         this.trySoldier = -1;
 
@@ -168,7 +170,7 @@ public class Player implements spy.sim.Player {
     
     public void receiveRecords(int id, List<Record> records)
     {
-        
+        receivedRecords.put(id, records);
     }
     
     public List<Point> proposePath()
@@ -430,7 +432,7 @@ public class Player implements spy.sim.Player {
             System.out.println("We See Someone!");
             for (Integer i:seeSoldiers.keySet()) { // map of solider id to their location that we see
                 //check if their waittime is 0
-                if (waitTime.get(seeSoldiers.get(i)) == 0) {
+                if (waitTime.get(i) == 0) {
                     trymeeting = true; //go towards the first one we see
                     trySoldier = i; //location of where we wanna go
                     break;
