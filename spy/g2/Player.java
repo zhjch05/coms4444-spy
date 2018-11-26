@@ -258,6 +258,9 @@ public class Player implements spy.sim.Player {
                 if (i==1 && j==1){
                     continue;
                 }
+                if (dx < 0  || dy < 0 || dx > 99 || dy > 99 ){
+                    continue;
+                }
                 if (map.get(dx).get(dy).getC() == 1){
                     possible_move.put(new Point(i-1,j-1),4);
                 }
