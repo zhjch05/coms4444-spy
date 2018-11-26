@@ -56,6 +56,7 @@ public class PathFinder {
 	 * @param map
 	 */
 	public PathFinder(int[][] map) {
+		// TODO dynamic
 		this.map = map;
 	}
 	
@@ -68,8 +69,8 @@ public class PathFinder {
 		for (int i = 0; i < map.length; ++i) {
 			ArrayList<Node> row = new ArrayList<Node>(map[0].length);
 			for (int j = 0; j < map[0].length; ++j)
-				row.set(j, new Node(i, j));
-			nodes.set(i, row);
+				row.add(new Node(i, j));
+			nodes.add(row);
 		}
 	}
 	
@@ -130,6 +131,7 @@ public class PathFinder {
 			// Travel time between two nodes
 			int cost = (diag) ? 3 : 2;
 			boolean isMuddy = map[node.x][node.y] == 2 || map[adjNode.x][adjNode.y] == 2;
+			// Add exploring
 			if (isMuddy)
 				cost *= 2;
 			

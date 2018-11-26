@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.PriorityQueue;
 
@@ -17,37 +19,40 @@ import spy.sim.Observation;
 
 public class Player implements spy.sim.Player {
     
-    private ArrayList<ArrayList<ArrayList<Record>>> records;
+    private ArrayList<ArrayList<Record>> observations;
     private int id;
     private Point loc;
     private HashMap<Integer,ArrayList<Record>> recordsToldBy;
-    private HashMap<Integer,ArrayList<Point>> pointsToldBy;
+    private HashMap<Point,ArrayList<Record>> pointsToldBy;
+    private List<Point> waterCells;
     
     private static final int EVANS_CONVENTION = 15;
     
     // Keeping track of when was a specific player last seen by us.
     private int[] lastPlayerSeen;
     
-    // Task queues for movements
-    private PriorityQueue<MovementTask> tasks;
+    // Ongoing tasks for movements
+    private LinkedList<MovementTask> tasks;
     
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
         this.id = id;
-        this.records = new ArrayList<ArrayList<ArrayList<Record>>>(100);
+        this.observations = new ArrayList<ArrayList<Record>>(100);
         this.recordsToldBy = new HashMap<>();
         this.pointsToldBy = new HashMap<>();
+        this.waterCells = waterCells;
         
         for (int i = 0; i < 100; i++){
-        	ArrayList<ArrayList<Record>> row = new ArrayList<ArrayList<Record>>(100);
+        	ArrayList<Record> row = new ArrayList<Record>(100);
             for (int j = 0; j < 100; j++){
-                row.set(j, new ArrayList<Record>());
+                row.add(null);
             }
-            records.set(i, row);
+            observations.add(row);
         }
         
         lastPlayerSeen = new int[n];
-        tasks = new PriorityQueue<MovementTask>();
+        tasks = new LinkedList<MovementTask>();
+        tasks.add(new BasicMovement());
         
         // System.out.println(this.records);
     }
@@ -62,14 +67,15 @@ public class Player implements spy.sim.Player {
             Point p = entry.getKey();
             CellStatus status = entry.getValue();
             
-            List<Record> recList = records.get(p.x).get(p.y);
             Record record = new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>());
             record.getObservations().add(new Observation(this.id, time));
-            recList.add(record);
+            observations.get(p.x).set(p.y, record);
             
             for (Integer player: status.getPresentSoldiers()) {
             	if (lastPlayerSeen[player] + EVANS_CONVENTION < time) {
-            		tasks.add(new MeetPlayer(player, records));
+            		tasks.add(new MeetPlayer(player, observations));
+            		//tasks.addFirst(new MeetPlayer(player));
+            		lastPlayerSeen[player] = time;
             	}
             }
             /*
@@ -90,31 +96,26 @@ public class Player implements spy.sim.Player {
     public List<Record> sendRecords(int id)
     {
         ArrayList<Record> toSend = new ArrayList<Record>();
-        for (ArrayList<ArrayList<Record>> row : records)
-        	for (ArrayList<Record> cell : row)
-        		for (Record record : cell)
-        			if (record != null){
-        				toSend.add(record);
-        			}
+        for (ArrayList<Record> row : observations)
+        	for (Record record : row)
+        		if (record != null){
+        			toSend.add(record);
+        		}
         return toSend;
     }
     
-    public void receiveRecords(int id, List<Record> records)
-    {
-
-
+    public void receiveRecords(int id, List<Record> records){
         ArrayList<Record> receivedRecs = new ArrayList<Record>();
-        ArrayList<Point> receivedPoints = new ArrayList<Point>();
 
-        for (Record record : records)
-        {
+        for (Record record : records){
             //only add the record if not null
-            if (record != null)
-            {
+            if (record != null){
                 receivedRecs.add(record);
-                receivedPoints.add(record.getLoc());
-
-
+                Point p = record.getLoc();
+                //keep track of all the points
+                ArrayList<Record> list = pointsToldBy.getOrDefault(p, new ArrayList<Record>());
+                list.add(record);
+                pointsToldBy.putIfAbsent(p, list);
             }
         }
 
@@ -127,22 +128,7 @@ public class Player implements spy.sim.Player {
 
         }
 
-        //keep track of all the points told by a specific player
-        if (pointsToldBy.containsKey(id)){
-            // concatenate receivedPoints
-            pointsToldBy.get(id).addAll(receivedPoints);
-        }else{
-            pointsToldBy.put(id,receivedPoints);
-
-        }
-
-
-        
-
-
-
-
-        
+        lastPlayerSeen[id] = Simulator.getElapsedT();
     }
     
     public List<Point> proposePath()
@@ -162,19 +148,115 @@ public class Player implements spy.sim.Player {
         return null;
     }
     
-    public void receiveResults(HashMap<Integer, Integer> results)
-    {
+    // Recieves the results (in the event that no path succeeds).
+    public void receiveResults(HashMap<Integer, Integer> results){
 
+        //analyze why we did not win
+        //was a the spys doing or a bug in someones code
+        for (Map.Entry<Integer, Integer> result : results.entrySet())
+        {
+
+            ArrayList<Integer> resultKeys = new ArrayList<Integer>();
+            resultKeys.add(result.getKey());
+            // result.getKey()
+
+        }
 
         
     }
     
-    public Point getMove()
-    {
-        Random rand = new Random();
-        int x = rand.nextInt(2) * 2
-         - 1;
-        int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
-        return new Point(x, y);
+    public Point getMove(){
+    	while (tasks.peek().isCompleted()) {
+    		tasks.removeFirst();
+    	}
+        return tasks.peek().nextMove();
     }
+    
+    public class BasicMovement extends MovementTask {
+    	private double moveFactor = 1.0D;
+    	private double exploreFactor = 1.0D;
+    	private double verifyFactor = 0.0D;
+    	private double proximityFactor = 0.00D; // TODO
+    	
+    	private Point lastMove = new Point(0, 0);
+    	
+    	@Override
+    	public boolean isCompleted() {
+    		return false;
+    	}
+    	
+    	protected double getScore(int deltax, int deltay) {
+    		if (waterCells.contains(new Point(loc.x + deltax, loc.y + deltay)))
+    			return -1.0D;
+    		if (deltax == 0 && deltay == 0)
+    			return -1.0D;
+    		HashSet<Point> points = new HashSet<Point>();
+    		if (deltax != 0) {
+    			points.add(new Point(loc.x + 3 * deltax, loc.y - 1));
+    			points.add(new Point(loc.x + 3 * deltax, loc.y + 1));
+    			points.add(new Point(loc.x + 4 * deltax, loc.y + deltay));
+    			points.add(new Point(loc.x + 3 * deltax, loc.y - 2 + deltay));
+    			points.add(new Point(loc.x + 3 * deltax, loc.y + 2 + deltay));
+    		}
+    		else {
+    			points.add(new Point(loc.x + 3, loc.y + deltay));
+    			points.add(new Point(loc.x - 3, loc.y + deltay));
+    		}
+    		
+    		if (deltay != 0) {
+    			points.add(new Point(loc.x - 1, loc.y + 3 * deltay));
+    			points.add(new Point(loc.x + 1, loc.y + 3 * deltay));
+    			points.add(new Point(loc.x + deltax, loc.y + 4 * deltay));
+    			points.add(new Point(loc.x - 2 + deltax, loc.y + 3 * deltay));
+    			points.add(new Point(loc.x + 2 + deltax, loc.y + 3 * deltay));
+    		}
+    		else {
+    			points.add(new Point(loc.x + deltax, loc.y + 3));
+    			points.add(new Point(loc.x + deltax, loc.y - 3));
+    		}
+    		
+    		int exploreCount = 0, verifyCount = 0;
+    		for (Point p : points) {
+    			try {
+    				if (!waterCells.contains(p) && observations.get(p.x).get(p.y) == null) {
+    					if (pointsToldBy.containsKey(new Point(p.x, p.y)))
+    						++verifyCount;
+    					else
+    						++exploreCount;
+    				}
+    			}
+    			catch(Exception e) {
+    				continue;
+    			}
+    		}
+    		
+    		int cost = (Math.abs(deltax) + Math.abs(deltay) == 2) ? 3 : 2;
+    		if (observations.get(loc.x).get(loc.y).getC() != 1 &&
+    				observations.get(loc.x + deltax).get(loc.y + deltay).getC() == 1)
+    			cost *= 2;
+    		return (exploreFactor * exploreCount + verifyFactor * verifyCount) / cost;
+    	}
+    	
+    	@Override
+    	public Point nextMove(){
+    		int bestMoveX = 0, bestMoveY = 0;
+    		double bestScore = -1.0D;
+			for (int deltax = -1; deltax <= 1; ++deltax)
+				for (int deltay = -1; deltay <= 1; ++deltay) {
+					double localScore = getScore(deltax, deltay);
+					// TODO Temporary hack for not turning back
+					if ((deltax + lastMove.x == 0) && (deltay + lastMove.y == 0)){
+						localScore -= 0.5D;
+					}
+					if (localScore > bestScore) {
+						bestMoveX = deltax;
+						bestMoveY = deltay;
+						bestScore = localScore;
+					}
+				}
+			lastMove = new Point(bestMoveX, bestMoveY);
+			return new Point(bestMoveX, bestMoveY);
+    	}
+    }
+
 }

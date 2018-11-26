@@ -5,9 +5,10 @@ import java.util.LinkedList;
 import spy.sim.Point;
 
 public class MovementTask {
-	private LinkedList<Point> moves;
+	protected LinkedList<Point> moves;
 	
 	public MovementTask() {
+		
 	}
 	
 	public MovementTask(LinkedList<Point> moves) {

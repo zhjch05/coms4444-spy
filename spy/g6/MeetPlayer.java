@@ -9,18 +9,18 @@ import spy.sim.Record;
 public class MeetPlayer extends MovementTask {
 
 	private int player;
-	private ArrayList<ArrayList<ArrayList<Record>>> playerRecords;
+	private ArrayList<ArrayList<Record>> playerRecords;
 
-	private ArrayList<ArrayList<Record>> getLatestRecord(){
-	    if(playerRecords.isEmpty()) return null;
-	    return playerRecords.get(0);
+	public MeetPlayer(int player, ArrayList<ArrayList<Record>> playerRecords) {
+        this.player = player;
+        this.playerRecords = playerRecords;
     }
-
-	public MeetPlayer(int player, ArrayList<ArrayList<ArrayList<Record>>> playerRecords) {
-		this.player = player;
-		this.playerRecords = playerRecords;
+	@Override
+	public boolean isCompleted() {
+		// TODO
+		return false;
 	}
-
-
-
+	
+	public MeetPlayer(int player) {
+	}
 }
