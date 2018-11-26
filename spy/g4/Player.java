@@ -32,6 +32,7 @@ public class Player implements spy.sim.Player {
     private HashMap<Point, Record> trueRecords;
 
     private HashMap<Point, CellStatus> previousStatuses;
+    private Queue<Point> pathToPackage;
     private boolean packageKnown = false;
     private boolean targetKnown = false;
     private boolean pathKnown = false;
@@ -84,6 +85,7 @@ public class Player implements spy.sim.Player {
 
         this.isSpy = isSpy;
         this.waterCells = waterCells;
+        pathToPackage = new Queue<Point>();
         trueRecords = new HashMap<Point, Record>();
         possibleSpies = new HashMap<Integer, HashSet<Point>>();
         //suspicionScore = new HashMap<Integer, Integer>();
@@ -257,10 +259,12 @@ public class Player implements spy.sim.Player {
             pathKnown = false;
             return null;
         }
+
         //private HashMap<Point, Record> trueRecords;
         // find the package and target position first
         Point target = null;
         Point package = null;
+
         for (Point key : trueRecords.keySet()) {
             pt = trueRecords.get(key).getPT();
             if (pt == 1) { /* package location */
@@ -347,10 +351,94 @@ public class Player implements spy.sim.Player {
             finalPath = null;
         } else {
             pathKnown = true;
+            pathToPackage = calculatePath(loc, package);
             finalPath = visited.get(target);
         }
 
 
+        return finalPath;
+    }
+
+    private Queue<Point> calculatePath(Point loc, Point package) {
+
+        Queue<Point> finalPath = new Queue<Point>();
+
+        /* perform BFS */
+        /* visited contains the point and the path that took to get to that point */
+        HashMap<Point, List<Point>> visited = new HashMap<Point, List<Point>>();
+        /* keeps track of parent / children pairs */
+        List<List<Point>> queue = new ArrayList<ArrayList<Point>>();
+        Boolean goal_reached = false;
+
+        queue.add(new ArrayList<Point>(loc, null));
+
+        while (true) {
+            /* dequeue and set to current */
+            if (queue.size() == 0 && goal_reached == false) {
+                break;
+            }
+            List<Point> temp = queue.get(0);
+            queue.remove(temp);
+            Point current = temp[0];
+            Point parent = temp[1];
+
+            /* goal test */
+            if (current.equals(package)) {
+                goal_reached = true;
+            }
+            /* add to visited */
+            List<Point> path = new ArrayList<Point>();
+            if (parent == null) {
+                path.add(current);
+            } else {
+                path = visited.get(parent);
+                path.add(current);
+            }
+            visited.add(current, path);
+
+
+            /* if goal test successful */
+            if (goal_reached = true) {
+                break;
+            }
+            /* adds all children that's not visited to queue
+             * only adds children that are normal condition */
+            int x = current.x;
+            int y = current.y;
+            List<Point> children = new ArrayList<Point>();
+            for (int i = -1; i < 2; i++) {
+                for (int j = -1; j < 2; j++) {
+                    if (i == 0 && j == 0) {
+                        continue;
+                    }
+                    Point child = new Point(x + i, y + j);
+                    /* check condition */
+                    if (trueRecords.get(child).getC() != 0) {
+                        continue;
+                    }
+                    /* check visited */
+                    Boolean visited_child == false;
+                    for (Point p : visited.keySet()) {
+                        if (p.equals(child)) {
+                            visited_child == true;
+                        }
+                    }
+                    if (visited_child = true) {
+                        continue;
+                    }
+
+                    children.add(new ArrayList<Point>(child, current));
+                }
+            }
+        }
+        // should there be a way to reach the target? 
+        if (goal_reached == false) {
+            finalPath = null;
+        } else {
+            for (Point p : visited.get(target)) {
+                finalPath.add(p);
+            }
+        }
         return finalPath;
     }
     
@@ -424,7 +512,7 @@ public class Player implements spy.sim.Player {
         stayPut = false;
         stayPutCounts = 0;
 
-        if (pathKnown) {
+        if (pathKnown && pathToPackage != null) {
 
             // ### MOVE TO PACKAGE ###
 
@@ -432,7 +520,7 @@ public class Player implements spy.sim.Player {
             // ### Ashley's code here ###
             // ##########################
 
-            return new Point(0, 0); // change this
+            return pathToPackage.remove(); // change this
 
             // probably will need to calculate the shortest path from current location to target first--store as a list of points
             // then each time getMove is called, iterate through the list of points and remove each one you visit until soldier has reached last point in list which should be the package location
