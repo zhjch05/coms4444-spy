@@ -28,6 +28,7 @@ public class Player implements spy.sim.Player
     // Parse Init
     private int id;
     public ArrayList<Integer> justMet = new ArrayList<Integer>();
+    public ArrayList<Integer> meetTime = new ArrayList<Integer>();
     private Point current;
     private boolean isSpy;
     private List<Point> waterCells;
@@ -194,7 +195,7 @@ public class Player implements spy.sim.Player
             {
                 ArrayList<Observation> observations = new ArrayList<Observation>();
                 record = new Record(p, status.getC(), status.getPT(), observations);
-                records.get(p.x).set(p.y, record);
+                truth_table.get(p.x).set(p.y, record);
             }
             else
             {
@@ -256,6 +257,7 @@ public class Player implements spy.sim.Player
     public List<Record> sendRecords(int id)
     {
         justMet.add(id);
+        meetTime.add(25);
         ArrayList<Record> toSend = new ArrayList<Record>();
         if(isSpy)
     	{
@@ -455,12 +457,25 @@ public class Player implements spy.sim.Player
 	public Point getMove()
 	{
         
+        for (int i=justMet.size()-1;i>=0;i--){
+            int a = meetTime.get(i);
+            a = a - 1 ;
+            if(a==0){
+                meetTime.remove(i);
+                justMet.remove(i);
+            }
+            else{
+                meetTime.set(i,a);
+            }
+        }
+
         if(playerDetect){
             Point bla = new Point(0,0);
             bla = playerDetectedMove();
             return bla;
         }
         
+
 		// You have a pre-determined path from BFS
 		// Just find your next move step!
 		if(!go_to.isEmpty())
@@ -510,7 +525,7 @@ public class Player implements spy.sim.Player
 		    //		++x;
 		    //		return new Point(x, y);
 		    //	}
-		    MazeSolver moveToPackage = new MazeSolver(current, target_loc, records);
+		    MazeSolver moveToPackage = new MazeSolver(current, target_loc, truth_table);
 		    moveToPackage.solve();
 		    if(moveToPackage.path != null){
 			go_to = moveToPackage.path;
@@ -527,10 +542,10 @@ public class Player implements spy.sim.Player
 				int possible_y = current.y;
 				int possible_x = current.x;
 				while (possible_y+1 < SIZE 
-						&& records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1)
+						&& truth_table.get(current.x).get(possible_y).getC() != 2 && truth_table.get(current.x).get(possible_y).getC() != 1)
 				{
 					possible_y++;
-					if (records.get(current.x).get(possible_y) == null)
+					if (truth_table.get(current.x).get(possible_y) == null)
 					{
 						return new Point(0, 1);
 					}
@@ -538,10 +553,10 @@ public class Player implements spy.sim.Player
 				possible_y = current.y;
 				possible_x = current.x;
 				while (possible_x+1 < SIZE 
-						&& records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1)
+						&& truth_table.get(possible_x).get(current.y).getC() != 2 && truth_table.get(possible_x).get(current.y).getC() != 1)
 				{
 					possible_x++;
-					if (records.get(possible_x).get(current.y) == null)
+					if (truth_table.get(possible_x).get(current.y) == null)
 					{
 						return new Point(1, 0);
 					}
@@ -549,26 +564,26 @@ public class Player implements spy.sim.Player
 				possible_y = current.y;
 				possible_x = current.x;
 				while (possible_y-1 >= 0 
-						&& records.get(current.x).get(possible_y).getC() != 2 && records.get(current.x).get(possible_y).getC() != 1)
+						&& truth_table.get(current.x).get(possible_y).getC() != 2 && truth_table.get(current.x).get(possible_y).getC() != 1)
 				{
 					possible_y--;
-					if (records.get(current.x).get(possible_y) == null)
+					if (truth_table.get(current.x).get(possible_y) == null)
 					{
 						return new Point(0, -1);
 					}
 				}
 				possible_y = current.y;
 				possible_x = current.x;
-				while (possible_x-1 >= 0 && records.get(possible_x).get(current.y).getC() != 2 && records.get(possible_x).get(current.y).getC() != 1)
+				while (possible_x-1 >= 0 && truth_table.get(possible_x).get(current.y).getC() != 2 && truth_table.get(possible_x).get(current.y).getC() != 1)
 				{
 					possible_x--;
-					if (records.get(possible_x).get(current.y) == null)
+					if (truth_table.get(possible_x).get(current.y) == null)
 					{
 						return new Point(-1, 0);
 					}
 				}
 				MazeSolver sweeper = new MazeSolver(current, current, truth_table);
-				List<Point> spath = sweeper.sweep(current, records);
+				List<Point> spath = sweeper.sweep(current, truth_table);
 				if (spath != null) {
 				    go_to = spath;
 				    return new Point(0, 0);
@@ -580,10 +595,10 @@ public class Player implements spy.sim.Player
 				// System.out.println("Target unfound");
 				int possible_y = current.y;
 				int possible_x = current.x;
-				while (possible_y+1 < SIZE && records.get(current.x).get(possible_y).getC() != 2)
+				while (possible_y+1 < SIZE && truth_table.get(current.x).get(possible_y).getC() != 2)
 				{
 					possible_y++;
-					if (records.get(current.x).get(possible_y) == null)
+					if (truth_table.get(current.x).get(possible_y) == null)
 					{
 						//System.out.printf("should return %d, %d\n", current.x, current.y+1);
 						return new Point(0, 1);
@@ -591,10 +606,10 @@ public class Player implements spy.sim.Player
 				}
 				possible_y = current.y;
 				possible_x = current.x;
-				while (possible_x+1 < SIZE && records.get(possible_x).get(current.y).getC() != 2)
+				while (possible_x+1 < SIZE && truth_table.get(possible_x).get(current.y).getC() != 2)
 				{
 					possible_x++;
-					if (records.get(possible_x).get(current.y) == null)
+					if (truth_table.get(possible_x).get(current.y) == null)
 					{
 						///System.out.printf("should return %d, %d\n", current.x+1, current.y);
 						return new Point(1, 0);
@@ -602,10 +617,10 @@ public class Player implements spy.sim.Player
 				}
 				possible_y = current.y;
 				possible_x = current.x;
-				while (possible_y-1 >= 0 && records.get(current.x).get(possible_y).getC() != 2)
+				while (possible_y-1 >= 0 && truth_table.get(current.x).get(possible_y).getC() != 2)
 				{
 					possible_y--;
-					if (records.get(current.x).get(possible_y) == null)
+					if (truth_table.get(current.x).get(possible_y) == null)
 					{
 						//System.out.printf("should return %d, %d\n", current.x, current.y-1);
 						return new Point(0, -1);
@@ -613,10 +628,10 @@ public class Player implements spy.sim.Player
 				}
 				possible_y = current.y;
 				possible_x = current.x;
-				while (possible_x-1 >= 0 && records.get(possible_x).get(current.y).getC() != 2)
+				while (possible_x-1 >= 0 && truth_table.get(possible_x).get(current.y).getC() != 2)
 				{
 					possible_x--;
-					if (records.get(possible_x).get(current.y) == null)
+					if (truth_table.get(possible_x).get(current.y) == null)
 					{
 						//System.out.printf("should return %d, %d\n", current.x-1, current.y);
 						return new Point(-1, 0);
@@ -624,14 +639,14 @@ public class Player implements spy.sim.Player
 				}
 
 				MazeSolver sweeper = new MazeSolver(current, current, truth_table);
-				List<Point> swpath = sweeper.sweep(current, records);
+				List<Point> swpath = sweeper.sweep(current, truth_table);
 				if (swpath != null) {
 				    go_to = swpath;
 				    return new Point(0, 0);
 				}
 
 				MazeSolver explorer = new MazeSolver(current, current, truth_table);
-				List<Point> epath = sweeper.explore(current, records);
+				List<Point> epath = sweeper.explore(current, truth_table);
 				if (epath != null) {
 				    go_to = epath;
 				    return new Point(0, 0);
