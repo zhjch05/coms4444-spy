@@ -203,6 +203,8 @@ public class Player implements spy.sim.Player {
                     Point p1 = new Point(i+1,j);
                     Point p2 = new Point(i,j+1);
                     Point p3 = new Point(i+1,j+1);
+                    Point p4 = new Point(i+1,j-1);
+                    Point p5 = new Point(i-1,j+1);
                     if (!waterCells.contains(p1) && ! muddyCells.contains(p1)){
                         g.addEdge(i+","+j,(i+1)+","+j,1);
                     }
@@ -211,6 +213,12 @@ public class Player implements spy.sim.Player {
                     }
                     if (!waterCells.contains(p3) && ! muddyCells.contains(p3)){
                         g.addEdge(i+","+j,(i+1)+","+(j+1),1);
+                    }
+                    if (!waterCells.contains(p4) && ! muddyCells.contains(p4)){
+                        g.addEdge(i+","+j,(i+1)+","+(j-1),1);
+                    }
+                    if (!waterCells.contains(p5) && ! muddyCells.contains(p5)){
+                        g.addEdge(i+","+j,(i-1)+","+(j+1),1);
                     }
                 }
             }
