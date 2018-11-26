@@ -311,41 +311,22 @@ public class Player implements spy.sim.Player {
     };
 
     private List<Point> getSurrounding(Point location) {
-        //return list of points of surrounding
+        //return surrounding area
         List<Point> neighbors = new ArrayList<Point>();
         for (int x=-1;x<=1;x++) {
-            // if (x == -3 || x == 3) {
-            //     Point temp = new Point(location.x+x, location.y+0);
-            //     if (temp.x >= 0 && temp.x <= 100 && temp.y >= 0 && temp.y <= 100) {
-            //         neighbors.add(temp);
-            //     }
-            // } else 
-            // if (x == -1 || x == 1) {
             for(int y=-1;y<=1;y++) {
                 Point temp = new Point(location.x+x, location.y+y);
                 if (temp.x >= 0 && temp.x <= 100 && temp.y >= 0 && temp.y <= 100) {
                     neighbors.add(temp);
                 }
             }
-            // } else { //x == 0
-            //     for(int y=-1;y<=1;y++) {
-            //         Point temp = new Point(location.x+x, location.y+y);
-            //         if (temp.x >= 0 && temp.x <= 100 && temp.y >= 0 && temp.y <= 100) {
-            //             neighbors.add(temp);
-            //         }
-            //     }
-            // }
         }
         return neighbors;
     }
     
     public Point getMove()
     {
-        System.out.println("printing current location: " + loc.x + "," + loc.y);
-        
-        // for (Point p : mudCells) {
-        //     System.out.println("muddy cells: " +p.x + ","+p.y);
-        // }        
+        // System.out.println("printing current location: " + loc.x + "," + loc.y);      
         List<Point> neighbors = getSurrounding(loc);
         for(Point n:neighbors) {
             // System.out.println("neighbors: " + n.x + "," + n.y);
@@ -360,6 +341,7 @@ public class Player implements spy.sim.Player {
         // for (Point n: notobserved) {
         //     System.out.println(n.x + "," + n.y);
         // }
+        // System.out.println("notobserved size: " + notobserved.size());
 
         if(notobserved.size() > 0) {
             Collections.sort(notobserved, pointComparator);
