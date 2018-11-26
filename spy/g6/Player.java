@@ -147,8 +147,19 @@ public class Player implements spy.sim.Player {
         return null;
     }
     
+    // Recieves the results (in the event that no path succeeds).
     public void receiveResults(HashMap<Integer, Integer> results){
 
+        //analyze why we did not win
+        //was a the spys doing or a bug in someones code
+        for (Map.Entry<Integer, Integer> result : results.entrySet())
+        {
+
+            ArrayList<Integer> resultKeys = new ArrayList<Integer>();
+            resultKeys.add(result.getKey());
+            // result.getKey()
+
+        }
 
         
     }
