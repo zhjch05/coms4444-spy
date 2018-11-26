@@ -17,7 +17,7 @@ public class MazeSolver
 	
 	private Point start;
 	private Point end;
-	public List<Point> path = null;
+	public ArrayList<Point> path = null;
 	private List<List<Point>> parents;
     private List<List<Integer>> offsets;
 
@@ -76,7 +76,7 @@ public class MazeSolver
         }
 	
 	
-        List<Point> p = new ArrayList<Point>();
+        ArrayList<Point> p = new ArrayList<Point>();
         while(current != s) 
         {
         	p.add(current);
@@ -143,7 +143,7 @@ public class MazeSolver
         }
 	
 	
-        List<Point> p = new ArrayList<Point>();
+        ArrayList<Point> p = new ArrayList<Point>();
         while(current != s) 
         {
         	p.add(current);

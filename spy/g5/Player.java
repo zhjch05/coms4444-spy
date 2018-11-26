@@ -45,7 +45,7 @@ public class Player implements spy.sim.Player
     
     // Movement functions
     private boolean sweep_complete = false;
-    private ArrayList<Point> go_to = new ArrayList<Point>();
+    private List<Point> go_to = new ArrayList<Point>();
     
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
@@ -454,8 +454,6 @@ public class Player implements spy.sim.Player
     // How much to shift to next location...
 	public Point getMove()
 	{
-        System.out.println("Repeat");
-
         
         if(playerDetect){
             Point bla = new Point(0,0);
@@ -484,34 +482,40 @@ public class Player implements spy.sim.Player
 		// TODO: modify this movement function so that it successfully navigates around water instead of getting stuck
 		if(target_loc != null && package_loc != null)
 		{
-			if(target_loc.x > current.x)
-			{
-				--x;
-				return new Point(x, y);
-			}
-			else if(target_loc.x == current.x)
-			{
-				if(target_loc.y > current.y)
-				{
-					--y;
-					return new Point(x, y);
-				}
-				else if(target_loc.y == current.y)
-				{
-					// At location! DONT MOVE
-					return new Point(x, y);
-				}
-				else
-				{
-					++y;
-					return new Point(x, y);
-				}    			
-			}
-			else
-			{
-				++x;
-				return new Point(x, y);
-			}
+		    //			if(target_loc.x > current.x)
+		    //	{
+		    //		--x;
+		    //		return new Point(x, y);
+		    //	}
+		    //	else if(target_loc.x == current.x)
+		    //	{
+		    //			if(target_loc.y > current.y)
+		    //		{
+		    //			--y;
+		    //			return new Point(x, y);
+		    //		}
+		    //		else if(target_loc.y == current.y)
+		    //		{
+		    //			// At location! DONT MOVE
+		    //			return new Point(x, y);
+		    //		}
+		    //		else
+		    //		{
+		    //			++y;
+		    //			return new Point(x, y);
+		    //		}    			
+		    //	}
+		    //	else
+		    //	{
+		    //		++x;
+		    //		return new Point(x, y);
+		    //	}
+		    MazeSolver moveToPackage = new MazeSolver(current, target_loc, records);
+		    moveToPackage.solve();
+		    if(moveToPackage.path != null){
+			go_to = moveToPackage.path;
+			return new Point(0, 0);
+		    }
 		}
 		else 
 		{
@@ -563,29 +567,11 @@ public class Player implements spy.sim.Player
 						return new Point(-1, 0);
 					}
 				}
-				if (current.x+1 < SIZE && current.y+1 < SIZE 
-						&& records.get(current.x+1).get(current.y+1).getC() != 2 && records.get(current.x+1).get(current.y+1).getC() != 1)
-				{
-					return new Point(1,1);
-				} 
-				else if (current.x+1 < SIZE && current.y+1 >= 0 
-						&& records.get(current.x+1).get(current.y-1).getC() != 2 && records.get(current.x+1).get(current.y-1).getC() != 1)
-				{
-					return new Point(1, -1);
-				} 
-				else if (current.x-1 >= 0 && current.y+1 < SIZE 
-						&& records.get(current.x-1).get(current.y+1).getC() != 2 && records.get(current.x-1).get(current.y+1).getC() != 1)
-				{
-					return new Point(-1, 1);
-				} 
-				else if (current.x-1 >= 0 && current.y-1 >= 0 
-						&& records.get(current.x-1).get(current.y-1).getC() != 2 && records.get(current.x-1).get(current.y-1).getC() != 1)
-				{
-					return new Point(-1, -1);
-				} 
-				else 
-				{
-					return new Point(0, 0);
+				MazeSolver sweeper = new MazeSolver(current, current, truth_table);
+				List<Point> spath = sweeper.sweep(current, records);
+				if (spath != null) {
+				    go_to = spath;
+				    return new Point(0, 0);
 				}
 			} 
 			else 
@@ -636,33 +622,24 @@ public class Player implements spy.sim.Player
 						return new Point(-1, 0);
 					}
 				}
-				//		System.out.println("Can't make simple move");
-				if (current.x+1 < SIZE && current.y+1 < SIZE 
-						&& records.get(current.x+1).get(current.y+1).getC() != 2)
-				{
-					return new Point(1, 1);
-				} 
-				else if (current.x+1 < SIZE && current.y+1 >= 0 
-						&& records.get(current.x+1).get(current.y-1).getC() != 2)
-				{
-					return new Point(1, -1);
-				} 
-				else if (current.x-1 >= 0 && current.y+1 < SIZE 
-						&& records.get(current.x-1).get(current.y+1).getC() != 2)
-				{
-					return new Point(-1, 1);
-				} 
-				else if (current.x-1 >= 0 && current.y-1 >= 0 
-						&& records.get(current.x-1).get(current.y-1).getC() != 2)
-				{
-					return new Point(-1, -1);
-				} 
-				else 
-				{
-					return new Point(0, 0);
+
+				MazeSolver sweeper = new MazeSolver(current, current, truth_table);
+				List<Point> swpath = sweeper.sweep(current, records);
+				if (swpath != null) {
+				    go_to = swpath;
+				    return new Point(0, 0);
+				}
+
+				MazeSolver explorer = new MazeSolver(current, current, truth_table);
+				List<Point> epath = sweeper.explore(current, records);
+				if (epath != null) {
+				    go_to = epath;
+				    return new Point(0, 0);
 				}
 			}
 		}
+		System.out.println("can't figure out how to move");
+		return new Point(0,0);
 	}
 	
 	private ArrayList<Point> all_valid_moves(Point current)
