@@ -48,6 +48,7 @@ public class Player implements spy.sim.Player {
     private int[][] explored;
     private List<Point> proposedPath;
     private Boolean found_path = false;
+    private HashMap<Point,Integer> trap_count;
 
     private ArrayList<ArrayList<Record>> landInfo; // similar to 'records' but global for dry land claims
     private ArrayList<ArrayList<Record>> mudInfo; // similar to 'records' but global for muddy land claims
@@ -62,6 +63,7 @@ public class Player implements spy.sim.Player {
         this.package_Location = new Point(-1,-1);
         this.target_Location = new Point(-1,-1);
         this.proposedPath = new ArrayList<Point>();
+        this.trap_count =  new HashMap<Point,Integer>();
         for(int i=0;i<100;i++)
         {
             for(int j=0;j<100;j++)
@@ -234,28 +236,28 @@ public class Player implements spy.sim.Player {
         int j = loc.y;
 
 
-        if(i+1<100 && visited[i+1][j]==0)
+        if(i+1<100 && grid[i+1][j]!=-2)
             return new Point(i+1,j);
 
-        if(i-1>=0 && visited[i-1][j]==0)
+        if(i-1>=0 && grid[i-1][j]!=-2)
             return new Point(i-1,j);
 
-        if(j+1<100 && visited[i][j+1]==0)
+        if(j+1<100 && grid[i][j+1]!=-2)
             return new Point(i,j+1);
 
-        if(j-1>=0 && visited[i][j-1]==0)
+        if(j-1>=0 && grid[i][j-1]!=-2)
             return new Point(i,j-1);
 
-        if(i+1<100 && j+1<100 && visited[i+1][j+1]==0)
+        if(i+1<100 && j+1<100 && grid[i+1][j+1]!=-2)
             return new Point(i+1,j+1);
 
-        if(i-1>=0 && j+1<100 && visited[i-1][j+1]==0)
+        if(i-1>=0 && j+1<100 && grid[i-1][j+1]!=-2)
             return new Point(i-1,j+1);
 
-        if(i+1<100 && j-1>=0 && visited[i+1][j-1]==0)
+        if(i+1<100 && j-1>=0 && grid[i+1][j-1]!=-2)
             return new Point(i+1,j-1);
 
-        if(j-1>=0 &&  i-1>=0 && visited[i-1][j-1]==0)
+        if(j-1>=0 &&  i-1>=0 && grid[i-1][j-1]!=-2)
             return new Point(i-1,j-1);
 
 
@@ -263,41 +265,66 @@ public class Player implements spy.sim.Player {
 
     }
 
+    // private Point getNearestUnExplored(Point curr)
+    // {
+    //     if(curr.x<0 || curr.y<0 || curr.x>=100 || curr.y>=100)
+    //         return new Point(-1000,-1000);
+
+    //     if(visited[curr.x][curr.y]==0)
+    //         {
+    //             explored[curr.x][curr.y] = 1;
+    //             return new Point(curr.x,curr.y);
+    //         }
+
+
+    //     int min_dist = Integer.MAX_VALUE;
+    //     Point next_move = new Point(-2000,-2000);
+
+    //     explored[curr.x][curr.y] = 1;
+
+    //     for(int i=curr.x-1;i<=curr.x+1;i++)
+    //     {
+    //         for(int j=curr.y-1;j<=curr.y+1;j++)
+    //         {
+    //             if(i < 0 || i>=100 || j<0 || j>=100 || explored[i][j]==1) continue;
+
+    //             Point move = getNearestUnExplored(new Point(i,j));
+
+    //             if(move.x<0 || move.y <0) continue;
+    //             int manhattan_dist = Math.abs(move.x-loc.x) + Math.abs(move.y-loc.y) - grid[move.x][move.y];
+    //             if(manhattan_dist<min_dist)
+    //             {
+    //                 min_dist = manhattan_dist;
+    //                 next_move = move;
+    //             }
+    //         }
+    //     }
+
+    //     return next_move;
+
+    // }
+
     private Point getNearestUnExplored(Point curr)
     {
-        if(curr.x<0 || curr.y<0 || curr.x>=100 || curr.y>=100)
-            return new Point(-1000,-1000);
 
-        if(visited[curr.x][curr.y]==0)
-            {
-                explored[curr.x][curr.y] = 1;
-                return new Point(curr.x,curr.y);
-            }
-
-
-        int min_dist = Integer.MAX_VALUE;
+        double min_dist = Integer.MAX_VALUE;
         Point next_move = new Point(-2000,-2000);
 
-        explored[curr.x][curr.y] = 1;
-
-        for(int i=curr.x-1;i<=curr.x+1;i++)
+        for(int i=0;i<100;i++)
         {
-            for(int j=curr.y-1;j<=curr.y+1;j++)
+            for(int j=0;j<100;j++)
             {
-                if(i < 0 || i>=100 || j<0 || j>=100 || explored[i][j]==1) continue;
+                if(grid[i][j]==-2 || visited[i][j]==1) continue;
 
-                Point move = getNearestUnExplored(new Point(i,j));
+                double dist_curr = Math.abs(curr.x-i) + Math.abs(curr.y-j) - grid[i][j];
 
-                if(move.x<0 || move.y <0) continue;
-                int manhattan_dist = Math.abs(move.x-loc.x) + Math.abs(move.y-loc.y);
-                if(manhattan_dist<min_dist)
+                if(dist_curr<min_dist)
                 {
-                    min_dist = manhattan_dist;
-                    next_move = move;
+                    min_dist = dist_curr;
+                    next_move = new Point(i,j);
                 }
             }
         }
-
         return next_move;
 
     }
@@ -340,9 +367,9 @@ public class Player implements spy.sim.Player {
                         if(safe && grid[i][j]<0) continue;
 
                         if(diff>1)
-                            val = tmp.key + 1.5;
+                            val = tmp.key + 1.5 - 2*grid[i][j];
                         else
-                            val = tmp.key + 1;
+                            val = tmp.key + 1 - 2*grid[i][j];
 
                         Point pt = new Point(i,j);
                         Double distance = dist.get(pt);
@@ -373,12 +400,14 @@ public class Player implements spy.sim.Player {
             Point next = new Point(destination);
             Point prev = new Point(-1000,-1000);
 
+            if(!found_path)
             proposedPath.clear();
 
             while(parent.get(next)!=null)
             {
                 System.out.println(next);
                 prev = new Point(next.x,next.y);
+                if(!found_path)
                 proposedPath.add(0,new Point(prev.x,prev.y));
                 next = new Point(parent.get(next));
                 
@@ -404,7 +433,33 @@ public class Player implements spy.sim.Player {
 	// System.out.println("Called getMove Command =======");
     Point move = new Point(-1000,-1000);
 
-    if(_target && _package && (loc.x!=package_Location.x || loc.y!=package_Location.y))
+    if(_target && _package)
+    {
+        //wait
+        if(!found_path)
+        {
+            proposedPath.clear();
+            
+            Point start = package_Location;
+            getNextOnPath(start,target_Location,true);
+
+            proposedPath.add(0,start);
+
+            Point reach_pt = proposedPath.get(proposedPath.size()-1);
+
+            if(reach_pt.x==target_Location.x && reach_pt.y == target_Location.y)
+                found_path = true;
+            
+            for(int i=0;i<proposedPath.size();i++)
+            {
+                System.out.println(proposedPath.get(i));
+            }
+        }
+        //announce shortest path
+    }
+
+
+    if(_target && _package && found_path && (loc.x!=package_Location.x || loc.y!=package_Location.y))
     {
         //go to package
         Point next = getNextOnPath(loc,package_Location,false);
@@ -412,30 +467,45 @@ public class Player implements spy.sim.Player {
         System.out.println("location is " + loc + " moving to " + move );
         int x  = move.x - loc.x;
         int y = move.y - loc.y;
+
+        
         return new Point(x,y);
     }
-    else if(_target && _package)
+    else if(_target && _package && found_path)
     {
-        //wait
-        if(!found_path)
-        {
-            proposedPath.clear();
-            found_path = true;
-            Point start = package_Location;
-            getNextOnPath(start,target_Location,true);
-
-            proposedPath.add(0,start);
-
-            for(int i=0;i<proposedPath.size();i++)
-            {
-                System.out.println(proposedPath.get(i));
-            }
-        }
-
         return new Point(0,0);
-        //announce shortest path
     }
 
+
+    
+    
+
+    Point next_loc = getNearestUnExplored(loc);
+    for(int i=0;i<100;i++)
+    {
+        for(int j=0;j<100;j++)
+            explored[i][j] = 0;
+    }
+    Point next = getNextOnPath(loc,next_loc,false);
+
+    if(trap_count.containsKey(next))
+    {
+        trap_count.put(next,trap_count.get(next)+1);
+    }
+    else
+    {
+        trap_count.put(next,0);
+    }
+
+    if(trap_count.get(next)<10)
+    {
+        move = next;
+        int x  = move.x - loc.x;
+        int y = move.y - loc.y;
+        System.out.println("moving to closest unexplored from " + loc + " moving to " + next_loc + "via "  + move );
+        System.out.println("the cell condition for " + move +   " is  " + grid[move.x][move.y] );
+        return new Point(x,y);
+    }
 
 
     move = explore();
@@ -449,20 +519,6 @@ public class Player implements spy.sim.Player {
             return new Point(x,y);
         }
 
-    
-
-    Point next_loc = getNearestUnExplored(loc);
-    for(int i=0;i<100;i++)
-    {
-        for(int j=0;j<100;j++)
-            explored[i][j] = 0;
-    }
-    Point next = getNextOnPath(loc,next_loc,false);
-    move = next;
-    int x  = move.x - loc.x;
-    int y = move.y - loc.y;
-    System.out.println("moving to closest unexplored from " + loc + " moving to " + next_loc + "via "  + move );
-    System.out.println("the cell condition for " + move +   " is  " + grid[move.x][move.y] );
-    return new Point(x,y);
+        return move;
     }
 }
