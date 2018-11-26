@@ -261,15 +261,56 @@ public class Player implements spy.sim.Player {
         return null;
     }
 
+    // getVotes() gets as input all the proposed paths and a list of corresponding player IDs
+    // it returns the list of player IDs who propose verified paths (in agreement with our records of the cells)
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
-    {
+    { 
+        // list of players we agree with 
+        ArrayList<Integer> toReturn = new ArrayList<Integer>(); 
         for (Map.Entry<Integer, List<Point>> entry : paths.entrySet())
-        {
-            ArrayList<Integer> toReturn = new ArrayList<Integer>();
-            toReturn.add(entry.getKey());
-            return new ArrayList<Integer>(entry.getKey());
+        { 
+            // if player proposed a valid path
+            if (this.isValidPath(entry.getValue())) { 
+                toReturn.add(entry.getKey());
+            } 
         }
-        return null;
+        return toReturn;
+    }
+
+    // isValidPath() gets as input a proposed path from getVotes()
+    // it returns a boolean, true if path is valid  
+    private boolean isValidPath(List<Point> proposedPath) {
+        int f = proposedPath.size() - 1; 
+        int i = 0;
+        for (Point point : proposedPath) {
+            Record record = records.get(point.x).get(point.y);
+            // matching record must exist and cell condition must be clear (0) 
+            if (record == null || record.getC() != 0) {
+                return false;
+            }
+            if (i == 0) {
+                // package location 
+                if (record.getPt() != 1) {
+                    System.out.println(record.getPt());
+                    i++;
+                    return false;
+                }
+            } else if (i == f) {
+                // target location 
+                if (record.getPt() != 2) {
+                    System.out.println(record.getPt());
+                    return false;
+                }
+            } else {
+                // ordinary cell 
+                i++;
+                if (record.getPt() != 0) {
+                    System.out.println(record.getPt());
+                    return false; 
+                }
+            }
+        } // end of for loop
+        return true; // if all passed 
     }
     
     public void receiveResults(HashMap<Integer, Integer> results)
