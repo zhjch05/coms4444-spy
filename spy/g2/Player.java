@@ -18,27 +18,27 @@ public class Player implements spy.sim.Player {
 
     private ArrayList<ArrayList<Record>> records;
     private ArrayList<ArrayList<Record>> map;
+    private ArrayList<ArrayList<Boolean>> visited;
     private int id;
     private Point loc;
     private List<Point> water;
     private boolean package_found;
     private Point package_loc;
     private Point target_loc;
-    private ArrayList<ArrayList<Boolean>> visited;
     private List<Point> route;
     private boolean readyForRoute;
     private boolean routeFound;
     private Point start;
     private Point destination;
+    private List<Point> Friend;
+    private HashMap<Integer, Integer> Met;
 
 
-    // use a integer to keep track of state of the board, 0 represent empty, 1 represent muddy, 2 represent water
-    // 3 represent package and 4 represent target
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
         this.id = id;
         this.records = new ArrayList<ArrayList<Record>>();
-        this.map = new ArrayList<ArrayList<Record>>();
+        // this.map = new ArrayList<ArrayList<Record>>();
         this.visited = new ArrayList<ArrayList<Boolean>>();
         this.route = new ArrayList<Point>();
         
@@ -54,24 +54,30 @@ public class Player implements spy.sim.Player {
                 v.add(false);
             }
             this.records.add(row);
-            this.map.add(r);
+            // this.map.add(r);
             this.visited.add(v);
         }
         this.loc = startingPos;
         this.water = waterCells;
         this.package_found = false;
         this.package_loc = null;
-        this.package_loc = new Point(0, 0);
+        // this.package_loc = new Point(0, 0);
         this.target_loc = null;
         this.readyForRoute = false;
         this.routeFound = false;
         this.start = null;
         this.destination = null;
+        this.Met = new HashMap<Integer,Integer>();
+        for (int i=0; i<n; i++){
+            Met.put(i,0);
+        }
+
     }
     
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
         this.loc = loc;
+        this.Friend = new ArrayList<Point>();
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
             Point p = entry.getKey();
@@ -101,8 +107,19 @@ public class Player implements spy.sim.Player {
                 }
             }
 
+            if (status.getPresentSoldiers().size() != 0){
+                for (Integer i: status.getPresentSoldiers()){
+                    if (i== this.id){
+                        continue;
+                    }
+                    if (Met.get(i) < 15){
+                        Friend.add(p);
+                        break;
+                    }
+                }
+            }
             record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
-            map.get(p.x).set(p.y, new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>()));
+            // map.get(p.x).set(p.y, new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>()));
         }
     }
     
@@ -119,11 +136,17 @@ public class Player implements spy.sim.Player {
                 }
             }
         }
+        Met.put(id,15);
         return toSend;
     }
     
     public void receiveRecords(int id, List<Record> rec)
     {
+        for (Record r : rec){
+            if (records.get(r.getLoc().x).get(r.getLoc().y) == null){
+                records.get(r.getLoc().x).set(r.getLoc().y, r);
+            }
+        }
     }
     
     public List<Point> proposePath()
@@ -159,20 +182,34 @@ public class Player implements spy.sim.Player {
         Point best_move = this.loc;
         Map<Point, Integer> possible_move = new HashMap<Point, Integer>();
         Point loc = this.loc;
-
+        for (Integer i: Met.keySet()){
+            if (Met.get(i)>0){
+                Met.put(i, Met.get(i)-1);
+            }
+        }
+        System.out.printf("Current loc: %d %d \n", loc.x, loc.y);
         if (routeFound) {
-            // System.out.println("route found");
+            System.out.println("route found");
             if (!loc.equals(package_loc)) {
                 // System.out.println("moving towards package location");
                 return move_toward(package_loc);
             }
             else {
-                // propose route
+                // stay at package loc
+                return new Point(0,0);
             }
         }
 
+        if (Friend.size() != 0){
+            System.out.println("Moving towards friend");
+            Point p = Friend.remove(0);
+
+            System.out.printf("at %d %d \n", p.x, p.y);
+            return move_toward(p);
+        }
+
         if (!readyForRoute && (loc.equals(package_loc) || loc.equals(target_loc))) {
-            // System.out.println("package or target found");
+            System.out.println("package or target found");
             readyForRoute = true;
             if (loc.equals(package_loc)) {
                 start = package_loc;
@@ -185,8 +222,8 @@ public class Player implements spy.sim.Player {
         }
 
         if (readyForRoute) {
-            // System.out.println("moving towards destination");
-            // System.out.println("loc x = " + this.loc.x + ", y = " + this.loc.y);
+            System.out.println("moving towards destination");
+            System.out.println("loc x = " + this.loc.x + ", y = " + this.loc.y);
             Point next = findValidPathOneMove(loc);
             // System.out.println("x = " + next.x + ", y = " + next.y);
             // target found
@@ -201,7 +238,7 @@ public class Player implements spy.sim.Player {
         }
 
         if (package_loc != null && !loc.equals(package_loc)){
-            // System.out.println("moving toward package");
+            System.out.println("moving toward package");
             // return move_toward(package_loc);
             Point next = move_toward(package_loc);
             // System.out.println("x = " + next.x + ", y = " + next.y);
@@ -212,12 +249,16 @@ public class Player implements spy.sim.Player {
         if (target_loc != null && !loc.equals(target_loc)) {
             return move_toward(target_loc);
         }
+        map = records;
 
         for (int i=0; i<3; i++){
             for (int j=0; j<3; j++){
                 int dx = loc.x+i-1;
                 int dy = loc.y+j-1;
                 if (i==1 && j==1){
+                    continue;
+                }
+                if (dx < 0  || dy < 0 || dx > 99 || dy > 99 ){
                     continue;
                 }
                 if (map.get(dx).get(dy).getC() == 1){
@@ -247,15 +288,16 @@ public class Player implements spy.sim.Player {
                 }
             }
         }
+        System.out.println("exploring");
         for (Point p: possible_move.keySet()){
             Point nex = new Point(loc.x+p.x,loc.y+p.y);
             if (exploration_reward(nex)/possible_move.get(p)>max_reward){
                 max_reward = exploration_reward(nex)/possible_move.get(p);
                 best_move = p;
             }
-            if (max_reward == 0){
-                best_move = find_unknown(loc);
-            }
+        }
+        if (max_reward == 0){
+            best_move = find_unknown(loc);
         }
         return best_move;
     }
@@ -377,7 +419,7 @@ public class Player implements spy.sim.Player {
                     continue;
                 }
 
-                if (map.get(next.x).get(next.y).getC() == 1) {
+                if (records.get(next.x).get(next.y).getC() == 1) {
                     continue;
                 }
 
