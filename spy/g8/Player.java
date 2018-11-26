@@ -373,7 +373,7 @@ public class Player implements spy.sim.Player {
         if (meeting == true) {
             for (int i=0;i<meetSoldiers.size();i++) {
                 //reset waittime
-                waitTime.put(meetSoldiers.get(i),wait);
+                waitTime.put(i,wait);
                 trymeeting = false;
             }
         }
