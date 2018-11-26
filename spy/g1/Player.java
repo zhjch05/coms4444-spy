@@ -457,7 +457,7 @@ public class Player implements spy.sim.Player {
                     possible_move.put(new Point(i-1,j-1),0);
                 }
                 else{
-                    possible_move.put(new Point(i-1,j-1),0);
+                    possible_move.put(new Point(i-1,j-1),2);
                 }
             }
               else{
@@ -465,7 +465,7 @@ public class Player implements spy.sim.Player {
                     possible_move.put(new Point(i-1,j-1),0);
                 }
                 else{
-                    possible_move.put(new Point(i-1,j-1),0);
+                    possible_move.put(new Point(i-1,j-1),2);
                 }
               }
             }
