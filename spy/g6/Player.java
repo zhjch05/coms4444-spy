@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 import spy.sim.Point;
 import spy.sim.Record;
@@ -16,50 +17,71 @@ import spy.sim.Observation;
 
 public class Player implements spy.sim.Player {
     
-    private ArrayList<ArrayList<Record>> records;
+    private ArrayList<ArrayList<ArrayList<Record>>> records;
     private int id;
     private Point loc;
     private HashMap<Integer,ArrayList<Record>> recordsToldBy;
     private HashMap<Integer,ArrayList<Point>> pointsToldBy;
     
-
+    private static final int EVANS_CONVENTION = 15;
+    
+    // Keeping track of when was a specific player last seen by us.
+    private int[] lastPlayerSeen;
+    
+    // Task queues for movements
+    private PriorityQueue<MovementTask> tasks;
+    
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
         this.id = id;
-        this.records = new ArrayList<ArrayList<Record>>();
+        this.records = new ArrayList<ArrayList<ArrayList<Record>>>(100);
         this.recordsToldBy = new HashMap<>();
         this.pointsToldBy = new HashMap<>();
         
-        for (int i = 0; i < 100; i++)
-        {
-            ArrayList<Record> row = new ArrayList<Record>();
-            for (int j = 0; j < 100; j++)
-            {
-                row.add(null);
+        for (int i = 0; i < 100; i++){
+        	ArrayList<ArrayList<Record>> row = new ArrayList<ArrayList<Record>>(100);
+            for (int j = 0; j < 100; j++){
+                row.set(j, new ArrayList<Record>());
             }
-            this.records.add(row);
-
-
+            records.set(i, row);
         }
+        
+        lastPlayerSeen = new int[n];
+        tasks = new PriorityQueue<MovementTask>();
+        
         // System.out.println(this.records);
     }
     
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
         this.loc = loc;
-
+        int time = Simulator.getElapsedT();
+      
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
             Point p = entry.getKey();
             CellStatus status = entry.getValue();
-            Record record = records.get(p.x).get(p.y);
+            
+            List<Record> recList = records.get(p.x).get(p.y);
+            Record record = new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>());
+            record.getObservations().add(new Observation(this.id, time));
+            recList.add(record);
+            
+            for (Integer player: status.getPresentSoldiers()) {
+            	if (lastPlayerSeen[player] + EVANS_CONVENTION < time) {
+            		tasks.add(new MeetPlayer(player));
+            	}
+            }
+            /*
             if (record == null || record.getC() != status.getC() || record.getPT() != status.getPT())
             {
                 ArrayList<Observation> observations = new ArrayList<Observation>();
                 record = new Record(p, status.getC(), status.getPT(), observations);
                 records.get(p.x).set(p.y, record);
-            }
-            record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
+                
+                // Find nearby players
+
+            }*/
 
         }
         // System.out.println(records);
@@ -68,16 +90,12 @@ public class Player implements spy.sim.Player {
     public List<Record> sendRecords(int id)
     {
         ArrayList<Record> toSend = new ArrayList<Record>();
-        for (ArrayList<Record> row : records)
-        {
-            for (Record record : row)
-            {
-                if (record != null)
-                {
-                    toSend.add(record);
-                }
-            }
-        }
+        for (ArrayList<ArrayList<Record>> row : records)
+        	for (ArrayList<Record> cell : row)
+        		for (Record record : cell)
+        			if (record != null){
+        				toSend.add(record);
+        			}
         return toSend;
     }
     
