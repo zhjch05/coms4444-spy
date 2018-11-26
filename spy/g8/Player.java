@@ -23,10 +23,21 @@ public class Player implements spy.sim.Player {
     private int id;
     public Point loc;
     private List<Point> waterCells;
+    private List<Point> muddyCells=new ArrayList<Point>();
     private List<Point> observed;
     private List<Point> notobserved;
     private Point destination;
     private Point move;
+    private Map<Integer,Integer> waitTime;
+    private Map<Integer,Point> seeSoldiers; //list of soldiers we see at a certain time
+    private int wait = 24;
+    private boolean meeting = false;
+    private List<Integer> meetSoldiers;
+    private boolean trymeeting = false;
+    private int trySoldier;
+    private Point dest = null;
+    private Point pack = null;
+    private HashMap<Integer, List<Record>> receivedRecords;
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
@@ -38,7 +49,17 @@ public class Player implements spy.sim.Player {
         this.observed = new ArrayList<Point>();
         this.notobserved = new ArrayList<Point>();
         this.move = new Point(0,0);
+        this.seeSoldiers = new HashMap<Integer,Point>();
+        this.receivedRecords = new HashMap<Integer, List<Record>>();
+        this.meetSoldiers = new ArrayList<Integer>();
+        this.trySoldier = -1;
 
+        this.waitTime = new HashMap<Integer,Integer>();
+        for(int i=0;i<n;i++) {
+            if (i != id) {
+                waitTime.put(i,wait);
+            }
+        }
 
         //System.out.println("watersize:"+waterCells.size());
         for (int i = 0; i < 100; i++)
@@ -83,6 +104,8 @@ public class Player implements spy.sim.Player {
                 }
             }
     };
+
+
     
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
@@ -92,6 +115,32 @@ public class Player implements spy.sim.Player {
         {
             Point p = entry.getKey();
             CellStatus status = entry.getValue();
+
+            List<Integer> see = status.getPresentSoldiers();
+            // look at case when we observe the cell we are occupying
+            if(see.size() > 1 && p.equals(loc)) { //do not count when it is ourselves
+                System.out.println("COLLABORATING");
+                meeting = true; // someone is in the same cell as us
+                for(int i=0;i<see.size();i++) {
+                    if(see.get(i) != this.id) {
+                        meetSoldiers.add(see.get(i));//which soldier(s) we are meeting
+                    }
+                }
+            } else {
+                meetSoldiers = new ArrayList<Integer>();
+                meeting = false;
+            }
+
+            for(int i=0;i<see.size();i++) {
+                if(see.get(i) != this.id) {
+                    seeSoldiers.put(see.get(i),p);
+                }
+            }
+            // record directly observed muddy cells
+            if (status.getC()==1) muddyCells.add(p);
+            if (status.getPT()==1) pack = p;
+            if (status.getPT()!=0 && status.getPT()!=1) dest = p;
+
             Record record = records.get(p.x).get(p.y);
             if (record == null || record.getC() != status.getC() || record.getPT() != status.getPT())
             {
@@ -121,12 +170,60 @@ public class Player implements spy.sim.Player {
     
     public void receiveRecords(int id, List<Record> records)
     {
-        
+        receivedRecords.put(id, records);
     }
     
     public List<Point> proposePath()
     {
-        return null;
+        if (pack == null || dest == null) return null;
+        WeightedGraph g = buildGraph();
+        int source = g.getVertex(pack.x+","+pack.y);
+        int target = g.getVertex(dest.x+","+dest.y);
+        int[][] prev = Dijkstra.dijkstra(g, source);
+        List<Integer> path = Dijkstra.getPaths(g, prev, target).get(0);
+        List<Point> toReturn = new ArrayList<Point>();
+        for(Integer i : path){
+            String[] coordinate = g.getLabel(i).split(",");
+            toReturn.add(new Point(Integer.parseInt(coordinate[0]),Integer.parseInt(coordinate[1])));
+        }
+        return toReturn;
+    }
+
+    public WeightedGraph buildGraph(){
+        WeightedGraph g = new WeightedGraph(10000);
+        for (int i=0 ; i<100 ; i++){
+            for (int j=0 ; j<100 ; j++){
+                g.setLabel(i+","+j);
+            }
+        }
+        for (int i=0 ; i<99 ; i++){
+            for (int j=0 ; j<99 ; j++){
+                Point p = new Point(i,j);
+                if (!waterCells.contains(p) && ! muddyCells.contains(p)){
+                    Point p1 = new Point(i+1,j);
+                    Point p2 = new Point(i,j+1);
+                    Point p3 = new Point(i+1,j+1);
+                    Point p4 = new Point(i+1,j-1);
+                    Point p5 = new Point(i-1,j+1);
+                    if (!waterCells.contains(p1) && ! muddyCells.contains(p1)){
+                        g.addEdge(i+","+j,(i+1)+","+j,1);
+                    }
+                    if (!waterCells.contains(p2) && ! muddyCells.contains(p2)){
+                        g.addEdge(i+","+j,i+","+(j+1),1);
+                    }
+                    if (!waterCells.contains(p3) && ! muddyCells.contains(p3)){
+                        g.addEdge(i+","+j,(i+1)+","+(j+1),1);
+                    }
+                    if (!waterCells.contains(p4) && ! muddyCells.contains(p4)){
+                        g.addEdge(i+","+j,(i+1)+","+(j-1),1);
+                    }
+                    if (!waterCells.contains(p5) && ! muddyCells.contains(p5)){
+                        g.addEdge(i+","+j,(i-1)+","+(j+1),1);
+                    }
+                }
+            }
+        }
+        return g;
     }
     
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
@@ -173,6 +270,84 @@ public class Player implements spy.sim.Player {
         return neighbors;
     }
 
+    public void whatISee(List<Point> neighbors){
+
+        int min_x = 200;
+        int min_y = 200;
+        for(Point n:neighbors){
+            if(n.x < min_x)
+                min_x = n.x;
+            if(n.y < min_y)
+                min_y = n.y;
+        }
+
+        //       o      
+        //   o o o o o  
+        //   o o o o o  
+        // o o o p o o o
+        //   o o o o o  
+        //   o o o o o  
+        //       o      
+
+        // p = Player
+        // o = normal cells
+        // x = water (death)
+        // m = mud
+        // S = source
+        // T = target
+
+        char[][] vision = new char[7][7];
+        for(int i=0; i<7; i++){
+            for(int j=0; j<7; j++){
+                vision[i][j] = ' ';
+            }
+        }
+
+        for(Point n:neighbors){
+            // default symbol for what we can see
+            char symbol = 'o';
+
+            // if we see water
+            if(waterCells.contains(n))
+                symbol = 'x';
+
+            if(records.get(n.x).get(n.y) != null){
+                Record cur_record = records.get(n.x).get(n.y);
+                
+                if(cur_record.getPT() == 0)
+                    symbol = symbol;                   //normal cell
+                else if(cur_record.getPT() == 1)
+                    symbol = 'S';                   // source
+                else
+                    symbol = 'T';                   // target
+
+                if(cur_record.getC() == 1)
+                    symbol = 'm';
+
+            }
+
+            vision[n.x - min_x][n.y - min_y] = symbol;
+        }
+        vision[3][3] = 'p';
+
+        for(int i=0; i<7; i++){
+            for(int j=0; j<7; j++){
+                System.out.print(vision[i][j] + " ");
+            }
+            System.out.println("");
+        }
+    }
+
+    public void printRecords(){
+        for(ArrayList<Record> row:records){
+            for(Record record:row){
+                if(record != null){
+                    System.out.println(record.toString());
+                }
+            }
+        }
+    }
+
     public Point getMove()
     {
         //System.out.println("GETMOVE"+records.get(loc.x).get(loc.y));
@@ -180,6 +355,8 @@ public class Player implements spy.sim.Player {
         // DO observation stuff here
         //System.out.println("CURR LOC:"+loc.x + " " + loc.y);
         List<Point> neighbors = getSurrounding(loc);
+        //whatISee(neighbors);
+        //printRecords();
         for(Point n:neighbors) {
             // check if any neighbors contain mud, pacakge, target, or any players
             // if other player detected, move towards that player
@@ -191,6 +368,87 @@ public class Player implements spy.sim.Player {
             }
         }
 
+        for (Map.Entry<Integer, Integer> entry : waitTime.entrySet()) {
+            Integer player = entry.getKey();
+            Integer time = entry.getValue();
+            if (time > 0) {
+                time -= 1;
+                waitTime.put(player,time);
+            }
+            //System.out.println("player id: " + player +" , waittime: " + time);
+        }
+        //we are meeting someone right now
+        if (meeting == true) {
+            for (int i=0;i<meetSoldiers.size();i++) {
+                //reset waittime
+                waitTime.put(i,wait);
+                trymeeting = false;
+            }
+        }
+
+    
+        if (trymeeting == true) { // we already have a target 
+            if (seeSoldiers.get(trySoldier) != null) {
+                destination = seeSoldiers.get(trySoldier);
+
+                //4 cases first
+                if (destination.x == loc.x +1 && destination.y == loc.y) {
+                    move = new Point(0,0);
+                } else if (destination.x == loc.x-1 && destination.y == loc.y ) {
+                    move = new Point(-1,0);
+                } else if (destination.x == loc.x && destination.y == loc.y+1) {
+                    move = new Point(0,0);
+                } else if (destination.x == loc.x && destination.y == loc.y-1) {
+                    move = new Point(0,1);
+                } else if (destination.x == loc.x+1 && destination.y == loc.y-1) {
+                    move = new Point(1,-1);
+                } else if (destination.x == loc.x-1 && destination.y == loc.y+1) {
+                    move = new Point(0,0);
+                } else if (destination.x == loc.x+1 && destination.y == loc.y+1) {
+                    move = new Point(0,0);
+                } else if (destination.x == loc.x-1 && destination.y == loc.y-1) {
+                    move = new Point(-1,-1);
+                } 
+                else if(destination.x > loc.x) { 
+                    move = new Point(1,0);
+                } else if (destination.x < loc.x) {
+                    move = new Point(-1,0);
+                } else {
+                    if (destination.y > loc.y) {
+                        move = new Point(0,1);
+                    } else {
+                        move = new Point(0,-1);
+                    } 
+                }
+                loc = new Point(loc.x + move.x, loc.y + move.y);
+                if (waterCells.contains(loc)) {
+                    Random rand = new Random();
+                    int x = rand.nextInt(2) * 2 - 1;
+                    int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
+                    move = new Point(x, y);
+                    loc = new Point(loc.x + move.x, loc.y + move.y);
+                }
+                return move;
+            }
+            else { //cannot see that soldier anymore
+                trymeeting = false;
+            }
+        }
+
+
+        if (seeSoldiers.size() > 0) { //we observe someone
+            System.out.println("We See Someone!");
+            for (Integer i:seeSoldiers.keySet()) { // map of solider id to their location that we see
+                //check if their waittime is 0
+                if (waitTime.get(i) == 0) {
+                    trymeeting = true; //go towards the first one we see
+                    trySoldier = i; //location of where we wanna go
+                    break;
+                }
+            }
+        } else {
+            trymeeting = false;
+        }
 
         //System.out.println("curr n_obs size: "+notobserved.size());
         if(notobserved.size() > 0) {
@@ -209,7 +467,7 @@ public class Player implements spy.sim.Player {
                 } 
             }
         }
-        else {
+        else { // when we have finished observing
             Random rand = new Random();
             int x = rand.nextInt(2) * 2 - 1;
             int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
