@@ -277,6 +277,7 @@ public class Player implements spy.sim.Player {
         return toReturn;
     }
 
+    // ** ASSUMES proposed path = [ package location, ... (list of clear cells), target location ]
     // isValidPath() gets as input a proposed path from getVotes()
     // it returns a boolean, true if path is valid  
     private boolean isValidPath(List<Point> proposedPath) {
@@ -290,22 +291,22 @@ public class Player implements spy.sim.Player {
             }
             if (i == 0) {
                 // package location 
-                if (record.getPt() != 1) {
-                    System.out.println(record.getPt());
+                if (record.getPT() != 1) {
+                    System.out.println(record.getPT());
                     i++;
                     return false;
                 }
             } else if (i == f) {
                 // target location 
-                if (record.getPt() != 2) {
-                    System.out.println(record.getPt());
+                if (record.getPT() != 2) {
+                    System.out.println(record.getPT());
                     return false;
                 }
             } else {
                 // ordinary cell 
                 i++;
-                if (record.getPt() != 0) {
-                    System.out.println(record.getPt());
+                if (record.getPT() != 0) {
+                    System.out.println(record.getPT());
                     return false; 
                 }
             }
