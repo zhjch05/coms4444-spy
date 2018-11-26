@@ -83,7 +83,7 @@ public class Player implements spy.sim.Player {
             this.visitedCells.add(row2);
         }
 
-        System.out.println("vc.get(0).get(0) = " + visitedCells.get(0).get(0));
+        //System.out.println("vc.get(0).get(0) = " + visitedCells.get(0).get(0));
 
         this.isSpy = isSpy;
         this.waterCells = waterCells;
@@ -571,7 +571,9 @@ public class Player implements spy.sim.Player {
                 ArrayList<Point> offsetL = observableOffsets.get(dir);
                 ArrayList<Record> toAdd = new ArrayList<Record>();
                 for (Point offset : offsetL) {
-                    toAdd.add(records.get(this.loc.x + offset.x).get(this.loc.y + offset.y));
+                    //System.out.println(this.loc.x + offset.x);
+                    //System.out.println(this.loc.y + offset.y);
+                    if ((-1 < (this.loc.x + offset.x)) && ((this.loc.x + offset.x) < 100) && (-1 < (this.loc.y + offset.y)) && ((this.loc.y + offset.y) < 100) && (records.get(this.loc.x + offset.x).get(this.loc.y + offset.y) != null)) {toAdd.add(records.get(this.loc.x + offset.x).get(this.loc.y + offset.y));}
                     if ((Math.abs(offset.x) < 2) && (Math.abs(offset.y) < 2)) {
                         possibleMoves.put(dir, new Point(offset.x, offset.y));
                     }
