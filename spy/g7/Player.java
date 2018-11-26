@@ -394,8 +394,9 @@ public class Player implements spy.sim.Player {
         }
 
         else if (package_found || target_found) {
-            System.out.println("something found");
-            if (mudCells.contains(loc)) {
+            // System.out.println("something found");
+            // only move to non-muddy cells
+            while (mudCells.contains(loc)) {
                 Random rand = new Random();
                 int x = rand.nextInt(2) * 2 - 1;
                 int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
