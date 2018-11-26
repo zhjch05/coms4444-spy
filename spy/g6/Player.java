@@ -45,9 +45,9 @@ public class Player implements spy.sim.Player {
         for (int i = 0; i < 100; i++){
         	ArrayList<Record> row = new ArrayList<Record>(100);
             for (int j = 0; j < 100; j++){
-                row.set(j, null);
+                row.add(null);
             }
-            observations.set(i, row);
+            observations.add(row);
         }
         
         lastPlayerSeen = new int[n];
@@ -73,7 +73,7 @@ public class Player implements spy.sim.Player {
             
             for (Integer player: status.getPresentSoldiers()) {
             	if (lastPlayerSeen[player] + EVANS_CONVENTION < time) {
-            		tasks.addFirst(new MeetPlayer(player));
+            		//tasks.addFirst(new MeetPlayer(player));
             		lastPlayerSeen[player] = time;
             	}
             }
@@ -153,13 +153,11 @@ public class Player implements spy.sim.Player {
         
     }
     
-    public Point getMove()
-    {
-        Random rand = new Random();
-        int x = rand.nextInt(2) * 2
-         - 1;
-        int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
-        return new Point(x, y);
+    public Point getMove(){
+    	while (tasks.peek().isCompleted()) {
+    		tasks.removeFirst();
+    	}
+        return tasks.peek().nextMove();
     }
     
     public class BasicMovement extends MovementTask {
@@ -168,8 +166,18 @@ public class Player implements spy.sim.Player {
     	private double verifyFactor = 0.0D;
     	private double proximityFactor = 0.00D; // TODO
     	
+    	private Point lastMove = new Point(0, 0);
+    	
+    	@Override
+    	public boolean isCompleted() {
+    		return false;
+    	}
     	
     	protected double getScore(int deltax, int deltay) {
+    		if (waterCells.contains(new Point(loc.x + deltax, loc.y + deltay)))
+    			return -1.0D;
+    		if (deltax == 0 && deltay == 0)
+    			return -1.0D;
     		HashSet<Point> points = new HashSet<Point>();
     		if (deltax != 0) {
     			points.add(new Point(loc.x + 3 * deltax, loc.y - 1));
@@ -197,11 +205,16 @@ public class Player implements spy.sim.Player {
     		
     		int exploreCount = 0, verifyCount = 0;
     		for (Point p : points) {
-    			if (!waterCells.contains(p) && observations.get(p.x).get(p.y) == null) {
-    				if (pointsToldBy.containsKey(new Point(p.x, p.y)))
-						++verifyCount;
-    				else
-    					++exploreCount;
+    			try {
+    				if (!waterCells.contains(p) && observations.get(p.x).get(p.y) == null) {
+    					if (pointsToldBy.containsKey(new Point(p.x, p.y)))
+    						++verifyCount;
+    					else
+    						++exploreCount;
+    				}
+    			}
+    			catch(Exception e) {
+    				continue;
     			}
     		}
     		
@@ -215,17 +228,22 @@ public class Player implements spy.sim.Player {
     	@Override
     	public Point nextMove(){
     		int bestMoveX = 0, bestMoveY = 0;
-    		double bestScore = 0.0D;
+    		double bestScore = -1.0D;
 			for (int deltax = -1; deltax <= 1; ++deltax)
 				for (int deltay = -1; deltay <= 1; ++deltay) {
 					double localScore = getScore(deltax, deltay);
+					// TODO Temporary hack for not turning back
+					if ((deltax + lastMove.x == 0) && (deltay + lastMove.y == 0)){
+						localScore -= 0.5D;
+					}
 					if (localScore > bestScore) {
 						bestMoveX = deltax;
 						bestMoveY = deltay;
 						bestScore = localScore;
 					}
 				}
-			return new Point(loc.x + bestMoveX, loc.y + bestMoveY);
+			lastMove = new Point(bestMoveX, bestMoveY);
+			return new Point(bestMoveX, bestMoveY);
     	}
     }
 

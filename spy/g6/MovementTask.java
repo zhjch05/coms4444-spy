@@ -8,6 +8,7 @@ public class MovementTask {
 	protected LinkedList<Point> moves;
 	
 	public MovementTask() {
+		
 	}
 	
 	public MovementTask(LinkedList<Point> moves) {

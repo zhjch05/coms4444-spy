@@ -69,8 +69,8 @@ public class PathFinder {
 		for (int i = 0; i < map.length; ++i) {
 			ArrayList<Node> row = new ArrayList<Node>(map[0].length);
 			for (int j = 0; j < map[0].length; ++j)
-				row.set(j, new Node(i, j));
-			nodes.set(i, row);
+				row.add(new Node(i, j));
+			nodes.add(row);
 		}
 	}
 	
