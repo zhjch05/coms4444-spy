@@ -67,11 +67,16 @@ public class MapGenerator implements spy.sim.MapGenerator {
     public List<Point> startingLocations(List<Point> waterCells)
     {
     	   ArrayList<Point> startingLocations = new ArrayList<Point>();
+    	   Random ran = new Random();
     	   for(int i = 0; i < 15; i++){ 
-    	   	startingLocations.add(new Point(i,i+12)); 
+    	   	int x = ran.nextInt(15); 
+    	   	int y = ran.nextInt(20) + 12; 
+    	   	startingLocations.add(new Point(x,y)); 
     	   } 
     	   for(int i = 0; i < 30; i++){ 
-    	   	startingLocations.add(new Point(i+30, i+30)); 
+    	   	int x = ran.nextInt(20)+30; 
+    	   	int y = ran.nextInt(15)+30;
+    	   	startingLocations.add(new Point(x, y)); 
     	   }
     	   return startingLocations; 
     } 
