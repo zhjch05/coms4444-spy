@@ -65,7 +65,7 @@ public class Player implements spy.sim.Player {
     
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
-	    this._package=false;
+	     this._package=false;
         this._target = false;
         this.grid = new int[100][100];
         this.visited = new int[100][100];
@@ -89,20 +89,7 @@ public class Player implements spy.sim.Player {
             visited[tmp.x][tmp.y]= -2;
             grid[tmp.x][tmp.y] = -2;
         }
-	
-
-
-    private ArrayList<ArrayList<Record>> landInfo; // similar to 'records' but global for dry land claims
-    private ArrayList<ArrayList<Record>> mudInfo; // similar to 'records' but global for muddy land claims
-
-    private int x_dir = 1;
-    private int y_dir = 0;
-    private int num_moves = 0;
-    private List<Point> water;
     
-    public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
-    {
-
         this.id = id;
         this.records = new ArrayList<ArrayList<Record>>();
         for (int i = 0; i < 100; i++)
@@ -112,17 +99,9 @@ public class Player implements spy.sim.Player {
             {
                 row.add(null);
             }
-
-	    // System.out.println(row);
+        // System.out.println(row);
             this.records.add(row);
         }
-
-	    System.out.println(row);
-            this.records.add(row);
-        }
-
-        water = waterCells;
-
     }
     
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
@@ -633,117 +612,118 @@ public class Player implements spy.sim.Player {
         }
     }
     
-    public Point getMove()
-    {
-	    System.out.println("Called getMove Command =======");
+    // public Point getMove()
+    // {
+	   //  System.out.println("Called getMove Command =======");
 
-        Integer x_prop = loc.x + x_dir;
-        Integer y_prop = loc.y + y_dir;
-        Point candidate = new Point(x_prop, y_prop); while ((water.contains(candidate) || (x_prop < 2) || (x_prop > 97) || (y_prop < 2) || (y_prop > 97))) { if (x_dir == 1)
-            {
-                x_dir = 0;
-                y_dir = 1;
-            }
-            else if (y_dir == 1)
-            {
-                x_dir = -1;
-                y_dir = 0;
-            }
-            else if (x_dir == -1)
-            {
-                x_dir = 0;
-                y_dir = -1;
-            }
-            else
-            {
-                x_dir = 1;
-                y_dir = 0;
-            }
-            x_prop = loc.x + x_dir;
-            y_prop = loc.y + y_dir;
+    //     Integer x_prop = loc.x + x_dir;
+    //     Integer y_prop = loc.y + y_dir;
+    //     Point candidate = new Point(x_prop, y_prop); while ((water.contains(candidate) || (x_prop < 2) || (x_prop > 97) || (y_prop < 2) || (y_prop > 97))) { if (x_dir == 1)
+    //         {
+    //             x_dir = 0;
+    //             y_dir = 1;
+    //         }
+    //         else if (y_dir == 1)
+    //         {
+    //             x_dir = -1;
+    //             y_dir = 0;
+    //         }
+    //         else if (x_dir == -1)
+    //         {
+    //             x_dir = 0;
+    //             y_dir = -1;
+    //         }
+    //         else
+    //         {
+    //             x_dir = 1;
+    //             y_dir = 0;
+    //         }
+    //         x_prop = loc.x + x_dir;
+    //         y_prop = loc.y + y_dir;
 
-            candidate = new Point(x_prop, y_prop);
-        }
+    //         candidate = new Point(x_prop, y_prop);
+    //     }
 
-        return new Point(x_dir, y_dir);
+    //     return new Point(x_dir, y_dir);
 
-        //if ((!water.contains(new Point(loc.x + 1, loc.y))) && (loc.x + 1 <= 97))
-        //{
-        //    move = new Point(1, 0);
-        //}
-        //else if ((!water.contains(new Point(loc.x, loc.y + 1))) && (loc.y + 1 <= 97))
-        //{
-        //    move = new Point(0, 1);
-        //}
-        //else if ((!water.contains(new Point(loc.x - 1, loc.y))) && (loc.x - 1 >= 2))
-        //{
-        //    move = new Point(-1, 0);
-        //}
-        //else if ((!water.contains(new Point(loc.x, loc.y - 1))) && (loc.y - 1 >= 2))
-        //{
-        //    move = new Point(0, -1);
-        //}
-        //else
-        //{
-        //    move = new Point(-1, 0);
-        //}
+    //     //if ((!water.contains(new Point(loc.x + 1, loc.y))) && (loc.x + 1 <= 97))
+    //     //{
+    //     //    move = new Point(1, 0);
+    //     //}
+    //     //else if ((!water.contains(new Point(loc.x, loc.y + 1))) && (loc.y + 1 <= 97))
+    //     //{
+    //     //    move = new Point(0, 1);
+    //     //}
+    //     //else if ((!water.contains(new Point(loc.x - 1, loc.y))) && (loc.x - 1 >= 2))
+    //     //{
+    //     //    move = new Point(-1, 0);
+    //     //}
+    //     //else if ((!water.contains(new Point(loc.x, loc.y - 1))) && (loc.y - 1 >= 2))
+    //     //{
+    //     //    move = new Point(0, -1);
+    //     //}
+    //     //else
+    //     //{
+    //     //    move = new Point(-1, 0);
+    //     //}
 
-        //ArrayList<Point> points = new ArrayList<Point>();
+    //     //ArrayList<Point> points = new ArrayList<Point>();
 
-        //points.add(new Point(3, 4));
-        //points.add(new Point(4, 4));
-        //points.add(new Point(4, 3));
+    //     //points.add(new Point(3, 4));
+    //     //points.add(new Point(4, 4));
+    //     //points.add(new Point(4, 3));
 
-        //points.add(new Point(3, 96));
-        //points.add(new Point(10, 96));
-        //points.add(new Point(10, 3));
-        //points.add(new Point(17, 3));
-        //points.add(new Point(17, 96));
-        //points.add(new Point(24, 96));
-        //points.add(new Point(24, 3));
-        //points.add(new Point(31, 3));
-        //points.add(new Point(31, 96));
-        //points.add(new Point(38, 96));
-        //points.add(new Point(38, 3));
-        //points.add(new Point(45, 3));
-        //points.add(new Point(45, 96));
-        //points.add(new Point(52, 96));
-        //points.add(new Point(52, 3));
-        //points.add(new Point(59, 3));
-        //points.add(new Point(59, 96));
-        //points.add(new Point(66, 96));
-        //points.add(new Point(66, 3));
-        //points.add(new Point(73, 3));
-        //points.add(new Point(73, 96));
-        //points.add(new Point(80, 96));
-        //points.add(new Point(80, 3));
-        //points.add(new Point(87, 3));
-        //points.add(new Point(87, 96));
-        //points.add(new Point(94, 96));
-        //points.add(new Point(94, 3));
-        //points.add(new Point(96, 3));
-        //points.add(new Point(96, 96));
+    //     //points.add(new Point(3, 96));
+    //     //points.add(new Point(10, 96));
+    //     //points.add(new Point(10, 3));
+    //     //points.add(new Point(17, 3));
+    //     //points.add(new Point(17, 96));
+    //     //points.add(new Point(24, 96));
+    //     //points.add(new Point(24, 3));
+    //     //points.add(new Point(31, 3));
+    //     //points.add(new Point(31, 96));
+    //     //points.add(new Point(38, 96));
+    //     //points.add(new Point(38, 3));
+    //     //points.add(new Point(45, 3));
+    //     //points.add(new Point(45, 96));
+    //     //points.add(new Point(52, 96));
+    //     //points.add(new Point(52, 3));
+    //     //points.add(new Point(59, 3));
+    //     //points.add(new Point(59, 96));
+    //     //points.add(new Point(66, 96));
+    //     //points.add(new Point(66, 3));
+    //     //points.add(new Point(73, 3));
+    //     //points.add(new Point(73, 96));
+    //     //points.add(new Point(80, 96));
+    //     //points.add(new Point(80, 3));
+    //     //points.add(new Point(87, 3));
+    //     //points.add(new Point(87, 96));
+    //     //points.add(new Point(94, 96));
+    //     //points.add(new Point(94, 3));
+    //     //points.add(new Point(96, 3));
+    //     //points.add(new Point(96, 96));
 
-        //ArrayList<Point> path = new ArrayList<Point>();
+    //     //ArrayList<Point> path = new ArrayList<Point>();
 
-        //Point a = new Point(3, 3);
-        //Point b;
+    //     //Point a = new Point(3, 3);
+    //     //Point b;
 
-        //for (Point p: points)
-        //{
-        //    b = p;
-        //    List<Point> mini_path = line(a, b);
-        //    for (Point p_: mini_path)
-        //    {
-        //        path.add(p_);
-        //    }
-        //    a = p;
-        //}
+    //     //for (Point p: points)
+    //     //{
+    //     //    b = p;
+    //     //    List<Point> mini_path = line(a, b);
+    //     //    for (Point p_: mini_path)
+    //     //    {
+    //     //        path.add(p_);
+    //     //    }
+    //     //    a = p;
+    //     //}
  
-        //Point dest = path.get(num_moves);
-        //System.out.println(dest);
-        //num_moves += 1;
+    //     //Point dest = path.get(num_moves);
+    //     //System.out.println(dest);
+    //     //num_moves += 1;
 
-        //return move;
-    }
+    //     //return move;
+    // }
+}
 }
