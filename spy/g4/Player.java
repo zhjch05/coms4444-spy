@@ -199,6 +199,104 @@ public class Player implements spy.sim.Player {
 
         // if there is a complete path, set pathKnown to true
 
+        if (!targetKnown || !packageKnown) {
+            pathKnown = false;
+            return null;
+        }
+        //private HashMap<Point, Record> trueRecords;
+        // find the package and target position first
+        Point target = null;
+        Point package = null;
+        for (Point key : trueRecords.keySet()) {
+            pt = trueRecords.get(key).getPT();
+            if (pt == 1) { /* package location */
+                package = key;
+            }
+            if (pt == 2) { /* target location */
+                target = key;
+            }
+            if (target != null && package != null) {
+                break;
+            }
+        }
+
+        /* perform BFS */
+        /* visited contains the point and the path that took to get to that point */
+        HashMap<Point, List<Point>> visited = new HashMap<Point, List<Point>>();
+        /* keeps track of parent / children pairs */
+        List<List<Point>> queue = new ArrayList<ArrayList<Point>>();
+        Boolean goal_reached = false;
+
+        queue.add(new ArrayList<Point>(package, null));
+
+        while (true) {
+            /* dequeue and set to current */
+            if (queue.size() == 0 && goal_reached == false) {
+                break;
+            }
+            List<Point> temp = queue.get(0);
+            queue.remove(temp);
+            Point current = temp[0];
+            Point parent = temp[1];
+
+            /* goal test */
+            if (current.equals(target)) {
+                goal_reached = true;
+            }
+            /* add to visited */
+            List<Point> path = new ArrayList<Point>();
+            if (parent == null) {
+                path.add(current);
+            } else {
+                path = visited.get(parent);
+                path.add(current);
+            }
+            visited.add(current, path);
+
+
+            /* if goal test successful */
+            if (goal_reached = true) {
+                break;
+            }
+            /* adds all children that's not visited to queue
+             * only adds children that are normal condition */
+            int x = current.x;
+            int y = current.y;
+            List<Point> children = new ArrayList<Point>();
+            for (int i = -1; i < 2; i++) {
+                for (int j = -1; j < 2; j++) {
+                    if (i == 0 && j == 0) {
+                        continue;
+                    }
+                    Point child = new Point(x + i, y + j);
+                    /* check condition */
+                    if (trueRecords.get(child).getC() != 0) {
+                        continue;
+                    }
+                    /* check visited */
+                    Boolean visited_child == false;
+                    for (Point p : visited.keySet()) {
+                        if (p.equals(child)) {
+                            visited_child == true;
+                        }
+                    }
+                    if (visited_child = true) {
+                        continue;
+                    }
+
+                    children.add(new ArrayList<Point>(child, current));
+                }
+            }
+        }
+
+        if (goal_reached == false) {
+            finalPath = null;
+        } else {
+            pathKnown = true;
+            finalPath = visited.get(target);
+        }
+
+
         return finalPath;
     }
     
