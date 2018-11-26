@@ -113,7 +113,7 @@ public class Player implements spy.sim.Player
         Point ret = new Point(0,0);
         if(stay){
             stay = false;
-            ret = current;
+            ret = null;
         }
         else if (moveToPlayer){
             ret = movePosition;
@@ -454,14 +454,14 @@ public class Player implements spy.sim.Player
     // How much to shift to next location...
 	public Point getMove()
 	{
+        System.out.println("Repeat");
 
         
         if(playerDetect){
-            Point x = new Point(0,0);
-            x = playerDetectedMove();
-            return x;
+            Point bla = new Point(0,0);
+            bla = playerDetectedMove();
+            return bla;
         }
-        
         
 		// You have a pre-determined path from BFS
 		// Just find your next move step!
