@@ -252,7 +252,42 @@ public class Player implements spy.sim.Player {
 
     public List<Point> proposePath()
     {
-        return null;
+        if(!package_found||!target_found)  return null;
+        List<List<Point>> result = new ArrayList<>();
+        List<Point> path = new ArrayList<>();
+        path.add(package_loc);
+        List<Point> visited = new ArrayList<>();
+        visited.add(package_loc);
+        backtrack(result, path, visited, package_loc, target_loc);
+        if(result.size()==0) return null;
+        Collections.sort(result, (x, y) -> calculateTime(x)-calculateTime(y));
+        return result.get(0);
+
+    }
+
+    private void backtrack(List<List<Point>> result, List<Point> path, List<Point> visited, Point current, Point target){
+        if(current.equals(target)){
+            result.add(path);
+            return;
+        }
+        PriorityQueue<Point> pq = new PriorityQueue<>((x, y)->(moveTime(current, x)-moveTime(current, y)));
+        Point temp = new Point(current.x+1,current.y);
+        if(trustRecords.containsKey(temp)) pq.add(temp);
+        temp = new Point(current.x-1,current.y);
+        if(trustRecords.containsKey(temp)) pq.add(temp);
+        temp = new Point(current.x,current.y+1);
+        if(trustRecords.containsKey(temp)) pq.add(temp);
+        temp = new Point(current.x,current.y-1);
+        if(trustRecords.containsKey(temp)) pq.add(temp);
+        while(pq.size()!=0){
+            temp = pq.poll();
+            if(temp.x < 100 && temp.x > 0 && temp.y > 0 && temp.y < 100 && ! waterCells.contains(temp) && !visited.contains(temp)){
+                visited.add(temp);
+                path.add(temp);
+                backtrack(result, path, visited, temp, target);
+                path.remove(path.size()-1);
+            }
+        }
     }
 
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
@@ -326,6 +361,7 @@ public class Player implements spy.sim.Player {
     
     public Point getMove()
     {
+        List<Point> path= proposePath();
         // System.out.println("printing current location: " + loc.x + "," + loc.y);      
         List<Point> neighbors = getSurrounding(loc);
         for(Point n:neighbors) {
