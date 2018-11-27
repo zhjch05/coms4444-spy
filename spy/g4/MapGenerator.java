@@ -22,11 +22,12 @@ public class MapGenerator implements spy.sim.MapGenerator {
 
 	public MapGenerator() {
 
-		String path_p = "spy/g4/";
-		ArrayList<String> paths = new ArrayList<String>(Arrays.asList("map1.txt", "map2.txt", "map3.txt"));
+		//String path_p = "spy/g4/";
+		//ArrayList<String> paths = new ArrayList<String>(Arrays.asList("map1.txt", "map2.txt", "map3.txt"));
 		Random rand = new Random();
 		int p = rand.nextInt(3);
-		PATH = path_p + paths.get(p);
+		//PATH = path_p + paths.get(p);
+		PATH = "spy/g4/smallmap.txt";
 		System.out.println("map path: " + PATH);
 
 		
@@ -78,12 +79,22 @@ public class MapGenerator implements spy.sim.MapGenerator {
     {
         ArrayList<Point> startingLocations = new ArrayList<Point>();
         Random rand = new Random();
-        for (int i = 0; i < 30; i++)
+        /*for (int i = 0; i < 30; i++)
         {
             Point p = new Point(15 + rand.nextInt(70), 10 + rand.nextInt(80));
             while (waterCells.contains(p))
             {
                 p = new Point(15 + rand.nextInt(70), 10 + rand.nextInt(80));
+            }
+            startingLocations.add(p);
+        }
+        return startingLocations;*/
+        for (int i = 0; i < 10; i++)
+        {
+            Point p = new Point(rand.nextInt(10), rand.nextInt(10));
+            while (waterCells.contains(p))
+            {
+                p = new Point(rand.nextInt(10), rand.nextInt(10));
             }
             startingLocations.add(p);
         }

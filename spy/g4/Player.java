@@ -118,8 +118,8 @@ public class Player implements spy.sim.Player {
             //update visitedCells
             visitedCells.get(p.x).set(p.y, true);
             CellStatus status = entry.getValue();
-            if (status.getPT() == 1) packageKnown = true;
-            else if (status.getPT() == 2) targetKnown = true;
+            if (status.getPT() == 1) {packageKnown = true; System.out.println(this.id + " knows where PACKAGE is!!");}
+            else if (status.getPT() == 2) {targetKnown = true; System.out.println(this.id + " knows where TARGET is!!");}
             Record record = records.get(p.x).get(p.y);
             if (record == null || record.getC() != status.getC() || record.getPT() != status.getPT())
             {
@@ -223,12 +223,19 @@ public class Player implements spy.sim.Player {
         }*/
 
         // Assuming no spies
+        int numRecs = 0;
+        for (ArrayList<Record> rL : this.records) {
+            for (Record r : rL) {
+                if (r!=null) {numRecs += 1;}
+            }
+        }
+        System.out.println("< length of records = " + numRecs);
         for (Record recR : records) {
 
             if (recR != null) {
                 
-                if (recR.getPT() == 1) packageKnown = true;
-                else if (recR.getPT() == 2) targetKnown = true;
+                if (recR.getPT() == 1) {packageKnown = true; System.out.println(this.id + " knows where PACKAGE is!!");}
+                else if (recR.getPT() == 2) {targetKnown = true; System.out.println(this.id + " knows where TARGET is!!");}
 
                 Point p = recR.getLoc();
                 Record ourRecord = this.records.get(p.x).get(p.y);
@@ -239,6 +246,13 @@ public class Player implements spy.sim.Player {
                 }
             }
         }
+        numRecs = 0;
+        for (ArrayList<Record> rL : this.records) {
+            for (Record r : rL) {
+                if (r!=null) {numRecs += 1;}
+            }
+        }
+        System.out.println(">>>> new length of records = " + numRecs);
         
 
         // If we are in the chain of observations
@@ -617,7 +631,7 @@ public class Player implements spy.sim.Player {
             }
 
             if (moveToSoldier) {
-                //System.out.println("move to soldier!!!");
+                System.out.println(this.id + " move to soldier!!!");
                 // # Move towards soldier #
                 if (!waterCells.contains(possibleMoves.get(dirToMoveIn))) {
                     return possibleMoves.get(dirToMoveIn);
@@ -632,7 +646,7 @@ public class Player implements spy.sim.Player {
                 }
             }
             if (stayPut) {
-                //System.out.println("stay put!!!");
+                System.out.println(this.id + " stay put!!!");
                 // # Stay put for 2 timesteps to enable exchange of info #
                 if (stayPutCounts < 2) {
                     stayPutCounts += 1;
@@ -644,7 +658,7 @@ public class Player implements spy.sim.Player {
             if (stayPutCounts == 0) {
 
                 // # Explore randomly #
-                //System.out.println("Explore randomly!!!");
+                System.out.println(this.id + " Explore randomly!!!");
                 double c1 = 40, c2 = -30, c3 = -10, c4 = 20;
                 
                 hValues = new HashMap<String, Double>();
