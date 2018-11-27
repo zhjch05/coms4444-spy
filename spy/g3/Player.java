@@ -265,45 +265,6 @@ public class Player implements spy.sim.Player {
 
     }
 
-    // private Point getNearestUnExplored(Point curr)
-    // {
-    //     if(curr.x<0 || curr.y<0 || curr.x>=100 || curr.y>=100)
-    //         return new Point(-1000,-1000);
-
-    //     if(visited[curr.x][curr.y]==0)
-    //         {
-    //             explored[curr.x][curr.y] = 1;
-    //             return new Point(curr.x,curr.y);
-    //         }
-
-
-    //     int min_dist = Integer.MAX_VALUE;
-    //     Point next_move = new Point(-2000,-2000);
-
-    //     explored[curr.x][curr.y] = 1;
-
-    //     for(int i=curr.x-1;i<=curr.x+1;i++)
-    //     {
-    //         for(int j=curr.y-1;j<=curr.y+1;j++)
-    //         {
-    //             if(i < 0 || i>=100 || j<0 || j>=100 || explored[i][j]==1) continue;
-
-    //             Point move = getNearestUnExplored(new Point(i,j));
-
-    //             if(move.x<0 || move.y <0) continue;
-    //             int manhattan_dist = Math.abs(move.x-loc.x) + Math.abs(move.y-loc.y) - grid[move.x][move.y];
-    //             if(manhattan_dist<min_dist)
-    //             {
-    //                 min_dist = manhattan_dist;
-    //                 next_move = move;
-    //             }
-    //         }
-    //     }
-
-    //     return next_move;
-
-    // }
-
     private Point getNearestUnExplored(Point curr)
     {
 
