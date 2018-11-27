@@ -110,6 +110,8 @@ public class Player implements spy.sim.Player {
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
         this.loc = loc;
+        seeSoldiers = new HashMap<Integer,Point>();
+        meetSoldiers = new ArrayList<Integer>();
 
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
@@ -381,60 +383,11 @@ public class Player implements spy.sim.Player {
         if (meeting == true) {
             for (int i=0;i<meetSoldiers.size();i++) {
                 //reset waittime
-                waitTime.put(i,wait);
+                waitTime.put(meetSoldiers.get(i),wait);
                 trymeeting = false;
+                meeting = false;
             }
         }
-
-    
-        if (trymeeting == true) { // we already have a target 
-            if (seeSoldiers.get(trySoldier) != null) {
-                destination = seeSoldiers.get(trySoldier);
-
-                //4 cases first
-                if (destination.x == loc.x +1 && destination.y == loc.y) {
-                    move = new Point(0,0);
-                } else if (destination.x == loc.x-1 && destination.y == loc.y ) {
-                    move = new Point(-1,0);
-                } else if (destination.x == loc.x && destination.y == loc.y+1) {
-                    move = new Point(0,0);
-                } else if (destination.x == loc.x && destination.y == loc.y-1) {
-                    move = new Point(0,1);
-                } else if (destination.x == loc.x+1 && destination.y == loc.y-1) {
-                    move = new Point(1,-1);
-                } else if (destination.x == loc.x-1 && destination.y == loc.y+1) {
-                    move = new Point(0,0);
-                } else if (destination.x == loc.x+1 && destination.y == loc.y+1) {
-                    move = new Point(0,0);
-                } else if (destination.x == loc.x-1 && destination.y == loc.y-1) {
-                    move = new Point(-1,-1);
-                } 
-                else if(destination.x > loc.x) { 
-                    move = new Point(1,0);
-                } else if (destination.x < loc.x) {
-                    move = new Point(-1,0);
-                } else {
-                    if (destination.y > loc.y) {
-                        move = new Point(0,1);
-                    } else {
-                        move = new Point(0,-1);
-                    } 
-                }
-                loc = new Point(loc.x + move.x, loc.y + move.y);
-                if (waterCells.contains(loc)) {
-                    Random rand = new Random();
-                    int x = rand.nextInt(2) * 2 - 1;
-                    int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
-                    move = new Point(x, y);
-                    loc = new Point(loc.x + move.x, loc.y + move.y);
-                }
-                return move;
-            }
-            else { //cannot see that soldier anymore
-                trymeeting = false;
-            }
-        }
-
 
         if (seeSoldiers.size() > 0) { //we observe someone
             System.out.println("We See Someone!");
@@ -445,9 +398,65 @@ public class Player implements spy.sim.Player {
                     trySoldier = i; //location of where we wanna go
                     break;
                 }
+                else {
+                    trymeeting = false;
+                    trySoldier = -1; 
+                }
             }
+
         } else {
             trymeeting = false;
+            trySoldier = -1;
+        }
+
+    
+        if (trymeeting == true) { // we already have a target 
+            //if (trySoldier >= 0) {
+            destination = seeSoldiers.get(trySoldier);
+
+            //4 cases first
+            if (destination.x == loc.x +1 && destination.y == loc.y) {
+                move = new Point(0,0);
+            } else if (destination.x == loc.x-1 && destination.y == loc.y ) {
+                move = new Point(-1,0);
+            } else if (destination.x == loc.x && destination.y == loc.y+1) {
+                move = new Point(0,0);
+            } else if (destination.x == loc.x && destination.y == loc.y-1) {
+                move = new Point(0,1);
+            } else if (destination.x == loc.x+1 && destination.y == loc.y-1) {
+                move = new Point(1,-1);
+            } else if (destination.x == loc.x-1 && destination.y == loc.y+1) {
+                move = new Point(0,0);
+            } else if (destination.x == loc.x+1 && destination.y == loc.y+1) {
+                move = new Point(0,0);
+            } else if (destination.x == loc.x-1 && destination.y == loc.y-1) {
+                move = new Point(-1,-1);
+            } 
+            else if(destination.x > loc.x) { 
+                move = new Point(1,0);
+            } else if (destination.x < loc.x) {
+                move = new Point(-1,0);
+            } else {
+                if (destination.y > loc.y) {
+                    move = new Point(0,1);
+                } else {
+                    move = new Point(0,-1);
+                } 
+            }
+            loc = new Point(loc.x + move.x, loc.y + move.y);
+            if (waterCells.contains(loc)) {
+                Random rand = new Random();
+                int x = rand.nextInt(2) * 2 - 1;
+                int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
+                move = new Point(x, y);
+                loc = new Point(loc.x + move.x, loc.y + move.y);
+            }
+            return move;
+            //}
+            /*else { //cannot see that soldier anymore
+                trymeeting = false;
+                trySoldier = -1;
+            }*/
         }
 
         //System.out.println("curr n_obs size: "+notobserved.size());
