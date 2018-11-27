@@ -167,17 +167,17 @@ public class Player implements spy.sim.Player {
                 Point min_point = p;
                 int smallest_id = Integer.MAX_VALUE;
                 for (int soldierId : soldierIds) {
-                    System.out.println("soldiers seen:" + soldierId);
                     if (soldierId == this.id) {
+                        // System.out.println("in if statement");
                         continue;
                     }
                     else if (soldierId < smallest_id) {
                         smallest_id = soldierId;
                         min_point = p;
                     }
+                    this.soldierToMoveTo = min_point;
+                    this.nearbySoldiers = true;
                 }
-                this.soldierToMoveTo = min_point;
-                this.nearbySoldiers = true;
             }
 
             List<Record> rl = new ArrayList<>();
@@ -217,6 +217,8 @@ public class Player implements spy.sim.Player {
             }
             send.addAll(l);
         }
+        // after sending all records, reset nearbySoldiers
+        this.nearbySoldiers = false;
         return send;
     }
 
@@ -395,6 +397,7 @@ public class Player implements spy.sim.Player {
             System.out.println("there are nearby soldiers!");
             int smallest_id = Integer.MAX_VALUE;
             for (int otherSoldierId : soldierIds) {
+                System.out.println("soldiers seen: " + otherSoldierId);
                 if (otherSoldierId < smallest_id) {
                     smallest_id = otherSoldierId;
                 }
@@ -403,6 +406,8 @@ public class Player implements spy.sim.Player {
                 }
                 //move to soldier with smallest id if one cell away, else keep moving
                 else {
+                    System.out.println("id of soldier moving: " + smallest_id);
+                    System.out.println("soldierToMoveTo: " + soldierToMoveTo.x +","+soldierToMoveTo.y);
                     if (distance(loc, soldierToMoveTo) < 2) {
                         int x = soldierToMoveTo.x - loc.x;
                         int y = soldierToMoveTo.y - loc.y;
@@ -416,7 +421,7 @@ public class Player implements spy.sim.Player {
         }
 
         if (stayPut) {
-            System.out.println("we're stopping for a while");
+            System.out.println(this.id + " is stopping for a while");
             // don't move for 4 time steps.
             // 4 because people need time to move to us (1 time step), also need to 
             // make sure they move away from sight before resetting 
