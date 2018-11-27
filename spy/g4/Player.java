@@ -621,7 +621,7 @@ public class Player implements spy.sim.Player {
             // probably will need to calculate the shortest path from current location to target first--store as a list of points
             // then each time getMove is called, iterate through the list of points and remove each one you visit until soldier has reached last point in list which should be the package location
 
-        } else if (packageKnown || targetKnown) {
+        } /*else if (packageKnown || targetKnown) {
 
             // if timeForRandomMove
 
@@ -646,7 +646,7 @@ public class Player implements spy.sim.Player {
             int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
             return new Point(x, y);
 
-        } else {
+        }*/ else {
             
 
             // ### KEEP EXPLORING ###
