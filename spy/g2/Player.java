@@ -225,7 +225,7 @@ public class Player implements spy.sim.Player {
         }
         */
         if (todo.size() > 0){
-            return todo.remove(todo.size()-1);
+            return move_toward(todo.remove(todo.size()-1));
         }
 
         if (package_found && target_found){
@@ -327,7 +327,7 @@ public class Player implements spy.sim.Player {
     
     public int exploration_reward(Point p){
         int reward = 0;
-        if (graph[p.x][p.y] == 0){
+        if (graph[p.x][p.y] == -2){
             return reward;
         }
         for (int i=0; i<100; ++i){
@@ -359,39 +359,30 @@ public class Player implements spy.sim.Player {
             Pair pa = pQueue.poll();
             Point p = pa.pt;
             int dist = pa.dist;
-            System.out.printf("%d %d\n",p.x,p.y);
 
             visited[p.x][p.y] = 1;
             for (Point n: neighbors(p)){
                 if (visited[n.x][n.y]==1 || graph[n.x][n.y] == -2){
                     continue;
                 }
-                System.out.printf("%d %d\n",n.x,n.y);
-
                 if ((double)exploration_reward(n)/cost(p,n) > max_reward){
                     dest = n;
                     flag = false;
                     max_reward = (double)exploration_reward(n)/cost(p,n);
                 }
-                if (graph[n.x][n.y] > 0){
-                    pQueue.add(new Pair(n, dist+cost(p,n)));
-                    par.put(n,p);
-                }
+                pQueue.add(new Pair(n, dist+cost(p,n)));
+                par.put(n,p);
                 visited[n.x][n.y] = 1;
             }
         }
         Point cur = dest;
-        System.out.printf("dest: %d %d \n",cur.x, cur.y);
         while (par.containsKey(cur)){
             todo.add(new Point(cur.x,cur.y));
             cur = par.get(cur);
         }
-        for (Point p:todo){
-            System.out.printf("going: %d %d \n",p.x, p.y);
-        }
 
         if (todo.size()>0){
-            return todo.remove(todo.size()-1);
+            return move_toward(todo.remove(todo.size()-1));
         }
         else{
             return new Point(0,0);
@@ -412,8 +403,6 @@ public class Player implements spy.sim.Player {
                 if (n.x== dest.x && n.y == dest.y){
                     par.put(n,p);
                     Point cur = n;
-
-                    System.out.printf("%d dest: %d %d\n",id, dest.x,dest.y);
 
                     while (par.containsKey(cur)){
                         todo.add(new Point(cur.x - par.get(cur).x,cur.y - par.get(cur).y));
