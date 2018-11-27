@@ -36,6 +36,12 @@ public class Player implements spy.sim.Player {
     private Point destination;
     private Point move;
     private PriorityQueue<Vote> lastResult;
+    private boolean nearbySoldiers;
+    private ArrayList<Integer> soldierIds;
+    private boolean stayPut;
+    private int stayPutTime = 0;
+    private Point soldierToMoveTo;
+    private boolean communicating = false;
 
     class PathTime{
         Integer id;
@@ -78,6 +84,7 @@ public class Player implements spy.sim.Player {
         trust.add(id);
         this.id = id;
         this.records = new ArrayList<ArrayList<Record>>();
+
         for (int i = 0; i < 100; i++)
         {
             ArrayList<Record> row = new ArrayList<Record>();
@@ -94,6 +101,8 @@ public class Player implements spy.sim.Player {
         
         this.package_found = false;
         this.target_found = false;
+        this.nearbySoldiers = false;
+        this.soldierIds = new ArrayList<Integer>();
         player_num = n;
     }
 
@@ -152,6 +161,29 @@ public class Player implements spy.sim.Player {
                 this.target_loc = loc;
                 this.target_found = true;
             }
+
+            // if we notice soldiers, store the location of the soldier with the smallest id
+            if (!communicating) {
+                if (status.getPresentSoldiers().size() > 0) {
+                    this.soldierIds = status.getPresentSoldiers();
+                    Point min_point = p;
+                    int smallest_id = Integer.MAX_VALUE;
+                    for (int soldierId : soldierIds) {
+                        if (soldierId == this.id) {
+                            // System.out.println("in if statement");
+                            continue;
+                        }
+                        else if (soldierId < smallest_id) {
+                            smallest_id = soldierId;
+                            min_point = p;
+                        }
+                        this.nearbySoldiers = true;
+                        this.soldierToMoveTo = min_point;
+                    }
+                }
+            }
+            
+
             List<Record> rl = new ArrayList<>();
             rl.add(record);
             trustRecords.put(p, rl);
@@ -177,6 +209,7 @@ public class Player implements spy.sim.Player {
 
     public List<Record> sendRecords(int id)
     {
+        communicating = true;
         List<Record> send = new ArrayList<Record>();
         for(List<Record> l :  trustRecords.values()){
             for(Record r:l){
@@ -189,6 +222,8 @@ public class Player implements spy.sim.Player {
             }
             send.addAll(l);
         }
+        // after sending all records, reset nearbySoldiers
+        this.nearbySoldiers = false;
         return send;
     }
 
@@ -361,6 +396,53 @@ public class Player implements spy.sim.Player {
     
     public Point getMove()
     {
+
+        // if we observe soldiers nearby
+        if (nearbySoldiers) {
+            System.out.println("there are nearby soldiers!");
+            int smallest_id = Integer.MAX_VALUE;
+            for (int otherSoldierId : soldierIds) {
+                System.out.println("soldiers seen: " + otherSoldierId);
+                if (otherSoldierId < smallest_id) {
+                    smallest_id = otherSoldierId;
+                }
+                if (this.id < smallest_id) {
+                    stayPut = true;
+                }
+                //move to soldier with smallest id if one cell away, else keep moving
+                else {
+                    System.out.println("id of soldier moving: " + smallest_id);
+                    System.out.println("soldierToMoveTo: " + soldierToMoveTo.x +","+soldierToMoveTo.y);
+                    if (distance(loc, soldierToMoveTo) < 2) {
+                        int x = soldierToMoveTo.x - loc.x;
+                        int y = soldierToMoveTo.y - loc.y;
+                        return new Point(x, y);
+                    }
+                    else {
+                        nearbySoldiers = false;
+                    }
+                }
+            }
+        }
+
+        if (stayPut) {
+            System.out.println(this.id + " is stopping for a while");
+            // don't move for 6 time steps
+            // because people need time to move to us, also need to 
+            // make sure they move away from sight before resetting 
+            if (stayPutTime < 6) {
+                stayPutTime += 1;
+                return new Point(0, 0);
+            }
+            //when done exchanging info, reset
+            stayPut = false;
+            stayPutTime = 0;
+            soldierToMoveTo = null;
+            nearbySoldiers = false;
+            communicating = false;
+        }
+
+
         List<Point> path= proposePath();
         // System.out.println("printing current location: " + loc.x + "," + loc.y);      
         List<Point> neighbors = getSurrounding(loc);
