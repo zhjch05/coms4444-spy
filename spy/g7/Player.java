@@ -42,7 +42,8 @@ public class Player implements spy.sim.Player {
     private int stayPutTime = 0;
     private Point soldierToMoveTo;
     private boolean communicating = false;
-
+    private boolean sentRecord = false;
+    private boolean receiveRecord = false;
     class PathTime{
         Integer id;
         Integer time;
@@ -212,32 +213,39 @@ public class Player implements spy.sim.Player {
         communicating = true;
         List<Record> send = new ArrayList<Record>();
         for(List<Record> l :  trustRecords.values()){
-            for(Record r:l){
-                if(r.getObservations().get(r.getObservations().size()-1).getID()!=this.id)
-                    r.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
-                else {
-                    r.getObservations().remove(r.getObservations().size()-1);
-                    r.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
+                for(Record r:l){
+                    if(r.getObservations().get(r.getObservations().size()-1).getID()!=this.id)
+                        r.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
+                    else {
+                        r.getObservations().remove(r.getObservations().size()-1);
+                        r.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
+                    }
                 }
+                send.addAll(l);
             }
-            send.addAll(l);
-        }
-        // after sending all records, reset nearbySoldiers
+            // after sending all records, reset nearbySoldiers
         this.nearbySoldiers = false;
         return send;
+
     }
 
     public void receiveRecords(int id, List<Record> records)
     {
-        for(Record r: records){
-            if(!trustRecords.containsKey(r.getLoc())){
-                List<Record> rl = new ArrayList<>();
-                rl.add(r);
-                trustRecords.put(r.getLoc(), rl);
-            }else {
-                List<Record> rl = trustRecords.get(r.getLoc());
-                rl.add(r);
+        if(!receiveRecord){
+            for(Record r: records){
+                if(!trustRecords.containsKey(r.getLoc())){
+                    List<Record> rl = new ArrayList<>();
+                    rl.add(r);
+                    trustRecords.put(r.getLoc(), rl);
+                }else {
+                    List<Record> rl = trustRecords.get(r.getLoc());
+                    rl.add(r);
+                }
+                receiveRecord = true;
             }
+
+        }else{
+            receiveRecord = false;
         }
 //        for(Record r:records){
 //            List<Record> l = new ArrayList<>();
@@ -396,7 +404,7 @@ public class Player implements spy.sim.Player {
     
     public Point getMove()
     {
-
+        System.out.println(trustRecords.size()+"  "+id);
         // if we observe soldiers nearby
         if (nearbySoldiers) {
             System.out.println("there are nearby soldiers!");
