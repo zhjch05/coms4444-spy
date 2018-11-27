@@ -24,6 +24,8 @@ public class Player implements spy.sim.Player {
     private ArrayList<ArrayList<Record>> records;
     private int id;
     private Point loc;
+    private int numPlayers;
+    private int totalTime;
 
     private boolean isSpy;
     private List<Point> waterCells;
@@ -51,8 +53,16 @@ public class Player implements spy.sim.Player {
     private String prevDir = "";
 
     private ArrayList<ArrayList<Boolean>> visitedCells;
+    private boolean recordsReceived;
 
-    public boolean isOpposite(String dir1, String dir2) {
+    private int timeForRandomMove = 0;
+    private List<Point> last12ObsLocs;
+    private int obsLocCount = 0;
+    private List<Integer> lastPlayersComm;
+    private int commsLength;
+    private double timeToComm = 0;
+
+    private boolean isOpposite(String dir1, String dir2) {
         if (dir1 == "" || dir2 == "") return false;
         else if (dir1 == "w" && dir2 == "e") return true;
         else if (dir1 == "e" && dir2 == "w") return true;
@@ -64,9 +74,41 @@ public class Player implements spy.sim.Player {
         else if (dir1 == "se" && dir2 == "nw") return true;
         return false;
     }
+
+    private boolean isStatSoldier(Point ourLoc, Point theirLoc) {
+        // # Determine whether to move to another soldier or not #
+        // if there is another present soldier with a larger y-coord then move to them
+        // if y-coord is the same but their x-coord is smaller then move to them
+        // otherwise stay put
+        if (theirLoc.y > ourLoc.y) return true;
+        if ((theirLoc.y == ourLoc.y) && (theirLoc.x < ourLoc.x)) return true;
+        return false;
+    }
+
+    private boolean isLoop(List<Point> obsLocs) {
+
+        // keep track of last 12 moves and if there are at least 3 moves and return true if there at least 3 points that have been visited more than 3 times
+
+        HashMap<Point, Integer> locCount = new HashMap<Point, Integer>();
+        
+        for (Point p : obsLocs) {
+            if (!locCount.keySet().contains(p)) locCount.put(p, 1);
+            else locCount.replace(p, locCount.get(p));
+        }
+        int c = 0;
+        for (Point p : locCount.keySet()) {
+            if (locCount.get(p) > 2) c += 1;
+        }
+        if (c > 2) return true;
+        else return false;
+
+    }
     
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
+        this.numPlayers = n;
+        this.totalTime = t;
+        this.timeToComm = 0.2*t;
         this.id = id;
         this.records = new ArrayList<ArrayList<Record>>();
         this.visitedCells = new ArrayList<ArrayList<Boolean>>();
@@ -93,6 +135,11 @@ public class Player implements spy.sim.Player {
         //suspicionScore = new HashMap<Integer, Integer>();
         previousStatuses = new HashMap<Point, CellStatus>();
 
+        last12ObsLocs = new ArrayList<Point>();
+        lastPlayersComm = new ArrayList<Integer>();
+
+        commsLength = numPlayers - 3;
+
         observableOffsets = new HashMap<String, ArrayList<Point>>();
         observableOffsets.put("s", new ArrayList(Arrays.asList(new Point(0, -1), new Point(0, -2), new Point(0, -3))));
         observableOffsets.put("n", new ArrayList(Arrays.asList(new Point(0, 1), new Point(0, 2), new Point(0, 3))));
@@ -111,6 +158,12 @@ public class Player implements spy.sim.Player {
         previousStatuses = statuses;
 
         this.loc = loc;
+        obsLocCount += 1;
+
+        if (obsLocCount % 12 == 0) {
+            last12ObsLocs = new ArrayList<Point>();
+        }
+        last12ObsLocs.add(this.loc);
 
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
@@ -142,6 +195,7 @@ public class Player implements spy.sim.Player {
     
     public List<Record> sendRecords(int id)
     {
+        System.out.println("> " + this.id + " is SENDING records <");
         ArrayList<Record> toSend = new ArrayList<Record>();
         /*if ( (possibleSpies.size() > 0) && ((possibleSpies.get(id).size() > 30) || (id == spy))) {
             return toSend;
@@ -187,11 +241,15 @@ public class Player implements spy.sim.Player {
                 }
             }
         }
+        System.out.println("length of records to send = " + toSend.size());
         return toSend;
     }
     
     public void receiveRecords(int id, List<Record> records)
     {
+        System.out.println("> " + this.id + " is RECEIVING records <");
+
+        recordsReceived = true;
         /*if (id != spy) {
             // Compare received records against those that we have in our trueRecords list
             // If there is a conflict
@@ -229,7 +287,7 @@ public class Player implements spy.sim.Player {
                 if (r!=null) {numRecs += 1;}
             }
         }
-        System.out.println("< length of records = " + numRecs);
+        System.out.println("< initial length of records = " + numRecs);
         for (Record recR : records) {
 
             if (recR != null) {
@@ -253,6 +311,13 @@ public class Player implements spy.sim.Player {
             }
         }
         System.out.println(">>>> new length of records = " + numRecs);
+
+        if (lastPlayersComm.size() < commsLength) {
+            lastPlayersComm.add(id);
+        } else {
+            lastPlayersComm.remove(0);
+            lastPlayersComm.add(id);
+        }
         
 
         // If we are in the chain of observations
@@ -538,9 +603,12 @@ public class Player implements spy.sim.Player {
         
         moveToSoldier = false;
         stayPut = false;
-        stayPutCounts = 0;
 
-        if (pathKnown && pathToPackage != null) {
+        timeForRandomMove += 1;
+
+        if (pathKnown) {
+
+            System.out.println("!!movement influenced by pathKnown!!");
 
             // ### MOVE TO PACKAGE ###
 
@@ -548,18 +616,24 @@ public class Player implements spy.sim.Player {
             // ### Ashley's code here ###
             // ##########################
 
-            return pathToPackage.remove(); // change this
+            return new Point(0, 0); // change this
 
             // probably will need to calculate the shortest path from current location to target first--store as a list of points
             // then each time getMove is called, iterate through the list of points and remove each one you visit until soldier has reached last point in list which should be the package location
 
         } else if (packageKnown || targetKnown) {
 
+            // if timeForRandomMove
+
+            System.out.println("!!movement influenced by packageKnown or targetKnown!!");
+
             // ### KEEP EXPLORING (currently might time out) ###
 
             // ##########################
             // ### Shandu's code here ###
             // ##########################
+
+            // MAYBE when exploring once package and target are found we can give less weight to directions in which there is package/target
 
             //System.out.println("cellStatus from previous observation:");
             for (Point p : previousStatuses.keySet()) {
@@ -573,6 +647,7 @@ public class Player implements spy.sim.Player {
             return new Point(x, y);
 
         } else {
+            
 
             // ### KEEP EXPLORING ###
 
@@ -585,54 +660,72 @@ public class Player implements spy.sim.Player {
                 ArrayList<Point> offsetL = observableOffsets.get(dir);
                 ArrayList<Record> toAdd = new ArrayList<Record>();
                 for (Point offset : offsetL) {
-                    //System.out.println(this.loc.x + offset.x);
-                    //System.out.println(this.loc.y + offset.y);
-                    if ((-1 < (this.loc.x + offset.x)) && ((this.loc.x + offset.x) < 100) && (-1 < (this.loc.y + offset.y)) && ((this.loc.y + offset.y) < 100) && (records.get(this.loc.x + offset.x).get(this.loc.y + offset.y) != null)) {toAdd.add(records.get(this.loc.x + offset.x).get(this.loc.y + offset.y));}
+
+                    Point newPoint = new Point(this.loc.x + offset.x, this.loc.y + offset.y);
+
+                    System.out.println("newPoint: " + newPoint);
+
+                    // still want to add unknown records to radialInfo becuase these are taken into account later
+                    // # Make sure that the new point is not outside of the map
+                    if ((-1 < newPoint.x) && (newPoint.x < 100) && (-1 < newPoint.y) && (newPoint.y < 100)) {
+                        toAdd.add(records.get(newPoint.x).get(newPoint.y));
+                    }
+                    
+                    // # Make sure that the new point is not within three blocks of the edge of the map #
                     if ((Math.abs(offset.x) < 2) && (Math.abs(offset.y) < 2)) {
+                        System.out.println("newPoint is a possible move!");
                         possibleMoves.put(dir, new Point(offset.x, offset.y));
                     }
                 }
                 radialInfo.put(dir, toAdd);
             }
             
-            //System.out.println("len of possMoves = " + possibleMoves.size());
-            //int radLen = 0;
-            //for (ArrayList<Record> f : radialInfo.values()) {
-            //    for (Record g : f) {
-            //        radLen += 1;
-            //    }
-            //}
-            //System.out.println("len of radialInfo = " + radLen);
+            System.out.println("len of possMoves = " + possibleMoves.size());
+            int radLen = 0;
+            for (ArrayList<Record> f : radialInfo.values()) {
+                for (Record g : f) {
+                    radLen += 1;
+                }
+            }
+            System.out.println("len of radialInfo = " + radLen);
+            
+            // # Determine if there are nearby soldiers #
             
             String dirToMoveIn = "";
             nearbySoldiers = new HashMap<Integer, Point>();
+            
             for (Point p : previousStatuses.keySet()) {
                 CellStatus cs = previousStatuses.get(p);
                 if ((cs.getPresentSoldiers().size() > 0) && (!p.equals(this.loc))) {
-                    //System.out.println("there are " + cs.getPresentSoldiers().size() + "soldiers nearby!!!");
-                    // there are soldiers present nearby
-                    // check if they are se (s first)--stayPut=true
-                    // check if they are nw (n first)--moveToSoldier=true
+                    // there are soldiers nearby
+                    System.out.println("there are " + cs.getPresentSoldiers().size() + " soldiers nearby!!!");
                     for (int soldID : cs.getPresentSoldiers()) {
-                        nearbySoldiers.put(soldID, p);
-                    }
-                    for (String dir : radialInfo.keySet()) {
-                        if (radialInfo.get(dir).contains(p) && (dir.equals("n") || dir.equals("nw") || dir.equals("w"))) {
-                            moveToSoldier = true;
-                            dirToMoveIn = dir;
-                        } else {
-                            stayPut = true;
+                        if (!lastPlayersComm.contains(soldID)) {
+                            nearbySoldiers.put(soldID, p);
                         }
                     }
-
                 }
-
-                //System.out.println(p + ": " + cs.getC() + ", " + cs.getPT() + ", " + cs.getPresentSoldiers());
             }
 
-            if (moveToSoldier) {
+            for (Integer sID : nearbySoldiers.keySet()) {
+                Point theirLoc = nearbySoldiers.get(sID);
+                if (isStatSoldier(this.loc, theirLoc)) {
+                    moveToSoldier = true;
+                    for (String dir : radialInfo.keySet()) {
+                        if (radialInfo.get(dir).contains(theirLoc)) {dirToMoveIn = dir; break;}
+                    }
+                    break;
+                } else {
+                    stayPut = true;
+                    break;
+                }
+            }
+
+            // ### MOVE TOWARDS SOLDIER ###
+            if (moveToSoldier && (Simulator.getElapsedT() > timeToComm)) {
+                System.out.println("time to communicate");
                 System.out.println(this.id + " move to soldier!!!");
-                // # Move towards soldier #
+
                 if (!waterCells.contains(possibleMoves.get(dirToMoveIn))) {
                     return possibleMoves.get(dirToMoveIn);
                 } else {
@@ -645,83 +738,155 @@ public class Player implements spy.sim.Player {
                     }
                 }
             }
+
+            // ### STAY PUT ###
             if (stayPut) {
                 System.out.println(this.id + " stay put!!!");
+
                 // # Stay put for 2 timesteps to enable exchange of info #
-                if (stayPutCounts < 2) {
+                /*if (stayPutCounts < 2) {
                     stayPutCounts += 1;
                     return new Point(0, 0);
                 }
-                stayPutCounts = 0;
+                stayPutCounts = 0;*/
+
+                // # Stay put until recordsReceived==True #
+                if (!recordsReceived && stayPutCounts < 5) {
+                    System.out.println("still haven't received records/haven't stayed for 10 iterations");
+                    System.out.println("stayPutCounts = " + stayPutCounts);
+                    stayPutCounts += 1;
+                    return new Point(0, 0);
+                } else {
+                    System.out.println("records have been received/waited for too long--begin random exploration");
+                    stayPutCounts = 0;
+                    recordsReceived = false;
+                }
             } 
 
+            // ### EXPLORE RANDOMLY ###
             if (stayPutCounts == 0) {
 
-                // # Explore randomly #
-                System.out.println(this.id + " Explore randomly!!!");
-                double c1 = 40, c2 = -30, c3 = -10, c4 = 20;
-                
-                hValues = new HashMap<String, Double>();
-                double maxHVal = Double.NEGATIVE_INFINITY;
-                String maxDir = "";
-                for (String dir : radialInfo.keySet()) {
-                    double num_muddy = 0;
-                    double num_water = 0;
-                    double num_clear = 0; // MAYBE when exploring once package and target are found we can give less weight to directions in which there is no package/target
-                    double num_unknown = 0;
-                    ArrayList<Record> dirRecords = radialInfo.get(dir);
-                    double numRecords = dirRecords.size();
-                    for (Record dR : dirRecords) {
-                        if (dR == null) {
-                            if (waterCells.contains(dR.getLoc())) num_water += 1;
-                            else num_unknown += 1;
-                        } else {
-                            if (dR.getC() == 0) num_clear += 1;
-                            else if (dR.getC() == 1) num_muddy += 1;
+                double maxUnvisited = Double.NEGATIVE_INFINITY;
+                String dirUnvisited = "";
+
+
+                if (!(isLoop(last12ObsLocs)) && (!(timeForRandomMove % 5 == 0) && !(timeForRandomMove % 6 == 0) && !(timeForRandomMove % 7 == 0))) {
+
+                    System.out.println(this.id + " explore randomly!!!");
+
+                    // weights for cost function
+                    double c1 = 30, c2 = -20, c3 = -10, c4 = 40;
+                    
+                    hValues = new HashMap<String, Double>();
+                    
+                    double maxHVal = Double.NEGATIVE_INFINITY;
+                    String maxDir = "";
+
+                    for (String dir : possibleMoves.keySet()) {
+
+                        Point newPoint = new Point(possibleMoves.get(dir));
+                        
+                        if (!waterCells.contains(possibleMoves.get(dir)) && (!((4 < newPoint.x) && (newPoint.x < 98)) && !((4 < newPoint.y) && (newPoint.y < 98)))) {
+                            // this is a direction we can possible move in
+
+                            System.out.println("nonwater point within boundary for exploration!");
+                            // compute hvalue for this direction and compare to max
+                            double num_muddy = 0; double num_water = 0; double num_clear = 0; double num_unvisited = 0;
+                            ArrayList<Record> dirRecords = radialInfo.get(dir);
+                            double numRecords = dirRecords.size();
+
+                            for (Record dR : dirRecords) {
+                                if (dR == null) {
+                                    if (waterCells.contains(dR.getLoc())) num_water += 1;
+                                    else num_unvisited += 1;
+                                } else {
+                                    if (waterCells.contains(dR.getLoc())) num_water += 1;
+                                    else if (dR.getC() == 0) num_clear += 1;
+                                    else if (dR.getC() == 1) num_muddy += 1;
+
+                                    if (!visitedCells.contains(dR.getLoc())) num_unvisited += 1;
+                                }
+                            }
+
+                            if (num_unvisited > maxUnvisited) {
+                                maxUnvisited = num_unvisited;
+                                dirUnvisited = dir;
+                            }
+
+                            //int isOpp = 0;
+                            //if (isOpposite(dR, prevDir)) isOpp = 1;
+                            double hVal = c1*(num_clear/numRecords) + c2*(num_water/numRecords) + c3*(num_muddy/numRecords) + num_unvisited; //+ c4*(num_unvisited/numRecords);// + c5*isOpp;
+                            if (hVal > maxHVal) {
+                                maxHVal = hVal;
+                                maxDir = dir;
+                            }
                         }
                     }
-                    double hVal = c1*(num_clear/numRecords) + c2*(num_water/numRecords) + c3*(num_muddy/numRecords) + c4*(num_unknown/numRecords);
-                    hValues.put(dir, hVal);    
-                }
-                boolean dirFound = false;
-                boolean cancel = false;
-                while (!dirFound) {
-                    maxHVal = Double.NEGATIVE_INFINITY;
-                    maxDir = "";
-                    for (String d : hValues.keySet()) {
-                        if (hValues.get(d) > maxHVal) {
-                            maxHVal = hValues.get(d);
-                            maxDir = d;
+                    if (!dirUnvisited.equals("") && (maxUnvisited != 0)) {
+                        System.out.println("best direction found!!!");
+                        prevDir = dirUnvisited;
+                        return possibleMoves.get(dirUnvisited);
+                    }
+
+                    if (!maxDir.equals("")) { //&& (!isOpposite(prevDir, maxDir))) {
+                        System.out.println("best direction found!!!");
+                        prevDir = maxDir;
+                        return possibleMoves.get(maxDir);
+                    }
+
+                    /*for (String dir : radialInfo.keySet()) {
+                        double num_muddy = 0; double num_water = 0; double num_clear = 0; double num_unknown = 0;
+                        ArrayList<Record> dirRecords = radialInfo.get(dir);
+                        double numRecords = dirRecords.size();
+                        for (Record dR : dirRecords) {
+                            if (dR == null) {
+                                if (waterCells.contains(dR.getLoc())) num_water += 1;
+                                else num_unknown += 1;
+                            } else {
+                                if (dR.getC() == 0) num_clear += 1;
+                                else if (dR.getC() == 1) num_muddy += 1;
+                            }
+                        }
+                        double hVal = c1*(num_clear/numRecords) + c2*(num_water/numRecords) + c3*(num_muddy/numRecords) + c4*(num_unknown/numRecords);
+                        hValues.put(dir, hVal);    
+                    }
+                    boolean dirFound = false;
+                    boolean cancel = false;
+                    while (!dirFound) {
+                        maxHVal = Double.NEGATIVE_INFINITY;
+                        maxDir = "";
+                        for (String d : hValues.keySet()) {
+                            if (hValues.get(d) > maxHVal) {
+                                maxHVal = hValues.get(d);
+                                maxDir = d;
+                            }
+                        }
+                        if (!maxDir.equals("") && (possibleMoves.get(maxDir) != null)) {
+                            //System.out.println("not empty direction and in possible moves!");
+                            //System.out.println("Best direction: " + maxDir);
+                            Point move = new Point(this.loc.x + possibleMoves.get(maxDir).x, this.loc.y + possibleMoves.get(maxDir).y);
+                            //System.out.println("CHECK: " + move);
+                            if ((!waterCells.contains(possibleMoves.get(maxDir))) && (!isOpposite(prevDir, maxDir))) {dirFound = true; prevDir = maxDir;}
+                            else {hValues.remove(maxDir);}
+                        }
+                        if (hValues.size() == 0) {
+                            dirFound = true;
+                            cancel = true;
                         }
                     }
-                    if (!maxDir.equals("") && (possibleMoves.get(maxDir) != null)) {
+                    if (!maxDir.equals("") && (possibleMoves.get(maxDir) != null) && (!cancel)) {
                         //System.out.println("not empty direction and in possible moves!");
-                        //System.out.println("Best direction: " + maxDir);
-                        Point move = new Point(this.loc.x + possibleMoves.get(maxDir).x, this.loc.y + possibleMoves.get(maxDir).y);
-                        //System.out.println("CHECK: " + move);
-                        if ((!waterCells.contains(possibleMoves.get(maxDir))) && (!isOpposite(prevDir, maxDir))) {dirFound = true; prevDir = maxDir;}
-                        else {hValues.remove(maxDir);}
-                    }
-                    if (hValues.size() == 0) {
-                        dirFound = true;
-                        cancel = true;
-                    }
-                }
-                if (!maxDir.equals("") && (possibleMoves.get(maxDir) != null) && (!cancel)) {
-                    //System.out.println("not empty direction and in possible moves!");
-                    //System.out.println("Best direction: " + maxDir + " cur_loc = " + this.loc + " >>> " + possibleMoves.get(maxDir));
-                    return possibleMoves.get(maxDir);
-                }
-
-                
+                        //System.out.println("Best direction: " + maxDir + " cur_loc = " + this.loc + " >>> " + possibleMoves.get(maxDir));
+                        return possibleMoves.get(maxDir);
+                    }*/ 
+                }  
             }
-            //System.out.println("random");
-            Random rand = new Random();
-            int x = rand.nextInt(2) * 2 - 1;
-            int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
-            return new Point(x, y);
-
         }
-        // ***NOTE*** currently both exploration blocks will do the same thing (the else-if and else statements)
+        System.out.println("no best direction was found/was in opposite direction/time to explore randomly!!!!");
+        // move randomly
+        Random rand = new Random();
+        int x = rand.nextInt(2) * 2 - 1;
+        int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
+        return new Point(x, y);
     }
 }
