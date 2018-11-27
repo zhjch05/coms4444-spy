@@ -188,8 +188,12 @@ public class Player implements spy.sim.Player {
     	protected double getScore(int deltax, int deltay) {
     		if (waterCells.contains(new Point(loc.x + deltax, loc.y + deltay)))
     			return -1.0D;
+            //return negative score for location outside the map
+            if (loc.x + deltax < 0 || loc.x + deltax > 99 || loc.y + deltay < 0 || loc.y + deltay > 99 )
+                return -1.0D;
     		if (deltax == 0 && deltay == 0)
     			return -1.0D;
+
     		HashSet<Point> points = new HashSet<Point>();
     		if (deltax != 0) {
     			points.add(new Point(loc.x + 3 * deltax, loc.y - 1));
