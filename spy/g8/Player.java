@@ -23,7 +23,7 @@ public class Player implements spy.sim.Player {
     private int id;
     public Point loc;
     private List<Point> waterCells;
-    private List<Point> muddyCells=new ArrayList<Point>();
+    private List<Point> clearCells=new ArrayList<Point>();
     private List<Point> observed;
     private List<Point> notobserved;
     private Point destination;
@@ -138,8 +138,8 @@ public class Player implements spy.sim.Player {
                     seeSoldiers.put(see.get(i),p);
                 }
             }
-            // record directly observed muddy cells
-            if (status.getC()==1) muddyCells.add(p);
+            // record directly observed clear cells
+            if (status.getC()!=1) clearCells.add(p);
             if (status.getPT()==1) pack = p;
             if (status.getPT()!=0 && status.getPT()!=1) dest = p;
 
@@ -173,6 +173,24 @@ public class Player implements spy.sim.Player {
     public void receiveRecords(int id, List<Record> records)
     {
         receivedRecords.put(id, records);
+        updateRecords();
+    }
+
+    public void updateRecords(){
+        for(int id:receivedRecords.keySet()){
+            List<Record> rec = receivedRecords.get(id);
+            for (Record r: rec){
+                if(r.getC() != 1 && !observed.contains(r.getLoc())){
+                    clearCells.add(r.getLoc());
+                }
+                if (dest == null && r.getPT() != 0 && r.getPT() != 1){
+                    dest = r.getLoc();
+                }
+                if (pack == null && r.getPT() == 1){
+                    pack = r.getLoc();
+                }
+            }
+        }
     }
     
     public List<Point> proposePath()
@@ -182,9 +200,11 @@ public class Player implements spy.sim.Player {
         int source = g.getVertex(pack.x+","+pack.y);
         int target = g.getVertex(dest.x+","+dest.y);
         int[][] prev = Dijkstra.dijkstra(g, source);
-        List<Integer> path = Dijkstra.getPaths(g, prev, target).get(0);
+
+        List<List<Integer>> path = Dijkstra.getPaths(g, prev, target);
+        if (path.size()==0) return null;
         List<Point> toReturn = new ArrayList<Point>();
-        for(Integer i : path){
+        for(Integer i : path.get(0)){
             String[] coordinate = g.getLabel(i).split(",");
             toReturn.add(new Point(Integer.parseInt(coordinate[0]),Integer.parseInt(coordinate[1])));
         }
@@ -198,34 +218,40 @@ public class Player implements spy.sim.Player {
                 g.setLabel(i+","+j);
             }
         }
-        for (int i=0 ; i<99 ; i++){
-            for (int j=0 ; j<99 ; j++){
+        // Two loops & check valid
+        for (int i=0 ; i<100 ; i++){
+            for (int j=0 ; j<100 ; j++){
                 Point p = new Point(i,j);
-                if (!waterCells.contains(p) && ! muddyCells.contains(p)){
+                if (clearCells.contains(p)){
                     Point p1 = new Point(i+1,j);
                     Point p2 = new Point(i,j+1);
                     Point p3 = new Point(i+1,j+1);
                     Point p4 = new Point(i+1,j-1);
-                    Point p5 = new Point(i-1,j+1);
-                    if (!waterCells.contains(p1) && ! muddyCells.contains(p1)){
+                    if (isValidPoint(p1) && clearCells.contains(p1)){
                         g.addEdge(i+","+j,(i+1)+","+j,1);
                     }
-                    if (!waterCells.contains(p2) && ! muddyCells.contains(p2)){
+                    if (isValidPoint(p2) && clearCells.contains(p2)){
                         g.addEdge(i+","+j,i+","+(j+1),1);
                     }
-                    if (!waterCells.contains(p3) && ! muddyCells.contains(p3)){
+                    if (isValidPoint(p3) && clearCells.contains(p3)){
                         g.addEdge(i+","+j,(i+1)+","+(j+1),1);
                     }
-                    if (!waterCells.contains(p4) && ! muddyCells.contains(p4)){
+                    if (isValidPoint(p4) && clearCells.contains(p4)){
                         g.addEdge(i+","+j,(i+1)+","+(j-1),1);
-                    }
-                    if (!waterCells.contains(p5) && ! muddyCells.contains(p5)){
-                        g.addEdge(i+","+j,(i-1)+","+(j+1),1);
                     }
                 }
             }
         }
         return g;
+    }
+    public boolean isValidPoint(Point p){
+        if (p.x < 0 || p.x > 99){
+            return false;
+        }
+        if (p.y < 0 || p.y > 99){
+            return false;
+        }
+        return true;
     }
     
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
@@ -235,6 +261,7 @@ public class Player implements spy.sim.Player {
             ArrayList<Integer> toReturn = new ArrayList<Integer>();
             toReturn.add(entry.getKey());
             //return entry.getKey();
+            return toReturn;
         }
         return null;
     }
@@ -353,6 +380,25 @@ public class Player implements spy.sim.Player {
     public Point getMove()
     {
         //System.out.println("GETMOVE"+records.get(loc.x).get(loc.y));
+
+        // once target and packet both found, move to packet
+
+        if (pack != null && dest != null){
+            Point toPack = new Point(0,0);
+            if (pack.x > loc.x){
+                toPack.x=1;
+            }
+            else if (pack.x < loc.x){
+                toPack.x=-1;
+            }
+            if (pack.y > loc.y){
+                toPack.y=1;
+            }
+            else if (pack.y < loc.y){
+                toPack.y=-1;
+            }
+            return toPack;
+        }
 
         // DO observation stuff here
         //System.out.println("CURR LOC:"+loc.x + " " + loc.y);
