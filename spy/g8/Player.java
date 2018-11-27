@@ -119,23 +119,31 @@ public class Player implements spy.sim.Player {
             CellStatus status = entry.getValue();
 
             List<Integer> see = status.getPresentSoldiers();
+            see.remove(Integer.valueOf(this.id));
             // look at case when we observe the cell we are occupying
-            if(see.size() > 1 && p.equals(loc)) { //do not count when it is ourselves
+            if(see.size() > 0 && p.equals(loc)) { //do not count when it is ourselves
                 System.out.println("COLLABORATING");
-                meeting = true; // someone is in the same cell as us
-                for(int i=0;i<see.size();i++) {
-                    if(see.get(i) != this.id) {
-                        meetSoldiers.add(see.get(i));//which soldier(s) we are meeting
+                for (int i =0;i<see.size();i++) {
+                    if (waitTime.get(see.get(i)) == 0) {
+                        meeting = true;
                     }
                 }
-            } else {
-                meetSoldiers = new ArrayList<Integer>();
-                meeting = false;
-            }
+                for(int i=0;i<see.size();i++) {
+                   // if(see.get(i) != this.id) {
+                    meetSoldiers.add(see.get(i));//which soldier(s) we are meeting
+                    //}
+                }
+            }/* else {
+                //meetSoldiers = new ArrayList<Integer>();
+                /meeting = false;
+            }*/
 
             for(int i=0;i<see.size();i++) {
                 if(see.get(i) != this.id) {
                     seeSoldiers.put(see.get(i),p);
+                    System.out.println("debug");
+                    System.out.println(see.get(i));
+                    System.out.println("wait"+waitTime.get(see.get(i)));
                 }
             }
             // record directly observed muddy cells
@@ -379,13 +387,15 @@ public class Player implements spy.sim.Player {
             }
             //System.out.println("player id: " + player +" , waittime: " + time);
         }
+
         //we are meeting someone right now
         if (meeting == true) {
+            trymeeting = false;
+            meeting = false;
+            System.out.println("MEETING MEETING MEETING");
             for (int i=0;i<meetSoldiers.size();i++) {
                 //reset waittime
                 waitTime.put(meetSoldiers.get(i),wait);
-                trymeeting = false;
-                meeting = false;
             }
         }
 
