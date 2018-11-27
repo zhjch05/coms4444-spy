@@ -244,13 +244,22 @@ public class Simulator {
             }
         }
         
+        if (victory)
+        {
+            System.out.println("\nSuccess!!");
+        }
+        else if (elapsedT >= t)
+        {
+            System.out.println("\nTime's up!");
+        }
+        else
+        {
+            System.out.println("\nUh-oh. Not a valid path.");
+        }
+
         if (gui)
         {
-            gui(server, state(fps));
-            while (true)
-            {
-
-            }
+            gui(server, state(-1));
         }
     }
     
