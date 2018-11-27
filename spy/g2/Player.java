@@ -1,18 +1,10 @@
 package spy.g2;
 
-import java.util.List;
-import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import spy.sim.*;
+import spy.g2.Pair;
 
-import spy.sim.Point;
-import spy.sim.Record;
-import spy.sim.CellStatus;
-import spy.sim.Simulator;
-import spy.sim.Observation;
+
 
 public class Player implements spy.sim.Player {
 
@@ -30,8 +22,13 @@ public class Player implements spy.sim.Player {
     private boolean routeFound;
     private Point start;
     private Point destination;
+    
+    private boolean[][] viewed;
+    private int[][] graph;
+
     private List<Point> Friend;
     private HashMap<Integer, Integer> Met;
+    private List<Point> todo;
 
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
@@ -45,33 +42,46 @@ public class Player implements spy.sim.Player {
         for (int i = 0; i < 100; i++)
         {
             ArrayList<Record> row = new ArrayList<Record>();
-            ArrayList<Record> r = new ArrayList<Record>();
+            // ArrayList<Record> r = new ArrayList<Record>();
             ArrayList<Boolean> v = new ArrayList<Boolean>();
             for (int j = 0; j < 100; j++)
             {
                 row.add(null);
-                r.add(null);
+                // r.add(null);
                 v.add(false);
             }
             this.records.add(row);
             // this.map.add(r);
             this.visited.add(v);
         }
+
+        this.graph = new int[100][100];
+        this.viewed = new boolean[100][100];
+        for (int i=0; i<99; i++){
+            for (int j=0; j<99; j++){
+                viewed[i][j] = false;
+            }
+        }
+
         this.loc = startingPos;
         this.water = waterCells;
+        for (Point p: waterCells){
+            viewed[p.x][p.y] = true;    
+        }
         this.package_found = false;
         this.package_loc = null;
-        // this.package_loc = new Point(0, 0);
+
         this.target_loc = null;
         this.readyForRoute = false;
         this.routeFound = false;
+
         this.start = null;
         this.destination = null;
+        this.todo = new ArrayList<Point>();
         this.Met = new HashMap<Integer,Integer>();
         for (int i=0; i<n; i++){
             Met.put(i,0);
         }
-
     }
     
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
@@ -90,6 +100,14 @@ public class Player implements spy.sim.Player {
                 record = new Record(p, status.getC(), status.getPT(), observations);
                 records.get(p.x).set(p.y, record);
             }
+            viewed[p.x][p.y] = true;
+            if (status.getC() == 0){
+                graph[p.x][p.y] = 1;
+            }
+            else if (status.getC() == 1){
+                graph[p.x][p.y] = 2;
+            }
+            
             if (status.getPT() == 1){
                 this.package_found = true;
                 this.package_loc = p;
@@ -121,7 +139,9 @@ public class Player implements spy.sim.Player {
             record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
             // map.get(p.x).set(p.y, new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>()));
         }
+        this.map = records;
     }
+
     
     public List<Record> sendRecords(int id)
     {
@@ -140,31 +160,79 @@ public class Player implements spy.sim.Player {
         return toSend;
     }
     
+
     public void receiveRecords(int id, List<Record> rec)
     {
+
         for (Record r : rec){
             if (records.get(r.getLoc().x).get(r.getLoc().y) == null){
                 records.get(r.getLoc().x).set(r.getLoc().y, r);
+                viewed[r.getLoc().x][r.getLoc().y] = true;
+                if (r.getC() == 1){
+                    graph[r.getLoc().x][r.getLoc().y] = 1;
+                }
+                if (r.getPT() == 1){
+                    this.package_found = true;
+                    this.package_loc = r.getLoc();
+                    if (start != null && this.target_loc != null && start.equals(this.target_loc)) {
+                        destination = this.package_loc;
+                    }
+                }
+                else if (r.getPT() == 2) {
+                    // System.out.println("target found");
+                    this.target_loc = r.getLoc();
+                    if (start != null && this.package_loc != null && start.equals(this.package_loc)) {
+                        // System.out.println("destination assigned");
+                        destination = this.target_loc;
+                        // System.out.println("destination: x = " + destination.x + ", y = " + destination.y);
+                    }
+                }
             }
         }
     }
     
-    public List<Point> proposePath()
-    {
-        if (!routeFound) {
-            return null;
-        }
+    public List<Point> proposePath(){
+        System.out.println("Proposing a path"); 
+        List<Point> path = new ArrayList<Point>();
+        Map<Point, Point> par = new HashMap<Point, Point>();
+        int[][] visited = new int[100][100];
+        PriorityQueue<Pair> pQueue = new PriorityQueue<Pair>(10000, new PairComparator()); 
+        pQueue.add(new Pair(loc,0));
+        Point cur = this.loc;
+        boolean flag = true;
+        //+--------------------------------------------------------------------------+
+        //| find the cell with max exploration / dist                                |
+        //+--------------------------------------------------------------------------+
         
-        if (route.get(0) == package_loc) {
-            return route;
+        while(pQueue.size() > 0 && flag){
+            Pair pa = pQueue.poll();
+            Point p = pa.pt;
+            int dist = pa.dist;
+            visited[p.x][p.y] = 1;
+            for (Point n: neighbors(p)){
+                if (graph[n.x][n.y] != 1){
+                    continue;
+                }
+                if (n == target_loc){
+                    cur = n;
+                    flag = false;
+                }
+                if (visited[n.x][n.y] == 0){
+                    pQueue.add(new Pair(n, dist+cost(p,n)));
+                    par.put(n,p);
+                    visited[n.x][n.y] = 1;
+                }
+            }
         }
-
-        Collections.reverse(route);
-        return route;
+        System.out.printf("found path\n");
+        while (par.containsKey(cur)){
+            path.add(new Point(cur.x - par.get(cur).x,cur.y - par.get(cur).y));
+            cur = par.get(cur);
+        }
+        return path;
     }
     
-    public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
-    {
+    public List<Integer> getVotes(HashMap<Integer, List<Point>> paths){
         List<Integer> votes = new ArrayList<Integer>();
         for (Integer p: paths.keySet()){
             votes.add(p);
@@ -176,18 +244,53 @@ public class Player implements spy.sim.Player {
     {
     }
     
-    public Point getMove()
-    {
+    public Point getMove(){
         double max_reward = 0;
-        Point best_move = this.loc;
-        Map<Point, Integer> possible_move = new HashMap<Point, Integer>();
+        Point best_move = new Point(0,0);
         Point loc = this.loc;
+        
+        /*
+        System.out.printf("id: %d Current loc: %d %d \n", this.id, loc.x, loc.y);
+        if (package_loc != null)
+            System.out.printf("package loc: %d %d \n", package_loc.x, package_loc.y);
+        */
+
+        /*
+        int ct = 0;
+        for (int i=0; i<100; i++){
+            for (int j=0; j<100; j++){
+                if (viewed[i][j]==false){
+                    ct++;
+                }
+            }
+        }
+        System.out.printf("remaining cells: %d \n", ct);
+        */        
+        // find all possible movements
         for (Integer i: Met.keySet()){
-            if (Met.get(i)>0){
+            if (Met.get(i) > 0){
                 Met.put(i, Met.get(i)-1);
             }
         }
-        System.out.printf("Current loc: %d %d \n", loc.x, loc.y);
+        
+        if (todo.size() > 0){
+            return todo.remove(todo.size()-1);
+        }
+        else{
+            System.out.printf("%d complete todo\n",id);
+        }
+
+        if (package_loc != null && target_loc != null){
+            if (find_path(package_loc, target_loc)){
+                System.out.printf("%d moving towards package\n",id);
+                if (loc == package_loc){
+                    return new Point(0,0);
+                }
+                todo = new ArrayList<Point>();
+                return move_toward(package_loc);
+            }
+        }
+        /*
         if (routeFound) {
             System.out.println("route found");
             if (!loc.equals(package_loc)) {
@@ -199,15 +302,14 @@ public class Player implements spy.sim.Player {
                 return new Point(0,0);
             }
         }
-
-        if (Friend.size() != 0){
+        
+        if (Friend.size() != 0 && move_possible(Friend.get(0))){
             System.out.println("Moving towards friend");
             Point p = Friend.remove(0);
-
             System.out.printf("at %d %d \n", p.x, p.y);
-            return move_toward(p);
+            return move_toward(p, possible_move);
         }
-
+        
         if (!readyForRoute && (loc.equals(package_loc) || loc.equals(target_loc))) {
             System.out.println("package or target found");
             readyForRoute = true;
@@ -237,32 +339,33 @@ public class Player implements spy.sim.Player {
             return next;
         }
 
-        if (package_loc != null && !loc.equals(package_loc)){
+        if (package_loc != null && !loc.equals(package_loc) && move_possible(package_loc)){
             System.out.println("moving toward package");
             // return move_toward(package_loc);
             Point next = move_toward(package_loc);
-            // System.out.println("x = " + next.x + ", y = " + next.y);
+            System.out.println("x = " + next.x + ", y = " + next.y);
             return next;
-
         }
 
         if (target_loc != null && !loc.equals(target_loc)) {
             return move_toward(target_loc);
         }
-        map = records;
+        */
+        return explore();
+    }
 
+    public Map<Point, Integer> check_possible_movement(Point lc){
+        Map<Point,Integer> possible_move = new HashMap<Point, Integer>();
         for (int i=0; i<3; i++){
             for (int j=0; j<3; j++){
-                int dx = loc.x+i-1;
-                int dy = loc.y+j-1;
-                if (i==1 && j==1){
+                int dx = lc.x+i-1;
+                int dy = lc.y+j-1;
+
+                if (i == 1 && j == 1){
                     continue;
                 }
                 if (dx < 0  || dy < 0 || dx > 99 || dy > 99 ){
                     continue;
-                }
-                if (map.get(dx).get(dy).getC() == 1){
-                    possible_move.put(new Point(i-1,j-1),4);
                 }
                 if(this.water.contains(new Point(dx,dy))){
                     continue;
@@ -277,7 +380,6 @@ public class Player implements spy.sim.Player {
                         }
                     }
                     else{
-
                         if (map.get(dx).get(dy).getC() == 1){
                             possible_move.put(new Point(i-1,j-1),4);
                         }
@@ -288,77 +390,224 @@ public class Player implements spy.sim.Player {
                 }
             }
         }
-        System.out.println("exploring");
-        for (Point p: possible_move.keySet()){
-            Point nex = new Point(loc.x+p.x,loc.y+p.y);
-            if (exploration_reward(nex)/possible_move.get(p)>max_reward){
-                max_reward = exploration_reward(nex)/possible_move.get(p);
-                best_move = p;
-            }
-        }
-        if (max_reward == 0){
-            best_move = find_unknown(loc);
-        }
-        return best_move;
+        return possible_move;
     }
 
+
+    // add all neighboring points to a list
+    // return : a List contains all the neighbors of Point p, including itself
+    public List<Point> neighbors(Point p){
+        List<Point> neighbors = new ArrayList<Point>();
+        for (int i=0; i<3; i++){
+            for (int j=0; j<3; j++){
+                int dx = p.x+i-1;
+                int dy = p.y+j-1;
+                if (i==1 && j==1){
+                    continue;
+                }
+                if (dx < 0  || dy < 0 || dx > 99 || dy > 99 ){
+                    continue;
+                }
+                neighbors.add(new Point(dx,dy));
+            }
+        }
+        return neighbors;
+    }
+    
     public int exploration_reward(Point p){
         int reward = 0;
+        if (graph[p.x][p.y] == 0){
+            return reward;
+        }
         for (int i=0; i<map.size();++i){
             for (int j=0; j<map.get(i).size();++j){
                 if (Math.abs(i-p.x) < 3 && Math.abs(j-p.y) < 3){
-                    if (map.get(i).get(j)==null){
-                        reward ++;
+                    if (viewed[i][j]){
+                        continue;
                     }
+                    reward ++;
                 }
             }
         }
         return reward;
     }
 
-    public Point find_unknown(Point loc){
-        int minimum = 200;
-        int tx = 0;
-        int ty = 0;
-        for (int i=0; i<map.size();++i){
-            for (int j=0; j<map.get(i).size();++j){
-                if (map.get(i).get(j)==null){
-                    if (Math.abs(i-loc.x)+Math.abs(j-loc.y)< minimum){
-                        minimum = Math.abs(i-loc.x)+Math.abs(j-loc.y);
-                        tx = i;
-                        ty = j;
+    public Point explore(){
+        Map<Point, Point> par = new HashMap<Point, Point>();
+        int[][] visited = new int[100][100];
+        PriorityQueue<Pair> pQueue = new PriorityQueue<Pair>(10000, new PairComparator()); 
+        pQueue.add(new Pair(loc,0));
+        double max_reward = 0;
+        boolean flag = true;
+        Point cur = this.loc;
+
+        //+--------------------------------------------------------------------------+
+        //| find the cell with max exploration / dist                                |
+        //+--------------------------------------------------------------------------+
+        
+        while(pQueue.size() > 0 && flag){
+            Pair pa = pQueue.poll();
+            Point p = pa.pt;
+            int dist = pa.dist;
+
+            visited[p.x][p.y] = 1;
+            for (Point n: neighbors(p)){
+                if ((double)exploration_reward(n)/cost(p,n) > max_reward){
+                    cur = n;
+                    flag = false;
+                    max_reward = (double)exploration_reward(n)/cost(p,n);
+                }
+                if (visited[n.x][n.y] == 0){
+                    if (graph[n.x][n.y] > 0){
+                        pQueue.add(new Pair(n, dist+cost(p,n)));
+                        par.put(n,p);
                     }
+                    visited[n.x][n.y] = 1;
                 }
             }
         }
-        return move_toward(new Point(tx, ty));
-    }
-
-
-    public Point move_toward(Point p){
-        int dx = 0;
-        int dy = 0;
-        if (p.x > this.loc.x){
-            dx = 1;
+        System.out.printf("dest: %d %d \n",cur.x, cur.y);
+        while (par.containsKey(cur)){
+            todo.add(new Point(cur.x - par.get(cur).x,cur.y - par.get(cur).y));
+            cur = par.get(cur);
         }
-        else if (p.x == this.loc.x){
-            dx = 0;
+
+        // System.out.printf("Moving to %d %d \n",cur.x, cur.y);
+        if (todo.size()>0){
+            return todo.remove(todo.size()-1);
         }
         else{
-            dx = -1;
+            return new Point(0,0);
         }
-        if (p.y > this.loc.y){
-            dy = 1;
-        }
-        else if (p.y == this.loc.y){
-            dy = 0;
-        }
-        else{
-            dy = -1;
-        }
-        return new Point (dx, dy);
     }
 
+    public Point move_toward(Point dest){
+        Map<Point, Point> par = new HashMap<Point, Point>();
+        int[][] visited = new int[100][100];
+        PriorityQueue<Pair> pQueue = new PriorityQueue<Pair>(10000, new PairComparator()); 
+        pQueue.add(new Pair(loc,0));
+        while(pQueue.size() > 0){
+            Pair pa = pQueue.poll();
+            Point p = pa.pt;
+            int dist = pa.dist;
+            visited[p.x][p.y] = 1;
+            for (Point n: neighbors(p)){
+                if (n.x== dest.x && n.y == dest.y){
+                    par.put(n,p);
+                    Point cur = n;
+
+                    System.out.printf("%d dest: %d %d\n",id, dest.x,dest.y);
+
+                    while (par.containsKey(cur)){
+                        todo.add(new Point(cur.x - par.get(cur).x,cur.y - par.get(cur).y));
+                        cur = par.get(cur);
+                    }
+                    if (todo.size()>0){
+                        return todo.remove(todo.size()-1);
+                    }
+                    return new Point(0,0);
+                }
+                if (visited[n.x][n.y] == 0){
+                    if (graph[n.x][n.y] > 0){
+                        pQueue.add(new Pair(n, dist+cost(p,n)));
+                        par.put(n,p);
+                    }
+                    visited[n.x][n.y] = 1;
+                }
+            }
+        }
+        return new Point(0,0);
+    }
+
+    public boolean move_possible(Point dest){
+        List<Point> t = new ArrayList<Point>();
+        int [][] visited = new int[100][100];
+        t.add(loc);
+        while(t.size() > 0){
+            Point p = t.remove(t.size()-1);
+            visited[p.x][p.y] = 1;
+            for (Point n: neighbors(p)){
+                if (n.x == dest.x && n.y==dest.y){
+                    return true;
+                }
+                if (visited[n.x][n.y] == 0){
+                    if (graph[n.x][n.y] > 0){
+                        t.add(n);
+                    }
+                    visited[n.x][n.y] = 1;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean find_path(Point pa, Point dest){
+        List<Point> t = new ArrayList<Point>();
+        int [][] visited = new int[100][100];
+        t.add(pa);
+        while(t.size() > 0){
+            Point p = t.remove(t.size()-1);
+            visited[p.x][p.y] = 1;
+            for (Point n: neighbors(p)){
+                if (graph[n.x][n.y]!=1){
+                    continue;
+                }
+                if (n.x == dest.x && n.y==dest.y){
+                    return true;
+                }
+                if (visited[n.x][n.y] == 0){
+                    t.add(n);    
+                    visited[n.x][n.y] = 1;
+                }
+            }
+        }
+        return false;
+    }
+
+    class PairComparator implements Comparator<Pair>{           
+        // Overriding compare()method of Comparator  
+                    // for descending order of dist 
+        public int compare(Pair s1, Pair s2) { 
+            if (s1.dist < s2.dist) 
+                return 1; 
+            else if (s1.dist > s2.dist) 
+                return -1; 
+            return 0; 
+        } 
+    } 
+
+    public int cost(Point p, Point n){
+        if (Math.abs(n.x-p.x)+Math.abs(n.y-p.y)==1){
+            if (graph[n.x][n.y]==1){
+                return 2;
+            }
+            else{
+                return 4;
+            }
+        }
+        else if (Math.abs(n.x-p.x)+Math.abs(n.y-p.y)==2){
+            if (graph[n.x][n.y]==1){
+                return 3;
+            }
+            else{
+                return 6;
+            }   
+        }
+        return 10;    
+    }
+
+    public int dist(Point a, Point b){
+        int dx = Math.abs(a.x-b.x);
+        int dy = Math.abs(a.y-b.y);
+        int dst = 0;
+        while (dx > 0 && dy > 0){
+            dx = dx -1;
+            dy = dy -1;
+            dst += 3;
+        }
+        dst += 2*(dx+dy);
+        return dst;
+    }
     // private void findValidPath(Point start) {
     //     Point curr = start;
     //     Point destination = null;
