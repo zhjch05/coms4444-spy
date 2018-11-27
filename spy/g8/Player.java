@@ -205,28 +205,21 @@ public class Player implements spy.sim.Player {
     public List<Point> proposePath()
     {
         if (pack == null || dest == null) return null;
-        // WeightedGraph g = buildGraph();
-        // int source = g.getVertex(pack.x+","+pack.y);
-        // int target = g.getVertex(dest.x+","+dest.y);
-        // int[][] prev = Dijkstra.dijkstra(g, source);
+ 
+        return BFS(pack,dest);
+    }
 
-        // List<List<Integer>> path = Dijkstra.getPaths(g, prev, target);
-        // if (path.size()==0) return null;
-        // List<Point> toReturn = new ArrayList<Point>();
-        // for(Integer i : path.get(0)){
-        //     String[] coordinate = g.getLabel(i).split(",");
-        //     toReturn.add(new Point(Integer.parseInt(coordinate[0]),Integer.parseInt(coordinate[1])));
-        // }
+    public List<Point> BFS(Point source, Point target){
         bfs = new HashMap<Point,Point>();
         List<Point> nextPoints = new ArrayList<>();
         List<Point> settledPoints = new ArrayList<>();
-        nextPoints.add(pack);
+        nextPoints.add(source);
         Point currentPoint;
         boolean found = false;
         while (nextPoints.size() > 0 && !found){
             currentPoint = nextPoints.remove(0);
             settledPoints.add(currentPoint);
-            System.out.println("size of list is "+nextPoints.size()+", currentPoint is "+currentPoint.x+","+currentPoint.y);
+            //System.out.println("size of list is "+nextPoints.size()+", currentPoint is "+currentPoint.x+","+currentPoint.y);
             Point[] ps = {new Point(currentPoint.x+1,currentPoint.y),
                           new Point(currentPoint.x,currentPoint.y+1),
                           new Point(currentPoint.x,currentPoint.y-1),   
@@ -241,7 +234,7 @@ public class Player implements spy.sim.Player {
                         bfs.put(p,currentPoint);
                     }
                     nextPoints.add(p);
-                    if (p.equals(dest)){
+                    if (p.equals(target)){
                         found = true;
                         break;
                     }
@@ -249,50 +242,22 @@ public class Player implements spy.sim.Player {
             }         
         }
         List<Point> toReturn = new ArrayList<>();
-        currentPoint = dest;
-        toReturn.add(dest);
-        while (!currentPoint.equals(pack)){
+        currentPoint = target;
+        toReturn.add(target);
+        int count = 0;
+        while (!currentPoint.equals(source)){
+            if (count >= 2*bfs.size()){
+                return null;
+            }
             Point temp = bfs.get(currentPoint);
             toReturn.add(0,temp);
             currentPoint = temp;
+            count +=1;
         }
         return toReturn;
-    }
 
+    } 
 
-    // public WeightedGraph buildGraph(){
-    //     WeightedGraph g = new WeightedGraph(10000);
-    //     for (int i=0 ; i<100 ; i++){
-    //         for (int j=0 ; j<100 ; j++){
-    //             g.setLabel(i+","+j);
-    //         }
-    //     }
-    //     // Two loops & check valid
-    //     for (int i=0 ; i<100 ; i++){
-    //         for (int j=0 ; j<100 ; j++){
-    //             Point p = new Point(i,j);
-    //             if (clearCells.contains(p)){
-    //                 Point p1 = new Point(i+1,j);
-    //                 Point p2 = new Point(i,j+1);
-    //                 Point p3 = new Point(i+1,j+1);
-    //                 Point p4 = new Point(i+1,j-1);
-    //                 if (isValidPoint(p1) && clearCells.contains(p1)){
-    //                     g.addEdge(i+","+j,(i+1)+","+j,1);
-    //                 }
-    //                 if (isValidPoint(p2) && clearCells.contains(p2)){
-    //                     g.addEdge(i+","+j,i+","+(j+1),1);
-    //                 }
-    //                 if (isValidPoint(p3) && clearCells.contains(p3)){
-    //                     g.addEdge(i+","+j,(i+1)+","+(j+1),1);
-    //                 }
-    //                 if (isValidPoint(p4) && clearCells.contains(p4)){
-    //                     g.addEdge(i+","+j,(i+1)+","+(j-1),1);
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     return g;
-    // }
     public boolean isValidPoint(Point p){
         if (p.x < 0 || p.x > 99){
             return false;
@@ -433,20 +398,12 @@ public class Player implements spy.sim.Player {
         // once target and packet both found, move to packet
 
         if (pack != null && dest != null){
-            Point toPack = new Point(0,0);
-            if (pack.x > loc.x){
-                toPack.x=1;
+            List<Point> path = BFS(loc,pack);
+            if (path.size() > 0){
+                Point next = path.get(1);
+                Point move = new Point(next.x-loc.x,next.y-loc.y);
+                return move;
             }
-            else if (pack.x < loc.x){
-                toPack.x=-1;
-            }
-            if (pack.y > loc.y){
-                toPack.y=1;
-            }
-            else if (pack.y < loc.y){
-                toPack.y=-1;
-            }
-            return toPack;
         }
 
         // DO observation stuff here
