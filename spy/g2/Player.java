@@ -2,7 +2,7 @@ package spy.g2;
 
 import java.util.*;
 import spy.sim.*;
-import spy.g2.Pair;
+// import spy.g2.Pair;
 
 
 
@@ -522,5 +522,81 @@ public class Player implements spy.sim.Player {
         }
         dst += 2*(dx+dy);
         return dst;
+    }
+
+    private void dfs(Point s, Point t) {
+        // List<List<Integer>> record = new ArrayList<List<Integer>>();
+        // for (int i = 0; i < 100; i++) {
+        //     List<Integer> list = new ArrayList<Integer>(Collections.nCopies(100, 0));
+        //     record.add(list);
+        // }
+        Map<Point, Double> dist = new HashMap<Point, Double>();
+        TreeMap<Double, Point> queue = new TreeMap<Double, Point>();
+        Map<Point, Point> prev = new HashMap<Point, Point>();
+        boolean[][] v = new boolean[100][100];
+
+        for (int i = 0; i < 100; i++) {
+            for (int j = 0; j < 100; j++) {
+                Point p = new Point(i, j);
+                dist.put(p, Double.MAX_VALUE);
+                // prev.put(p, null);
+            }
+        }
+
+        dist.put(s, 0.);
+        queue.put(0., s);
+        Map.Entry<Double, Point> entry = queue.firstEntry();
+        Point next = entry.getValue();
+        queue.remove(entry.getKey());
+        v[next.x][next.y] = true;
+        System.out.println("preprocessing done, starting point: x = " + next.x + ", y = " + next.y);
+        while (!next.equals(t)) {
+            System.out.println("next: x = " + next.x + ", y = " + next.y);
+            for (int i = next.x - 1; i < next.x + 2; i++) {
+                for (int j = next.y - 1; j < next.y + 2; j++) {
+                    Point candidate = new Point(i, j);
+                    System.out.println("candidate: x = " + i + ", y = " + j);
+                    if (i < 0 || i > 99 || j < 0 || j > 99 || v[i][j] || water.contains(candidate) || records.get(i).get(j) == null || records.get(i).get(j).getC() == 1 /*|| record.get(i).get(j) != 0*/) {
+                        continue;
+                    }
+                    // double distance = Math.abs(next.x - i) + Math.abs(next.y - j);
+                    double distance = Math.sqrt((next.x - i) * (next.x - i) + (next.y - j) * (next.y - j));
+                    System.out.println("valid candidate: x = " + i + ", y = " + j + ", distance: " + distance);
+                    if (dist.get(next) + distance < dist.get(candidate)) {
+                        dist.put(candidate, dist.get(next) + distance);
+                        prev.put(candidate, next);
+                        queue.put(dist.get(next) + distance, candidate);
+                    }
+                }
+            }
+
+            if (queue.size() == 0) {
+                break;
+            }
+
+            entry = queue.firstEntry();
+            next = entry.getValue();
+            queue.remove(entry.getKey());
+            v[next.x][next.y] = true;
+        }
+
+        System.out.println("while loop ended");
+
+        if (!prev.containsKey(t)) {
+            return;
+        }
+
+        Point p = t;
+        proposal.add(p);
+        System.out.println("shortest path, point: x = " + p.x + ", y = " + p.y);
+        while (prev.containsKey(p)) {
+            p = prev.get(p);
+            proposal.add(p);
+            System.out.println("shortest path, point: x = " + p.x + ", y = " + p.y);
+        }
+
+        if (proposal.get(0).equals(target_loc)) {
+            Collections.reverse(proposal);
+        }
     }
 }
