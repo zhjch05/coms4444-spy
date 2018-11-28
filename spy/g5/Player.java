@@ -61,6 +61,7 @@ public class Player implements spy.sim.Player
         	SPY_ID = id;
         }
         this.isSpy = isSpy;
+        movePosition = new Point(0,0);
         moveToPlayer = false;
         // Initialize Maps
         this.records = new ArrayList<ArrayList<Record>>();
@@ -111,7 +112,7 @@ public class Player implements spy.sim.Player
     }
 
     public Point playerDetectedMove(){
-        Point ret = new Point(0,0);
+		Point ret = new Point(0,0);
         if(stay){
             stay = false;
             ret = null;
@@ -149,19 +150,21 @@ public class Player implements spy.sim.Player
 
             if((players != null)&&(flag==0))
             {
-                if(((p.x==current.x)&&(p.y==current.y))||(Math.abs(p.x-current.x)*Math.abs(p.y-current.y)>1)){
+                if(((p.x==current.x)&&(p.y==current.y))||(Math.abs(p.x-current.x)>1)||(Math.abs(p.y-current.y)>1)){
                 }
                 else{
                     playerDetect = true;
                     if(checkLoc(p,loc)){
                         stay = true;
                         moveToPlayer = false;
-                        movePosition = p;
+                        movePosition.x = p.x - current.x;
+                        movePosition.y = p.y - current.y;
                     }
                     else{
                         stay = false;
                         moveToPlayer = true;
-                        movePosition = p;
+                        movePosition.x = p.x - current.x;
+                        movePosition.y = p.y - current.y;
                     }
                 }
             }
@@ -470,7 +473,6 @@ public class Player implements spy.sim.Player
     // How much to shift to next location...
 	public Point getMove()
 	{
-	    /*        
         for (int i=justMet.size()-1;i>=0;i--){
             int a = meetTime.get(i);
             a = a - 1 ;
@@ -489,7 +491,7 @@ public class Player implements spy.sim.Player
             return bla;
         }
         
-*/
+
 		// You have a pre-determined path from BFS
 		// Just find your next move step!
 		if(!go_to.isEmpty())
