@@ -25,6 +25,10 @@ public class Player implements spy.sim.Player {
     private HashMap<Integer,ArrayList<Record>> recordsToldBy;
     private HashMap<Point,ArrayList<Record>> pointsToldBy;
     private List<Point> waterCells;
+    private List<Point> path;
+    private Boolean pathFound;
+    private Boolean packageFound;
+    private Boolean targetFound;
     
     private static final int EVANS_CONVENTION = 15;
     
@@ -41,6 +45,10 @@ public class Player implements spy.sim.Player {
         this.recordsToldBy = new HashMap<>();
         this.pointsToldBy = new HashMap<>();
         this.waterCells = waterCells;
+        this.path = new ArrayList<Point>();
+        this.pathFound = false;
+        this.packageFound = false;
+        this.targetFound = false;
         
         for (int i = 0; i < 100; i++){
         	ArrayList<Record> row = new ArrayList<Record>(100);
@@ -73,6 +81,7 @@ public class Player implements spy.sim.Player {
             
             for (Integer player: status.getPresentSoldiers()) {
             	if (lastPlayerSeen[player] + EVANS_CONVENTION < time) {
+            		tasks.add(new MeetPlayer(player, observations));
             		//tasks.addFirst(new MeetPlayer(player));
             		lastPlayerSeen[player] = time;
             	}
@@ -132,7 +141,25 @@ public class Player implements spy.sim.Player {
     
     public List<Point> proposePath()
     {
-        return null;
+
+
+        if (targetFound && packageFound){
+
+            if (pathFound){
+
+                return path;
+            } 
+            else{
+                //find shortest path
+                //bfs with all weights as 1
+                //PathFinder.search()
+                return null;
+            }
+        }
+
+        else{
+            return null;
+        }
     }
     
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
@@ -147,8 +174,19 @@ public class Player implements spy.sim.Player {
         return null;
     }
     
+    // Recieves the results (in the event that no path succeeds).
     public void receiveResults(HashMap<Integer, Integer> results){
 
+        //analyze why we did not win
+        //was a the spys doing or a bug in someones code
+        for (Map.Entry<Integer, Integer> result : results.entrySet())
+        {
+
+            ArrayList<Integer> resultKeys = new ArrayList<Integer>();
+            resultKeys.add(result.getKey());
+            // result.getKey()
+
+        }
 
         
     }
@@ -176,8 +214,12 @@ public class Player implements spy.sim.Player {
     	protected double getScore(int deltax, int deltay) {
     		if (waterCells.contains(new Point(loc.x + deltax, loc.y + deltay)))
     			return -1.0D;
+            //return negative score for location outside the map
+            if (loc.x + deltax < 0 || loc.x + deltax > 99 || loc.y + deltay < 0 || loc.y + deltay > 99 )
+                return -1.0D;
     		if (deltax == 0 && deltay == 0)
     			return -1.0D;
+
     		HashSet<Point> points = new HashSet<Point>();
     		if (deltax != 0) {
     			points.add(new Point(loc.x + 3 * deltax, loc.y - 1));
@@ -210,8 +252,11 @@ public class Player implements spy.sim.Player {
     					if (pointsToldBy.containsKey(new Point(p.x, p.y)))
     						++verifyCount;
     					else
-    						++exploreCount;
+    						exploreCount += 2;
     				}
+                    else{
+                        // --exploreCount;
+                    }
     			}
     			catch(Exception e) {
     				continue;
@@ -222,7 +267,8 @@ public class Player implements spy.sim.Player {
     		if (observations.get(loc.x).get(loc.y).getC() != 1 &&
     				observations.get(loc.x + deltax).get(loc.y + deltay).getC() == 1)
     			cost *= 2;
-    		return (exploreFactor * exploreCount + verifyFactor * verifyCount) / cost;
+    		// return (exploreFactor * exploreCount + verifyFactor * verifyCount) / cost;
+            return (exploreFactor * exploreCount ) / cost;
     	}
     	
     	@Override
