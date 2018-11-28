@@ -52,6 +52,13 @@ public class Player implements spy.sim.Player {
     private Integer time; // keeps track of elapsed time
     private Point unexplored; // the next unexplored point to visit
 
+    // Handles communicatin protocol
+    private HashMap<Point, CellStatus> lastObservation;	
+    private Boolean moveToSoldier;
+    private Boolean stayStill;
+    private HashMap<Integer, Point> nearbySoldiers;
+    private int idleCount = 4;
+	 
     private ArrayList<Point> wayPoints;
 
     private ArrayList<ArrayList<Record>> landInfo; // similar to 'records' but global for dry land claims
@@ -75,6 +82,7 @@ public class Player implements spy.sim.Player {
 
         this.wayPoints = new ArrayList<Point>();
 
+	lastObservation = new HashMap<Point, CellStatus>();
         // set status of water cells and set unknown cells to muddy
 
         for(int i=0;i<100;i++)
@@ -112,6 +120,9 @@ public class Player implements spy.sim.Player {
     // Adds observations to record
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
+	// Store the current observation for reference in next move command
+	lastObservation = statuses;
+
         this.loc = loc;
         visited[loc.x][loc.y] = 1;
 	// System.out.println("Called observe function =========");
@@ -430,17 +441,75 @@ public class Player implements spy.sim.Player {
 
     }
 
+    public String getOrientation(Point me, Point other){
 
+	String orientation = "same point";
+	int yDiff = me.y - other.y;
+	if (yDiff > 0) {
+	    orientation = "n";
+	} else if (yDiff <0 ){
+	    orientation = "s";
+	} else {
+	    orientation = "";
+	}
+
+	int xDiff = me.x - other.x;
+	if (xDiff > 0) {
+	    orientation = orientation + "e";
+	} else if (xDiff < 0) {
+	    orientation = orientation + "w";
+	}
+
+	return orientation;
+    }
     //Computes the next move    
     public Point getMove()
     {
 
+    stayStill = false;
+    moveToSoldier = false;
     time++;
     
 
     visited[loc.x][loc.y] = 1; //mark current location as visited
 	// System.out.println("Called getMove Command =======");
     Point move = new Point(-1000,-1000);
+
+
+    // Communication protocol, check if soldier is near
+    nearbySoldiers = new HashMap<Integer, Point>();
+    for (Point p: lastObservation.keySet()) {
+	CellStatus cs = lastObservation.get(p);
+	
+	Point posToMove = new Point(0, 0);
+	if ((cs.getPresentSoldiers().size() > 0) && (!p.equals(this.loc))) {
+		
+	    for (int peerID : cs.getPresentSoldiers()) {
+		nearbySoldiers.put(peerID, p);
+
+		String myOrientation = getOrientation(this.loc, p);		
+		System.out.println(this.id + " Spotted soldier: " + peerID + " at location " + p + "=================================");
+	        System.out.println("We are " + myOrientation + " of :" + peerID);
+		
+		posToMove = p;
+		if (myOrientation.equals("nw") || myOrientation.equals("n") || myOrientation.equals("w") ) {
+		    stayStill = true;
+		} else {
+		    moveToSoldier = true;
+		}
+	    }
+        }
+
+	if (moveToSoldier) {
+	    return getNextOnPath(this.loc, posToMove, false);
+	}
+	
+	if (stayStill && idleCount > 0) {
+	    idleCount--;
+	    return new Point(0, 0);		
+	}
+
+    }
 
     //
     // If target and package have been located, try to find a safe path between them. If found set found_path to true
