@@ -25,6 +25,7 @@ public class Player implements spy.sim.Player {
     private HashMap<Integer,ArrayList<Record>> recordsToldBy;
     private HashMap<Point,ArrayList<Record>> pointsToldBy;
     private List<Point> waterCells;
+    private List<Point> path;
     
     private static final int EVANS_CONVENTION = 15;
     
@@ -41,6 +42,7 @@ public class Player implements spy.sim.Player {
         this.recordsToldBy = new HashMap<>();
         this.pointsToldBy = new HashMap<>();
         this.waterCells = waterCells;
+        this.path = new ArrayList<Point>();
         
         for (int i = 0; i < 100; i++){
         	ArrayList<Record> row = new ArrayList<Record>(100);
@@ -133,7 +135,12 @@ public class Player implements spy.sim.Player {
     
     public List<Point> proposePath()
     {
-        return null;
+        if (path.size() > 0){
+            return path;
+        }
+        else{
+            return null;
+        }
     }
     
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
@@ -241,8 +248,8 @@ public class Player implements spy.sim.Player {
     		if (observations.get(loc.x).get(loc.y).getC() != 1 &&
     				observations.get(loc.x + deltax).get(loc.y + deltay).getC() == 1)
     			cost *= 2;
-    		return (exploreFactor * exploreCount + verifyFactor * verifyCount) / cost;
-            // return (exploreFactor * exploreCount ) / cost;
+    		// return (exploreFactor * exploreCount + verifyFactor * verifyCount) / cost;
+            return (exploreFactor * exploreCount ) / cost;
     	}
     	
     	@Override
