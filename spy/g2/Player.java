@@ -131,7 +131,7 @@ public class Player implements spy.sim.Player {
                         if (i == this.id){
                             continue;
                         }
-                        else if (i > this.id){
+                        else if (i > this.id && Met.get(i)==0){
                             // wait for five turns for it to get here
                             todo.add(0,new Point(0,0));
                             todo.add(0,new Point(0,0));
@@ -245,11 +245,6 @@ public class Player implements spy.sim.Player {
         System.out.printf("remaining cells: %d \n", ct);
         
         */
-        for (Integer i: Met.keySet()){
-            if (Met.get(i) > 0){
-                Met.put(i, Met.get(i)-1);
-            }
-        }
         
         if (todo.size() > 0){
             return move_to(todo.remove(todo.size()-1));
