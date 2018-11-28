@@ -154,6 +154,9 @@ public class Player implements spy.sim.Player {
     
     public List<Record> sendRecords(int id)
     {
+        if (Met.get(id) == 0){
+            return new ArrayList<Record>();
+        }
         ArrayList<Record> toSend = new ArrayList<Record>();
         for (ArrayList<Record> row : records)
         {
