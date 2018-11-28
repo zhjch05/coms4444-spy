@@ -226,8 +226,11 @@ public class Player implements spy.sim.Player {
     					if (pointsToldBy.containsKey(new Point(p.x, p.y)))
     						++verifyCount;
     					else
-    						++exploreCount;
+    						exploreCount += 2;
     				}
+                    else{
+                        // --exploreCount;
+                    }
     			}
     			catch(Exception e) {
     				continue;
@@ -239,6 +242,7 @@ public class Player implements spy.sim.Player {
     				observations.get(loc.x + deltax).get(loc.y + deltay).getC() == 1)
     			cost *= 2;
     		return (exploreFactor * exploreCount + verifyFactor * verifyCount) / cost;
+            // return (exploreFactor * exploreCount ) / cost;
     	}
     	
     	@Override
