@@ -8,7 +8,7 @@ import java.util.Random;
 
 import spy.g1.Edge;
 
-import javafx.scene.shape.MoveTo;
+//import javafx.scene.shape.MoveTo;
 
 import java.util.HashSet;
 import java.util.HashMap;
@@ -30,13 +30,11 @@ public class Player implements spy.sim.Player {
     private HashSet water = new HashSet();
     private HashSet existingEdges = new HashSet();
     private Dijkstra djk = new Dijkstra();
-    private Boolean findPackage;
-    private Boolean findTarget;
+
     private Point packageLocation;
     private Point targetLocation;
     private int moveMode;
-    private int state;
-    private boolean targetFound, packageFound;
+    private boolean findPackage, findTarget;
 
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
@@ -75,180 +73,66 @@ public class Player implements spy.sim.Player {
             this.map.add(r);
         }
         for (Vertex source : djk.getVertices()){
-          // construct edge weights -- assume muddy
-          setIncomingEdges(source, true);
+            // construct edge weights -- assume muddy
+            setIncomingEdges(source, true);
         }
 
         // doesn't know package location or target location at beginning
         this.findPackage = false;
         this.findTarget = false;
         this.moveMode = 0;
-        // moveMode = 0, did not find package or target
-        // moveMode = 1/2, know package location, not start/start from package location
-        // moveMode = 3/4, know target location, not start/start from target location
-
-        // for (Vertex source : djk.getVertices()){
-
-        //   //Construct edge weights as if each land cell is muddy
-        //   int i = source.x;
-        //   int j = source.y;
-        //   int[] northwest = {i-1, j+1};
-        //   if (i > 0 && j < 99){
-        //     if(!water.contains(northwest)){
-        //       String name = Integer.toString(i) + "," + Integer.toString(j);
-        //       Vertex target = djk.getVertex(name);
-        //       Vertex[] key1 = {source, target};
-        //       Vertex[] key2 = {target, source};
-        //       if(! (existingEdges.contains(key1) || existingEdges.contains(key2)) ){
-        //         djk.addUndirectedEdge(source.name, target.name, 6);
-        //         existingEdges.add(key1);
-        //         existingEdges.add(key2);
-        //       }
-        //     }
-        //   }
-          // int[] west = {i-1, j};
-          // if (i > 0){
-          //   if(!water.contains(west)){
-          //     String name = Integer.toString(i) + "," + Integer.toString(j);
-          //     Vertex target = djk.getVertex(name);
-          //     Vertex[] key1 = {source, target};
-          //     Vertex[] key2 = {target, source};
-          //     if(! (existingEdges.contains(key1) || existingEdges.contains(key2)) ){
-          //       djk.addUndirectedEdge(source.name, target.name, 4);
-          //       existingEdges.add(key1);
-          //       existingEdges.add(key2);
-          //     }
-          //   }
-          // }
-          // int[] southwest = {i-1, j-1};
-          // if (i > 0 && j > 0){
-          //   if(!water.contains(southwest)){
-          //     String name = Integer.toString(i) + "," + Integer.toString(j);
-          //     Vertex target = djk.getVertex(name);
-          //     Vertex[] key1 = {source, target};
-          //     Vertex[] key2 = {target, source};
-          //     if(! (existingEdges.contains(key1) || existingEdges.contains(key2)) ){
-          //       djk.addUndirectedEdge(source.name, target.name, 6);
-          //       existingEdges.add(key1);
-          //       existingEdges.add(key2);
-          //     }
-          //   }
-          // }
-          // int[] north = {i, j+1};
-          // if (j < 99){
-          //   if(!water.contains(north)){
-          //     String name = Integer.toString(i) + "," + Integer.toString(j);
-          //     Vertex target = djk.getVertex(name);
-          //     Vertex[] key1 = {source, target};
-          //     Vertex[] key2 = {target, source};
-          //     if(! (existingEdges.contains(key1) || existingEdges.contains(key2)) ){
-          //       djk.addUndirectedEdge(source.name, target.name, 4);
-          //       existingEdges.add(key1);
-          //       existingEdges.add(key2);
-          //     }
-          //   }
-          // }
-          // int[] south = {i, j-1};
-          // if (j > 0){
-          //   if(!water.contains(south)){
-          //     String name = Integer.toString(i) + "," + Integer.toString(j);
-          //     Vertex target = djk.getVertex(name);
-          //     Vertex[] key1 = {source, target};
-          //     Vertex[] key2 = {target, source};
-          //     if(! (existingEdges.contains(key1) || existingEdges.contains(key2)) ){
-          //       djk.addUndirectedEdge(source.name, target.name, 4);
-          //       existingEdges.add(key1);
-          //       existingEdges.add(key2);
-          //     }
-          //   }
-          // }
-          // int[] northeast = {i+1, j+1};
-          // if (i < 99 && j < 99){
-          //   if(!water.contains(northeast)){
-          //     String name = Integer.toString(i) + "," + Integer.toString(j);
-          //     Vertex target = djk.getVertex(name);
-          //     Vertex[] key1 = {source, target};
-          //     Vertex[] key2 = {target, source};
-          //     if(! (existingEdges.contains(key1) || existingEdges.contains(key2)) ){
-          //       djk.addUndirectedEdge(source.name, target.name, 6);
-          //       existingEdges.add(key1);
-          //       existingEdges.add(key2);
-          //     }
-          //   }
-          // }
-          // int[] east = {i+1, j};
-          // if (i < 99){
-          //   if(!water.contains(east)){
-          //     String name = Integer.toString(i) + "," + Integer.toString(j);
-          //     Vertex target = djk.getVertex(name);
-          //     Vertex[] key1 = {source, target};
-          //     Vertex[] key2 = {target, source};
-          //     if(! (existingEdges.contains(key1) || existingEdges.contains(key2)) ){
-          //       djk.addUndirectedEdge(source.name, target.name, 4);
-        //         existingEdges.add(key1);
-        //         existingEdges.add(key2);
-        //       }
-        //     }
-        //   }
-        //   int[] southeast = {i+1, j-1};
-        //   if (i < 99 && j < 99){
-        //     if(!water.contains(southeast)){
-        //       String name = Integer.toString(i) + "," + Integer.toString(j);
-        //       Vertex target = djk.getVertex(name);
-        //       Vertex[] key1 = {source, target};
-        //       Vertex[] key2 = {target, source};
-        //       if(! (existingEdges.contains(key1) || existingEdges.contains(key2)) ){
-        //         djk.addUndirectedEdge(source.name, target.name, 6);
-        //         existingEdges.add(key1);
-        //         existingEdges.add(key2);
-        //       }
-        //     }
-        //   }
-        // }
-
+        // moveMode = 0, initial exploration
+        // moveMode = 1, saw package or target
+        // moveMode = 2, reached package or target -- looking for other one
+        // moveMode = 3, saw the other one -- trying to reach target
+        // moveMode = 4, saw the other one -- go to package to propose path
+        // moveMode = 5, done -- just stay put
     }
 
     private void setIncomingEdges(Vertex source, boolean isMuddy) {
-      int x = source.x;
-      int y = source.y;
-      int[][] adjacent = {
-          {x-1,y-1},
-          {x-1,y},
-          {x-1,y+1},
-          {x,y+1},
-          {x+1,y+1},
-          {x+1,y},
-          {x+1,y-1},
-          {x,y-1}
-      };
+        int x = source.x;
+        int y = source.y;
+        int[][] adjacent = {
+            {x-1,y-1},
+            {x-1,y},
+            {x-1,y+1},
+            {x,y+1},
+            {x+1,y+1},
+            {x+1,y},
+            {x+1,y-1},
+            {x,y-1}
+        };
 
-      for (int k = 0; k < adjacent.length; ++k) {
-          int i = adjacent[k][0], j = adjacent[k][1];
+        for (int k = 0; k < adjacent.length; ++k) {
+            int i = adjacent[k][0], j = adjacent[k][1];
 
-          if(i>=0 && i<=99 && j>=0 && j<=99 && !water.contains(adjacent[k])) {
-              String name = Integer.toString(i) + "," + Integer.toString(j);
-              Vertex target = djk.getVertex(name);
-              Vertex[] key = {target, source};
-              double weight = (k%2==0) ? 3 : 2;
-              if (isMuddy) {
-                if (state==0) {weight *= 2;}
-                if (state==1) {weight = Double.POSITIVE_INFINITY;}
-              }
-              djk.setEdge(target.name, source.name, weight);
-              //existingEdges.add(key);
-          }
-      }
+            if(i>=0 && i<=99 && j>=0 && j<=99 && !water.contains(adjacent[k])) {
+                String name = Integer.toString(i) + "," + Integer.toString(j);
+                Vertex target = djk.getVertex(name);
+                Vertex[] key = {target, source};
+                double weight = (k%2==0) ? 3 : 2;
+                if (isMuddy) {
+                  if (moveMode<2) {weight *= 2;}
+                  if (moveMode>=2) {weight = Double.POSITIVE_INFINITY;}
+                }
+                djk.setEdge(target.name, source.name, weight);
+                //existingEdges.add(key);
+            }
+        }
     }
 
-
+    // updates the state of the player based on surroundings
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
+        // update location
         this.loc = loc;
 
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
             Point p = entry.getKey();
             CellStatus status = entry.getValue();
+
+            // record the data learned
             Record record = records.get(p.x).get(p.y);
             if (record == null || record.getC() != status.getC() || record.getPT() != status.getPT())
             {
@@ -256,44 +140,79 @@ public class Player implements spy.sim.Player {
                 record = new Record(p, status.getC(), status.getPT(), observations);
                 records.get(p.x).set(p.y, record);
             }
-            if (status.getPT() == 1){
-               this.findPackage = true;
-               this.moveMode = 2; // now at the package location
-               this.packageLocation = p;
-            }
-            if (status.getPT() == 2){
-              findTarget = true;
-              this.moveMode = 4; // now at the target location
-              this.targetLocation = p;
-            }
             map.get(p.x).set(p.y, new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>()));
             record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
+
+            // check tile status
+            if(record.getPT() != 0) {
+                switch(moveMode) {
+                    case 0:
+                        moveMode = 1; // reach the first special tile
+                        break;
+                    case 2:
+                        if(findPackage && record.getPT()==2) {
+                            moveMode = 3;
+                            // found package first and just discorvered target
+                            // move to target
+                        } else if(findTarget && record.getPT()==1) {
+                            moveMode = 4;
+                            // found target first and just discovered package
+                            // just go to package and we're done
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                if(record.getPT()==1) {
+                    this.findPackage = true;
+                    this.packageLocation = p;
+                } else {
+                    this.findTarget = true;
+                    this.targetLocation = p;
+                }
+            }
+
+            // update the graph to reflect new information
             String name = Integer.toString(p.x) + "," + Integer.toString(p.y);
             Vertex v = djk.getVertex(name);
             v.explored = true;
             setIncomingEdges(v, record.getC()==1);
-            
-            if(record.getPT() != 0) {
-                if(state==0) {
-                    // switch to state 1
-                    state = 1;
-                    for (Vertex source : djk.getVertices()){
-                        // set all muddy edges to infinite weight
-                        Record r = records.get(source.x).get(source.y);
-                        if(r!=null && r.getC()==1) {
-                            setIncomingEdges(source, true);
+
+            // check on location
+            boolean atPackage = this.loc.equals(packageLocation);
+            boolean atTarget = this.loc.equals(targetLocation);
+            if(atPackage || atTarget) {
+                switch(moveMode) {
+                    case 1:
+                        moveMode = 2;
+                        // update graph so all muddy edges are infinite
+                        for (Vertex source : djk.getVertices()){
+                            Record r = records.get(source.x).get(source.y);
+                            if(r!=null && r.getC()==1) {
+                                setIncomingEdges(source, true);
+                            }
                         }
-                    }
-                }
-
-                if(record.getPT() == 1) {packageFound=true;}
-                if(record.getPT() == 2) {targetFound=true;}
-
-                if(packageFound && targetFound) {
-                    state = 2;
+                        break;
+                    case 3:
+                        if(atTarget) {moveMode = 4;}
+                        break;
+                    case 4:
+                        if(atPackage) {moveMode = 5;}
+                        break;
+                    default:
+                        break;
                 }
             }
-          }
+        }
+    }
+
+    private void updateMoveMode(int value) {
+        this.moveMode = value;
+        if (this.moveMode == 2) {
+            // set all muddy edges to infinite weight
+
+        }
     }
 
     public List<Record> sendRecords(int id)
@@ -337,11 +256,50 @@ public class Player implements spy.sim.Player {
 
     }
 
+    // runs algorithms to decide which move to make based on the current state
     public Point getMove()
-    {  
-      Point currentLoc = this.loc;
-      Point nextLoc = currentLoc;
-      visited.put(currentLoc, true);
+    {
+        List<Edge> curPath;
+        String source = Integer.toString(loc.x) + "," + Integer.toString(loc.y);
+        String target;
+        switch(moveMode) {
+            case 0:
+                curPath = djk.getShortestPathToUnexplored(source);
+                break;
+
+            case 1:
+                if(findPackage) {
+                    target = Integer.toString(packageLocation.x) + "," + Integer.toString(packageLocation.y);
+                } else {
+                    target = Integer.toString(targetLocation.x) + "," + Integer.toString(targetLocation.y);
+                }
+                curPath = djk.getDijkstraPath(source, target);
+                break;
+
+            case 2:
+                curPath = djk.getShortestPathToUnexplored(source);
+                break;
+
+            case 3:
+                target = Integer.toString(targetLocation.x) + "," + Integer.toString(targetLocation.y);
+                curPath = djk.getDijkstraPath(source, target);
+                break;
+
+            case 4:
+                target = Integer.toString(packageLocation.x) + "," + Integer.toString(packageLocation.y);
+                curPath = djk.getDijkstraPath(source, target);
+                break;
+
+            default:
+                return new Point(0,0);
+        }
+
+        Vertex nextMove = curPath.get(0).target;
+        return new Point(nextMove.x - loc.x, nextMove.y - loc.y);
+
+      // Point currentLoc = this.loc;
+      // Point nextLoc = currentLoc;
+      // visited.put(currentLoc, true);
       // int currentx = 0;
       // int currenty = 0;
       // int packageX = 0;
@@ -369,36 +327,36 @@ public class Player implements spy.sim.Player {
       //   }
       // }
       
-      if (findPackage == true || findTarget == true){
-        // know packageLocation from communication
-        if ((findPackage == true) && (this.moveMode == 1)){
-          // go to package location
-          return move(packageLocation);
-        }
-        // know packageLocation from observation, start from observation
-        else if ((findPackage == true) && (this.moveMode == 2)){
-          // System.out.println("222222222");
-          nextLoc = findNextAvoid(this.loc);
-          visited.put(new Point(nextLoc.x+currentLoc.x,nextLoc.y+currentLoc.y), true);
-          return nextLoc;
-        }
-        // know targetLocation from communication
-        else if ((findPackage != true) && (this.moveMode == 3)){
-            // go to target location
-            return move(targetLocation);
-        }
-        // know targetLocation from observation
-        else{
-          nextLoc = findNextAvoid(this.loc);
-          visited.put(new Point(nextLoc.x+currentLoc.x,nextLoc.y+currentLoc.y), true);
-          return nextLoc;
-        }
-      }
-      // if didn't know either target location nor package location
-      nextLoc = findNext(currentLoc);
-      visited.put(new Point(nextLoc.x+currentLoc.x,nextLoc.y+currentLoc.y), true);
-      // System.out.println("nextLoc"+nextLoc);
-      return nextLoc;
+      // if (findPackage == true || findTarget == true){
+      //   // know packageLocation from communication
+      //   if ((findPackage == true) && (this.moveMode == 1)){
+      //     // go to package location
+      //     return move(packageLocation);
+      //   }
+      //   // know packageLocation from observation, start from observation
+      //   else if ((findPackage == true) && (this.moveMode == 2)){
+      //     // System.out.println("222222222");
+      //     nextLoc = findNextAvoid(this.loc);
+      //     visited.put(new Point(nextLoc.x+currentLoc.x,nextLoc.y+currentLoc.y), true);
+      //     return nextLoc;
+      //   }
+      //   // know targetLocation from communication
+      //   else if ((findPackage != true) && (this.moveMode == 3)){
+      //       // go to target location
+      //       return move(targetLocation);
+      //   }
+      //   // know targetLocation from observation
+      //   else{
+      //     nextLoc = findNextAvoid(this.loc);
+      //     visited.put(new Point(nextLoc.x+currentLoc.x,nextLoc.y+currentLoc.y), true);
+      //     return nextLoc;
+      //   }
+      // }
+      // // if didn't know either target location nor package location
+      // nextLoc = findNext(currentLoc);
+      // visited.put(new Point(nextLoc.x+currentLoc.x,nextLoc.y+currentLoc.y), true);
+      // // System.out.println("nextLoc"+nextLoc);
+      // return nextLoc;
     }
 
     public Point move(Point target)

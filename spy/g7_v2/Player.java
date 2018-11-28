@@ -1,4 +1,4 @@
-package spy.g7;
+package spy.g7_v2;
 
 import java.util.List;
 import java.util.Collections;
@@ -41,11 +41,7 @@ public class Player implements spy.sim.Player {
     private boolean stayPut;
     private int stayPutTime = 0;
     private Point soldierToMoveTo;
-    private boolean communicating = false;
-    private boolean sentRecord = false;
-    private boolean receiveRecord = false;
-    private int step = 1;
-    private int sendstep = 1;
+
     class PathTime{
         Integer id;
         Integer time;
@@ -166,39 +162,27 @@ public class Player implements spy.sim.Player {
             }
 
             // if we notice soldiers, store the location of the soldier with the smallest id
-            if (!communicating) {
-                if (status.getPresentSoldiers().size() > 0) {
-                    this.soldierIds = status.getPresentSoldiers();
-                    Point min_point = p;
-                    int smallest_id = Integer.MAX_VALUE;
-                    for (int soldierId : soldierIds) {
-                        if (soldierId == this.id) {
-                            // System.out.println("in if statement");
-                            continue;
-                        }
-                        else if (soldierId < smallest_id) {
-                            smallest_id = soldierId;
-                            min_point = p;
-                        }
-                        this.nearbySoldiers = true;
-                        this.soldierToMoveTo = min_point;
+            if (status.getPresentSoldiers().size() > 0) {
+                this.soldierIds = status.getPresentSoldiers();
+                Point min_point = p;
+                int smallest_id = Integer.MAX_VALUE;
+                for (int soldierId : soldierIds) {
+                    if (soldierId == this.id) {
+                        // System.out.println("in if statement");
+                        continue;
                     }
+                    else if (soldierId < smallest_id) {
+                        smallest_id = soldierId;
+                        min_point = p;
+                    }
+                    this.soldierToMoveTo = min_point;
+                    this.nearbySoldiers = true;
                 }
             }
-            
 
             List<Record> rl = new ArrayList<>();
             rl.add(record);
-            if(!trustRecords.containsKey(p)){
-                trustRecords.put(p, rl);
-            }else{
-                if(!trustRecords.get(p).contains(record)){
-                    rl = trustRecords.get(p);
-                    rl.add(record);
-                    trustRecords.put(p, rl);
-                }
-            }
-
+            trustRecords.put(p, rl);
         }
 
     }
@@ -221,44 +205,34 @@ public class Player implements spy.sim.Player {
 
     public List<Record> sendRecords(int id)
     {
-        communicating = true;
         List<Record> send = new ArrayList<Record>();
         for(List<Record> l :  trustRecords.values()){
-                for(Record r:l){
-                    if(r.getObservations().get(r.getObservations().size()-1).getID()!=this.id)
-                        r.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
-                    else {
-                        r.getObservations().remove(r.getObservations().size()-1);
-                        r.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
-                    }
+            for(Record r:l){
+                if(r.getObservations().get(r.getObservations().size()-1).getID()!=this.id)
+                    r.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
+                else {
+                    r.getObservations().remove(r.getObservations().size()-1);
+                    r.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
                 }
-                send.addAll(l);
             }
-            // after sending all records, reset nearbySoldiers
+            send.addAll(l);
+        }
+        // after sending all records, reset nearbySoldiers
         this.nearbySoldiers = false;
         return send;
-
     }
 
     public void receiveRecords(int id, List<Record> records)
     {
-        if(!receiveRecord){
-            for(Record r: records){
-                if(!trustRecords.containsKey(r.getLoc())){
-                    List<Record> rl = new ArrayList<>();
-                    rl.add(r);
-                    trustRecords.put(r.getLoc(), rl);
-                }else {
-                    List<Record> rl = trustRecords.get(r.getLoc());
-                    if(trustRecords.get(r.getLoc()).size() < 100 && r.getObservations().size()<20 && !trustRecords.get(r.getLoc()).contains(r))
-                       rl.add(r);
-                }
-                receiveRecord = true;
+        for(Record r: records){
+            if(!trustRecords.containsKey(r.getLoc())){
+                List<Record> rl = new ArrayList<>();
+                rl.add(r);
+                trustRecords.put(r.getLoc(), rl);
+            }else {
+                List<Record> rl = trustRecords.get(r.getLoc());
+                rl.add(r);
             }
-
-        }else{
-           step = step+1;
-           if(step%10 == 0) receiveRecord = false;
         }
 //        for(Record r:records){
 //            List<Record> l = new ArrayList<>();
@@ -308,9 +282,7 @@ public class Player implements spy.sim.Player {
 
     public List<Point> proposePath()
     {
-
         if(!package_found||!target_found)  return null;
-        System.out.println("propose now");
         List<List<Point>> result = new ArrayList<>();
         List<Point> path = new ArrayList<>();
         path.add(package_loc);
@@ -319,13 +291,11 @@ public class Player implements spy.sim.Player {
         backtrack(result, path, visited, package_loc, target_loc);
         if(result.size()==0) return null;
         Collections.sort(result, (x, y) -> calculateTime(x)-calculateTime(y));
-        System.out.println(result.get(0).size());
         return result.get(0);
 
     }
 
     private void backtrack(List<List<Point>> result, List<Point> path, List<Point> visited, Point current, Point target){
-       // System.out.println(visited.size());
         if(current.equals(target)){
             result.add(path);
             return;
@@ -421,7 +391,7 @@ public class Player implements spy.sim.Player {
     
     public Point getMove()
     {
-        System.out.println(trustRecords.size()+"  "+id);
+
         // if we observe soldiers nearby
         if (nearbySoldiers) {
             System.out.println("there are nearby soldiers!");
@@ -452,10 +422,10 @@ public class Player implements spy.sim.Player {
 
         if (stayPut) {
             System.out.println(this.id + " is stopping for a while");
-            // don't move for 6 time steps
-            // because people need time to move to us, also need to 
+            // don't move for 4 time steps.
+            // 4 because people need time to move to us (1 time step), also need to 
             // make sure they move away from sight before resetting 
-            if (stayPutTime < 6) {
+            if (stayPutTime < 4) {
                 stayPutTime += 1;
                 return new Point(0, 0);
             }
@@ -464,7 +434,6 @@ public class Player implements spy.sim.Player {
             stayPutTime = 0;
             soldierToMoveTo = null;
             nearbySoldiers = false;
-            if(sendstep%10 == 0) communicating = false;
         }
 
 
