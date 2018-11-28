@@ -158,7 +158,7 @@ public class Player implements spy.sim.Player {
             Vertex v = djk.getVertex(name);
             v.explored = true;
             setIncomingEdges(v, record.getC()==1);
-            
+
             if(record.getPT() != 0) {
                 if(state==0) {
                     // switch to state 1
@@ -205,7 +205,16 @@ public class Player implements spy.sim.Player {
 
     public List<Point> proposePath()
     {
-        return null;
+        String packageVertex = Integer.toString(packageLocation.x) + "," + Integer.toString(packageLocation.y);
+        String targetVertex = Integer.toString(targetLocation.x) + "," + Integer.toString(targetLocation.y);
+        List<Edge> path = djk.getDijkstraPath(packageVertex, targetVertex);
+        List<Point> proposal = new ArrayList<Point>;
+        for(Edge e: path){
+          Vertex next = e.target;
+          Point nextPoint = new Point(next.x, next.y);
+          proposal.add(nextPoint);
+        }
+        return proposal;
     }
 
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
@@ -224,7 +233,7 @@ public class Player implements spy.sim.Player {
     }
 
     public Point getMove()
-    {  
+    {
       Point currentLoc = this.loc;
       Point nextLoc = currentLoc;
       visited.put(currentLoc, true);
@@ -248,13 +257,13 @@ public class Player implements spy.sim.Player {
       //   packageLoc = "packageX,packageY";
       //   targetLoc = "targetX,targetY";
       //   // String targetLoc = {targetX,targetY};
-        
+
       //   List<Edge> path = djk.getDijkstraPath(packageLoc, targetLoc);
       //   if(!path.isEmpty()){
       //     return move(packageLocation);
       //   }
       // }
-      
+
       if (findPackage == true || findTarget == true){
         // know packageLocation from communication
         if ((findPackage == true) && (this.moveMode == 1)){
@@ -373,7 +382,7 @@ public class Player implements spy.sim.Player {
                 }
               }
             }
-            
+
             }
           }
       }
@@ -467,7 +476,7 @@ public class Player implements spy.sim.Player {
       }
       return toReturn;
     }
-  
+
   public Point find_unknown(Point loc){
       int minimum = 200;
       int tx = 0;
