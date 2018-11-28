@@ -180,12 +180,12 @@ public class Player implements spy.sim.Player
             // Package Found!
             if(type == 1)
             {
-                package_loc = loc;
+                package_loc = p;
             }
             // Target found
             else if(type == 2)
             {
-            	target_loc = loc;
+            	target_loc = p;
             }
             // 0 just means not special tile...
             
@@ -348,12 +348,24 @@ public class Player implements spy.sim.Player
     // Gets a proposed path from a player at the package
     public List<Point> proposePath()
     {
+	if(target_loc == null || package_loc == null){
+	    return null;
+	}
+	
 		MazeSolver solution = new MazeSolver(package_loc, target_loc, truth_table);
 		solution.solve();
-    	if(isSpy)
-    	{
+		//		System.out.print("proposing path: ");
+		//for(Point p :solution.path){
+		//  System.out.printf("(%d,%d), ", p.x, p.y);
+		    
+		//}
+		//System.out.println()
+
+
+       
     		// give wrong direction somehow...
-    		return solution.path;
+	if(isSpy){
+  		return solution.path;
     	}
     	else
     	{
@@ -380,7 +392,9 @@ public class Player implements spy.sim.Player
     			// If a lie is found, Do NOT vote. Otherwise, vote for it!
     			if(is_valid_path(proposed_path))
     			{
-    				vote_for.add(i);
+			    if (vote_for.size() == 0){
+			    vote_for.add(i);
+			    }
     			}
     			else
     			{
@@ -447,7 +461,7 @@ public class Player implements spy.sim.Player
     		Integer num_votes = results.get(i);
     		if(num_votes != null)
     		{
-    			System.out.println("G"+i+ " got " + num_votes + " votes");
+		    //			System.out.println("G"+i+ " got " + num_votes + " votes");
     		}
     	}
     }
@@ -456,7 +470,7 @@ public class Player implements spy.sim.Player
     // How much to shift to next location...
 	public Point getMove()
 	{
-        
+	    /*        
         for (int i=justMet.size()-1;i>=0;i--){
             int a = meetTime.get(i);
             a = a - 1 ;
@@ -475,7 +489,7 @@ public class Player implements spy.sim.Player
             return bla;
         }
         
-
+*/
 		// You have a pre-determined path from BFS
 		// Just find your next move step!
 		if(!go_to.isEmpty())
@@ -497,6 +511,7 @@ public class Player implements spy.sim.Player
 		// TODO: modify this movement function so that it successfully navigates around water instead of getting stuck
 		if(target_loc != null && package_loc != null)
 		{
+		    //  System.out.printf("Package at %d, %d, target at %d, %d\n", package_loc.x, package_loc.y, target_loc.x, target_loc.y);
 		    //			if(target_loc.x > current.x)
 		    //	{
 		    //		--x;
@@ -525,135 +540,74 @@ public class Player implements spy.sim.Player
 		    //		++x;
 		    //		return new Point(x, y);
 		    //	}
-		    MazeSolver moveToPackage = new MazeSolver(current, target_loc, truth_table);
+		    MazeSolver moveToPackage = new MazeSolver(current, package_loc, truth_table);
+		    //		    System.out.printf("trying to move to %d, %d from %d, %d if we have a final path", package_loc.x, package_loc.y, current.x, current.y);
 		    moveToPackage.solve();
-		    if(moveToPackage.path != null){
+
+		    MazeSolver finalPath = new MazeSolver(package_loc, target_loc, truth_table);
+		    if(moveToPackage.path != null && finalPath != null){
 			go_to = moveToPackage.path;
+			//	System.out.println("set path to package");
 			return new Point(0, 0);
 		    }
+		    //System.out.println("no package path found\n");
 		}
 		else 
 		{
 			//System.out.printf("At point %d, %d\n", current.x, current.y);
-			//TODO: modify this to navigate over diagonal bridges
-			if(package_loc != null || target_loc != null)
+
+		    //System.out.println("Target FOUND");
+		    int possible_y = current.y;
+		    int possible_x = current.x;
+		    while (possible_y+1 < SIZE && truth_table.get(current.x).get(possible_y).getC() == 0) {
+			possible_y++;
+			if (truth_table.get(current.x).get(possible_y) == null)
+			    {
+				return new Point(0, 1);
+			    }
+		    }
+		    while (possible_x+1 < SIZE && truth_table.get(possible_x).get(current.y).getC() == 0)
 			{
-				//System.out.println("Target FOUND");
-				int possible_y = current.y;
-				int possible_x = current.x;
-				while (possible_y+1 < SIZE 
-						&& truth_table.get(current.x).get(possible_y).getC() != 2 && truth_table.get(current.x).get(possible_y).getC() != 1)
+			    possible_x++;
+			    if (truth_table.get(possible_x).get(current.y) == null)
 				{
-					possible_y++;
-					if (truth_table.get(current.x).get(possible_y) == null)
-					{
-						return new Point(0, 1);
-					}
-				}
-				possible_y = current.y;
-				possible_x = current.x;
-				while (possible_x+1 < SIZE 
-						&& truth_table.get(possible_x).get(current.y).getC() != 2 && truth_table.get(possible_x).get(current.y).getC() != 1)
-				{
-					possible_x++;
-					if (truth_table.get(possible_x).get(current.y) == null)
-					{
-						return new Point(1, 0);
-					}
-				}
-				possible_y = current.y;
-				possible_x = current.x;
-				while (possible_y-1 >= 0 
-						&& truth_table.get(current.x).get(possible_y).getC() != 2 && truth_table.get(current.x).get(possible_y).getC() != 1)
-				{
-					possible_y--;
-					if (truth_table.get(current.x).get(possible_y) == null)
-					{
-						return new Point(0, -1);
-					}
-				}
-				possible_y = current.y;
-				possible_x = current.x;
-				while (possible_x-1 >= 0 && truth_table.get(possible_x).get(current.y).getC() != 2 && truth_table.get(possible_x).get(current.y).getC() != 1)
-				{
-					possible_x--;
-					if (truth_table.get(possible_x).get(current.y) == null)
-					{
-						return new Point(-1, 0);
-					}
-				}
-				MazeSolver sweeper = new MazeSolver(current, current, truth_table);
-				List<Point> spath = sweeper.sweep(current, truth_table);
-				if (spath != null) {
-				    go_to = spath;
-				    return new Point(0, 0);
-				}
-			} 
-			else 
-			{ 
-				// target has not been found
-				// System.out.println("Target unfound");
-				int possible_y = current.y;
-				int possible_x = current.x;
-				while (possible_y+1 < SIZE && truth_table.get(current.x).get(possible_y).getC() != 2)
-				{
-					possible_y++;
-					if (truth_table.get(current.x).get(possible_y) == null)
-					{
-						//System.out.printf("should return %d, %d\n", current.x, current.y+1);
-						return new Point(0, 1);
-					}
-				}
-				possible_y = current.y;
-				possible_x = current.x;
-				while (possible_x+1 < SIZE && truth_table.get(possible_x).get(current.y).getC() != 2)
-				{
-					possible_x++;
-					if (truth_table.get(possible_x).get(current.y) == null)
-					{
-						///System.out.printf("should return %d, %d\n", current.x+1, current.y);
-						return new Point(1, 0);
-					}
-				}
-				possible_y = current.y;
-				possible_x = current.x;
-				while (possible_y-1 >= 0 && truth_table.get(current.x).get(possible_y).getC() != 2)
-				{
-					possible_y--;
-					if (truth_table.get(current.x).get(possible_y) == null)
-					{
-						//System.out.printf("should return %d, %d\n", current.x, current.y-1);
-						return new Point(0, -1);
-					}
-				}
-				possible_y = current.y;
-				possible_x = current.x;
-				while (possible_x-1 >= 0 && truth_table.get(possible_x).get(current.y).getC() != 2)
-				{
-					possible_x--;
-					if (truth_table.get(possible_x).get(current.y) == null)
-					{
-						//System.out.printf("should return %d, %d\n", current.x-1, current.y);
-						return new Point(-1, 0);
-					}
-				}
-
-				MazeSolver sweeper = new MazeSolver(current, current, truth_table);
-				List<Point> swpath = sweeper.sweep(current, truth_table);
-				if (swpath != null) {
-				    go_to = swpath;
-				    return new Point(0, 0);
-				}
-
-				MazeSolver explorer = new MazeSolver(current, current, truth_table);
-				List<Point> epath = sweeper.explore(current, truth_table);
-				if (epath != null) {
-				    go_to = epath;
-				    return new Point(0, 0);
+				    return new Point(1, 0);
 				}
 			}
+		    possible_y = current.y;
+		    possible_x = current.x;
+		    while (possible_y-1 >= 0 && truth_table.get(current.x).get(possible_y).getC() == 0)
+			{
+			    possible_y--;
+			    if (truth_table.get(current.x).get(possible_y) == null)
+				{
+				    return new Point(0, -1);
+				}
+			}
+		    possible_y = current.y;
+		    possible_x = current.x;
+		    while (possible_x-1 >= 0 && truth_table.get(possible_x).get(current.y).getC() == 0)
+			{
+			    possible_x--;
+			    if (truth_table.get(possible_x).get(current.y) == null)
+				{
+				    return new Point(-1, 0);
+				}
+			}
+		    MazeSolver sweeper = new MazeSolver(current, current, truth_table);
+		    List<Point> spath = sweeper.sweep(current, truth_table);
+		    if (spath != null) {
+			go_to = spath;
+			return new Point(0, 0);
+		    }
+		    List<Point> epath = sweeper.explore(current, truth_table);
+		    if (epath != null) {
+			go_to = epath;
+			return new Point(0, 0);
+		    }
+		    
 		}
-		System.out.println("can't figure out how to move");
+		//		System.out.printf("stuck at %d, %d\n", current.x, current.y);
 		return new Point(0,0);
 	}
 	
