@@ -119,7 +119,6 @@ public class Player implements spy.sim.Player {
                 graph[p.x][p.y] = 1;
             }
             else if (status.getPT() == 2) {
-
                 System.out.printf("%d Target Found\n",id);
                 this.target_found = true;
                 this.target_loc = p; 
@@ -251,11 +250,6 @@ public class Player implements spy.sim.Player {
         
         if (todo.size() > 0){
             return move_to(todo.remove(todo.size()-1));
-        }
-
-        if (loc.x == 2 && loc.y == 2){
-            System.out.println(target_found);
-            System.out.println(package_found);
         }
 
         if (package_found && target_found){
