@@ -26,6 +26,9 @@ public class Player implements spy.sim.Player {
     private HashMap<Point,ArrayList<Record>> pointsToldBy;
     private List<Point> waterCells;
     private List<Point> path;
+    private Boolean pathFound;
+    private Boolean packageFound;
+    private Boolean targetFound;
     
     private static final int EVANS_CONVENTION = 15;
     
@@ -43,6 +46,9 @@ public class Player implements spy.sim.Player {
         this.pointsToldBy = new HashMap<>();
         this.waterCells = waterCells;
         this.path = new ArrayList<Point>();
+        this.pathFound = false;
+        this.packageFound = false;
+        this.targetFound = false;
         
         for (int i = 0; i < 100; i++){
         	ArrayList<Record> row = new ArrayList<Record>(100);
@@ -135,9 +141,22 @@ public class Player implements spy.sim.Player {
     
     public List<Point> proposePath()
     {
-        if (path.size() > 0){
-            return path;
+
+
+        if (targetFound && packageFound){
+
+            if (pathFound){
+
+                return path;
+            } 
+            else{
+                //find shortest path
+                //bfs with all weights as 1
+                //PathFinder.search()
+                return null;
+            }
         }
+
         else{
             return null;
         }
