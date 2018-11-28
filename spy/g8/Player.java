@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import spy.sim.Point;
@@ -39,6 +40,7 @@ public class Player implements spy.sim.Player {
     private Point dest = null;
     private Point pack = null;
     private HashMap<Integer, List<Record>> receivedRecords;
+    private Random rand;
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
@@ -55,6 +57,8 @@ public class Player implements spy.sim.Player {
         this.meetSoldiers = new ArrayList<Integer>();
         this.trySoldier = -1;
         this.clearCells = new ArrayList<Point>();
+        this.rand = new Random();
+
 
         this.waitTime = new HashMap<Integer,Integer>();
         for(int i=0;i<n;i++) {
@@ -124,7 +128,7 @@ public class Player implements spy.sim.Player {
             see.remove(Integer.valueOf(this.id));
             // look at case when we observe the cell we are occupying
             if(see.size() > 0 && p.equals(loc)) { //do not count when it is ourselves
-                System.out.println("AT SAME LOCATION");
+                //System.out.println("AT SAME LOCATION");
                 for (int i =0;i<see.size();i++) {
                     if (waitTime.get(see.get(i)) == 0) {
                         meeting = true;
@@ -191,10 +195,16 @@ public class Player implements spy.sim.Player {
             List<Record> rec = receivedRecords.get(id);
             for (Record r: rec){
                 if(!waterCells.contains(r.getLoc()) && r.getC() != 1 && !observed.contains(r.getLoc())){
+
                     clearCells.add(r.getLoc());
+                    keepUnique(clearCells);
 
                     // trust the other agent
                     observed.add(r.getLoc());
+                    keepUnique(observed);
+
+                    notobserved.remove(r.getLoc());
+                    keepUnique(notobserved);
                 }
                 if (dest == null && r.getPT() != 0 && r.getPT() != 1){
                     dest = r.getLoc();
@@ -204,6 +214,13 @@ public class Player implements spy.sim.Player {
                 }
             }
         }
+    }
+
+    public void keepUnique(List<Point> temp){
+        Set<Point> hs = new HashSet<>();
+        hs.addAll(temp);
+        temp.clear();
+        temp.addAll(hs);
     }
     
     public List<Point> proposePath()
@@ -234,6 +251,56 @@ public class Player implements spy.sim.Player {
                           new Point(currentPoint.x-1,currentPoint.y-1)};
             for (Point p : ps){
                 if (isValidPoint(p)&&!settledPoints.contains(p)&&!nextPoints.contains(p)&&clearCells.contains(p)){
+                    if (!bfs.containsKey(p)){
+                        bfs.put(p,currentPoint);
+                    }
+                    nextPoints.add(p);
+                    if (p.equals(target)){
+                        found = true;
+                        break;
+                    }
+                }
+            }         
+        }
+        List<Point> toReturn = new ArrayList<>();
+        currentPoint = target;
+        toReturn.add(target);
+        int count = 0;
+        while (!currentPoint.equals(source)){
+            if (count >= 2*bfs.size()){
+                return null;
+            }
+            Point temp = bfs.get(currentPoint);
+            toReturn.add(0,temp);
+            currentPoint = temp;
+            count +=1;
+        }
+        return toReturn;
+
+    } 
+
+
+    public List<Point> BFS_Naive(Point source, Point target){
+        bfs = new HashMap<Point,Point>();
+        List<Point> nextPoints = new ArrayList<>();
+        List<Point> settledPoints = new ArrayList<>();
+        nextPoints.add(source);
+        Point currentPoint;
+        boolean found = false;
+        while (nextPoints.size() > 0 && !found){
+            currentPoint = nextPoints.remove(0);
+            settledPoints.add(currentPoint);
+            //System.out.println("size of list is "+nextPoints.size()+", currentPoint is "+currentPoint.x+","+currentPoint.y);
+            Point[] ps = {new Point(currentPoint.x+1,currentPoint.y),
+                          new Point(currentPoint.x,currentPoint.y+1),
+                          new Point(currentPoint.x,currentPoint.y-1),   
+                          new Point(currentPoint.x-1,currentPoint.y),            
+                          new Point(currentPoint.x+1,currentPoint.y+1),
+                          new Point(currentPoint.x+1,currentPoint.y-1),
+                          new Point(currentPoint.x-1,currentPoint.y+1),
+                          new Point(currentPoint.x-1,currentPoint.y-1)};
+            for (Point p : ps){
+                if (isValidPoint(p)&&!settledPoints.contains(p)&&!nextPoints.contains(p)&&!waterCells.contains(p)){
                     if (!bfs.containsKey(p)){
                         bfs.put(p,currentPoint);
                     }
@@ -402,6 +469,14 @@ public class Player implements spy.sim.Player {
     {
         //System.out.println("GETMOVE"+records.get(loc.x).get(loc.y));
 
+        if (pack != null)
+            System.out.println(this.id + " Package Located at: " + pack);
+        if (dest != null)
+            System.out.println(this.id + " Target Located at: " + dest);
+
+        //System.out.println(this.id + " Unseen cells: " + notobserved.size());
+
+
         // once target and packet both found, move to packet
         List<Point> neighbors = getSurrounding(loc);
         //whatISee(neighbors);
@@ -495,7 +570,6 @@ public class Player implements spy.sim.Player {
             //if (trySoldier >= 0) {
             destination = seeSoldiers.get(trySoldier);
 
-            Random rand = new Random();
             int x = rand.nextInt(2) * 2 - 1;
             int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
 
@@ -530,6 +604,15 @@ public class Player implements spy.sim.Player {
                 move = new Point(-1, 0);
             else
                 move = new Point(x, y);
+            // else{
+            //     List<Point> path = BFS_Naive(loc,destination);
+            //     if (path.size() > 1){
+            //         Point next = path.get(1);
+            //         move = new Point(next.x-loc.x, next.y-loc.y);
+            //         loc = new Point(next.x, next.y);
+            //         return move;
+            //     }
+            // }
 
             //4 cases first
             // if (destination.x == loc.x +1 && destination.y == loc.y) {
@@ -577,7 +660,22 @@ public class Player implements spy.sim.Player {
         //System.out.println("curr n_obs size: "+notobserved.size());
         if(notobserved.size() > 0) {
             Collections.sort(notobserved, pointComparator);
-            destination = notobserved.get(0);
+
+            int total_unobserved = Math.min(notobserved.size(), 3);
+
+            destination = notobserved.get(rand.nextInt(total_unobserved));
+
+            List<Point> path = BFS_Naive(loc,destination);
+            if (path.size() > 1){
+                Point next = path.get(1);
+                move = new Point(next.x-loc.x, next.y-loc.y);
+                loc = new Point(next.x, next.y);
+                return move;
+            }
+
+            //destination = notobserved.get(0);
+
+
             //System.out.println("DEST:"+destination.x + " " + destination.y);
             if(destination.x > loc.x) { 
                 move = new Point(1,0);
@@ -592,7 +690,6 @@ public class Player implements spy.sim.Player {
             }
         }
         else { // when we have finished observing
-            Random rand = new Random();
             int x = rand.nextInt(2) * 2 - 1;
             int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
             move = new Point(x, y);
@@ -600,7 +697,6 @@ public class Player implements spy.sim.Player {
 
         loc = new Point(loc.x + move.x, loc.y + move.y);
         if (waterCells.contains(loc)) {
-            Random rand = new Random();
             int x = rand.nextInt(2) * 2 - 1;
             int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
             move = new Point(x, y);
