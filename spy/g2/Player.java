@@ -119,6 +119,7 @@ public class Player implements spy.sim.Player {
                 graph[p.x][p.y] = 1;
             }
             else if (status.getPT() == 2) {
+
                 System.out.printf("%d Target Found\n",id);
                 this.target_found = true;
                 this.target_loc = p; 
@@ -130,7 +131,10 @@ public class Player implements spy.sim.Player {
                         if (i == this.id){
                             continue;
                         }
-                        else if (i > this.id && Met.get(i)==0){
+                        if (Met.get(i)>0){
+                            continue;
+                        }
+                        if (i > this.id){
                             // wait for five turns for it to get here
                             todo.add(0,new Point(0,0));
                             todo.add(0,new Point(0,0));
@@ -139,10 +143,9 @@ public class Player implements spy.sim.Player {
                             todo.add(0,new Point(0,0));
                         }
                         else{
-                            if (Met.get(i) == 0){
-                                move_toward(p);
-                                break;
-                            }
+                            System.out.printf("%d moving toward %d",this.id, i);
+                            move_toward(p);
+                            break;
                         }
                     }
                 }
@@ -153,7 +156,7 @@ public class Player implements spy.sim.Player {
     
     public List<Record> sendRecords(int id)
     {
-        if (Met.get(id) == 0){
+        if (Met.get(id) > 0){
             return new ArrayList<Record>();
         }
         ArrayList<Record> toSend = new ArrayList<Record>();
