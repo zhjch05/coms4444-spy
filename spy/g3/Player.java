@@ -39,24 +39,26 @@ public class Player implements spy.sim.Player {
     private ArrayList<ArrayList<Record>> records; // 2-dim list of cells on map (personal records)
     private int id;
     private Point loc; // Current location on map
-    private Boolean _target;
-    private Boolean _package;
-    private Point package_Location;
-    private Point target_Location;
-    private int[][] grid;
-    private int[][] visited;
-    private int[][] explored;
-    private List<Point> proposedPath;
-    private Boolean found_path = false;
-    private HashMap<Point,Integer> trap_count;
-    private Integer time;
-    private Point unexplored;
+    private Boolean _target;  // whether target has been located
+    private Boolean _package; //whether package has been located
+    private Point package_Location; // package location
+    private Point target_Location; // target location
+    private int[][] grid; // status of cells: -2 id water, -1 is muddy, 0 is normal, 1 is target & Package
+    private int[][] visited; // whether the cell has been visited
+    private int[][] explored; // whether the cell has been explored i.e. neighbors searched, in the current iteration
+    private List<Point> proposedPath; // proposed safe path from package to target
+    private Boolean found_path = false; // whether a safe proposed path has been found
+    private HashMap<Point,Integer> trap_count; // maintains frequency of visiting a location
+    private Integer time; // keeps track of elapsed time
+    private Point unexplored; // the next unexplored point to visit
 
     private ArrayList<ArrayList<Record>> landInfo; // similar to 'records' but global for dry land claims
     private ArrayList<ArrayList<Record>> mudInfo; // similar to 'records' but global for muddy land claims
     
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
+        // Initialize parameters
+
 	    this._package=false;
         this._target = false;
         this.grid = new int[100][100];
@@ -68,6 +70,9 @@ public class Player implements spy.sim.Player {
         this.trap_count =  new HashMap<Point,Integer>();
         this.time =0;
         this.unexplored = new Point(startingPos);
+
+        // set status of water cells and set unknown cells to muddy
+
         for(int i=0;i<100;i++)
         {
             for(int j=0;j<100;j++)
@@ -84,6 +89,7 @@ public class Player implements spy.sim.Player {
             grid[tmp.x][tmp.y] = -2;
         }
 	
+        // create records for sending and bookeeping
         this.id = id;
         this.records = new ArrayList<ArrayList<Record>>();
         for (int i = 0; i < 100; i++)
@@ -98,6 +104,8 @@ public class Player implements spy.sim.Player {
         }
     }
     
+    //Observes the vicinity, upfates grid & visited for all visible cells
+    // Adds observations to record
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
         this.loc = loc;
@@ -145,6 +153,7 @@ public class Player implements spy.sim.Player {
         }
     }
     
+    //Sends records when demanded
     public List<Record> sendRecords(int id)
     {
         // System.out.println("Called sendRecords ======");	  
@@ -163,6 +172,9 @@ public class Player implements spy.sim.Player {
         return toSend;
     }
     
+    // receives records and updates grid &  visited according ro info provided.
+    // NOTE:  Right now all information is assumed to be true. We are trusting other players on blind faith.
+    // Will have to change in presence of spy
     public void receiveRecords(int id, List<Record> records)
     {
 	   // System.out.println("Called receiveRecords Command ========");
@@ -212,6 +224,7 @@ public class Player implements spy.sim.Player {
 
     }
     
+    //Proposes the path if on package location
     public List<Point> proposePath()
     {
         if(proposedPath.size()>1)
@@ -219,6 +232,8 @@ public class Player implements spy.sim.Player {
         return null;
     }
     
+    // Vote for proposed paths
+    //NOTE: Currently trusting all paths proposed by the players. Assuming the correctness of their implementations
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
     {
         for (Map.Entry<Integer, List<Point>> entry : paths.entrySet())
@@ -230,45 +245,46 @@ public class Player implements spy.sim.Player {
         return null;
     }
     
+    // No idea what this is for
     public void receiveResults(HashMap<Integer, Integer> results)
     {
        	// System.out.println("Called receiveResults Command =======");
     }
 
-    private Point explore()
-    {
-        int i = loc.x;
-        int j = loc.y;
+    // private Point explore()
+    // {
+    //     int i = loc.x;
+    //     int j = loc.y;
 
 
-        if(i+1<100 && grid[i+1][j]!=-2)
-            return new Point(i+1,j);
+    //     if(i+1<100 && grid[i+1][j]!=-2)
+    //         return new Point(i+1,j);
 
-        if(i-1>=0 && grid[i-1][j]!=-2)
-            return new Point(i-1,j);
+    //     if(i-1>=0 && grid[i-1][j]!=-2)
+    //         return new Point(i-1,j);
 
-        if(j+1<100 && grid[i][j+1]!=-2)
-            return new Point(i,j+1);
+    //     if(j+1<100 && grid[i][j+1]!=-2)
+    //         return new Point(i,j+1);
 
-        if(j-1>=0 && grid[i][j-1]!=-2)
-            return new Point(i,j-1);
+    //     if(j-1>=0 && grid[i][j-1]!=-2)
+    //         return new Point(i,j-1);
 
-        if(i+1<100 && j+1<100 && grid[i+1][j+1]!=-2)
-            return new Point(i+1,j+1);
+    //     if(i+1<100 && j+1<100 && grid[i+1][j+1]!=-2)
+    //         return new Point(i+1,j+1);
 
-        if(i-1>=0 && j+1<100 && grid[i-1][j+1]!=-2)
-            return new Point(i-1,j+1);
+    //     if(i-1>=0 && j+1<100 && grid[i-1][j+1]!=-2)
+    //         return new Point(i-1,j+1);
 
-        if(i+1<100 && j-1>=0 && grid[i+1][j-1]!=-2)
-            return new Point(i+1,j-1);
+    //     if(i+1<100 && j-1>=0 && grid[i+1][j-1]!=-2)
+    //         return new Point(i+1,j-1);
 
-        if(j-1>=0 &&  i-1>=0 && grid[i-1][j-1]!=-2)
-            return new Point(i-1,j-1);
+    //     if(j-1>=0 &&  i-1>=0 && grid[i-1][j-1]!=-2)
+    //         return new Point(i-1,j-1);
 
 
-        return new Point(-1000,-1000);
+    //     return new Point(-1000,-1000);
 
-    }
+    // }
 
     // private Point getNearestUnExplored(Point curr)
     // {
@@ -309,6 +325,9 @@ public class Player implements spy.sim.Player {
 
     // }
 
+
+
+    // Gets the nearest unvisited cell. This is done inorder to explore new areas with minimal repetition
     private Point getNearestUnExplored(Point curr)
     {
 
@@ -334,6 +353,7 @@ public class Player implements spy.sim.Player {
 
     }
 
+    //Move to a random unvisited cell if trapped. Intended as tie breaker
     private Point getRandomUnexplored()
     {
         Random rand = new Random();
@@ -353,6 +373,9 @@ public class Player implements spy.sim.Player {
     }
 
 
+    //Dijkstra'a shortest path algorithm to find shortest path from loc to destination.
+    // if safe set to true it finds the shortest path from normal cells only
+    // if sade set to false, it finds rge shortest path overall including muddy cells 
     private Point getNextOnPath(Point loc,Point destination,Boolean safe)
     {
         HashMap<Point, Double> dist = new HashMap<Point, Double>();
@@ -457,23 +480,28 @@ public class Player implements spy.sim.Player {
 
     }
 
-    
+
+    //Computes the next move    
     public Point getMove()
     {
 
     time++;
-
-
-    for(int i=0;i<100;i++)
+    //
+    // reset exploration matrix before searching for next exploration site
+    //
+    for(int i=0;i<100;i++) 
     {
         for(int j=0;j<100;j++)
             explored[i][j] = 0;
     }
 
-    visited[loc.x][loc.y] = 1;
+    visited[loc.x][loc.y] = 1; //mark current location as visited
 	// System.out.println("Called getMove Command =======");
     Point move = new Point(-1000,-1000);
 
+    //
+    // If target and package have been located, try to find a safe path between them. If found set found_path to true
+    //
     if(_target && _package)
     {
         //wait
@@ -499,7 +527,9 @@ public class Player implements spy.sim.Player {
         //announce shortest path
     }
 
-
+    //
+    // if a safe path has been found, proceed to the package on the shortest path from current location
+    //
     if(_target && _package && found_path && (loc.x!=package_Location.x || loc.y!=package_Location.y))
     {
         //go to package
@@ -512,12 +542,17 @@ public class Player implements spy.sim.Player {
         
         return new Point(x,y);
     }
+    //
+    //If safe path has been found from package to target and you are package location, then wait and announce proposed path.
+    //Also vote for appropriate paths
+    //
     else if(_target && _package && found_path)
     {
         return new Point(0,0);
     }
-
-
+    //
+    // If you are enroute to the next unexplored cell and haven't reached it then continue along the shortest path to that cell
+    //
     if(unexplored.x>=0 && unexplored.y>=0 && visited[unexplored.x][unexplored.y]!=1)
     {
         Point next = getNextOnPath(loc,unexplored,false);
@@ -530,11 +565,15 @@ public class Player implements spy.sim.Player {
             if(x>=-1 && y>=-1)
             return new Point(x,y);
     }
-    
-
+    //
+    //If you have reached the last unexplored cell, then find the next nearest unexplored cell. Set unexplored to next site
+    //
     Point next_loc = getNearestUnExplored(loc);
     unexplored = next_loc;
 
+    //
+    //get next move for new unexplored site
+    //
     for(int i=0;i<100;i++)
     {
         for(int j=0;j<100;j++)
@@ -542,6 +581,9 @@ public class Player implements spy.sim.Player {
     }
     Point next = getNextOnPath(loc,next_loc,false);
 
+    //
+    // maintain a trap count for current location
+    //
     if(trap_count.containsKey(next))
     {
         trap_count.put(next,trap_count.get(next)+1);
@@ -550,7 +592,9 @@ public class Player implements spy.sim.Player {
     {
         trap_count.put(next,0);
     }
-
+    //
+    //if you have visited the same site more than 10 times, then probably trapped. Select a random unexplored cell and proceed towards that to break free.
+    //
     if(trap_count.get(next)<10)
     {
         move = next;
@@ -571,6 +615,9 @@ public class Player implements spy.sim.Player {
 
     }
 
+        //
+        //This basically should never happem. It implies that you visited all possible cells and still found no valid path!
+        //
         return move;
     }
 }
