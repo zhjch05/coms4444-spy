@@ -49,6 +49,8 @@ public class Player implements spy.sim.Player {
     private List<Point> proposedPath;
     private Boolean found_path = false;
     private HashMap<Point,Integer> trap_count;
+    private Integer time;
+    private Point unexplored;
 
     private ArrayList<ArrayList<Record>> landInfo; // similar to 'records' but global for dry land claims
     private ArrayList<ArrayList<Record>> mudInfo; // similar to 'records' but global for muddy land claims
@@ -64,6 +66,8 @@ public class Player implements spy.sim.Player {
         this.target_Location = new Point(-1,-1);
         this.proposedPath = new ArrayList<Point>();
         this.trap_count =  new HashMap<Point,Integer>();
+        this.time =0;
+        this.unexplored = new Point(startingPos);
         for(int i=0;i<100;i++)
         {
             for(int j=0;j<100;j++)
@@ -125,7 +129,7 @@ public class Player implements spy.sim.Player {
             }
             else if (status.getPT()==2)
             {
-                grid[p.x][p.y] = 2;
+                grid[p.x][p.y] = 1;
                 target_Location.x = p.x;
                 target_Location.y = p.y;
                 _target =true;
@@ -145,6 +149,7 @@ public class Player implements spy.sim.Player {
     {
         // System.out.println("Called sendRecords ======");	  
         ArrayList<Record> toSend = new ArrayList<Record>();
+        if(time%50==0)
         for (ArrayList<Record> row : records)
         {
             for (Record record : row)
@@ -329,6 +334,24 @@ public class Player implements spy.sim.Player {
 
     }
 
+    private Point getRandomUnexplored()
+    {
+        Random rand = new Random();
+        int n = rand.nextInt(50);
+
+        for(int i=n;i<100;i++)
+        {
+            for(int j=0;j<100;j++)
+            {
+                if(grid[i][j]==-2 || visited[i][j]==1) continue;
+
+                return new Point(i,j);
+            }
+        }
+
+        return new Point(-1000,-1000);
+    }
+
 
     private Point getNextOnPath(Point loc,Point destination,Boolean safe)
     {
@@ -350,6 +373,21 @@ public class Player implements spy.sim.Player {
         PriorityQueue<Entry> q = new PriorityQueue<>();
         Entry s = new Entry(0.0,loc);
         q.add(s);
+
+        if(!safe)
+        {
+            for(int i=0;i<100;i++)
+            {
+                for(int j=0;j<100;j++)
+                {
+                    if(grid[i][j]!=-2)
+                    {
+                        Entry t = new Entry(0.0,loc);
+                        q.add(t);
+                    }
+                }
+            }
+        }
         
         while(q.peek()!=null && !found)
             {
@@ -423,6 +461,9 @@ public class Player implements spy.sim.Player {
     public Point getMove()
     {
 
+    time++;
+
+
     for(int i=0;i<100;i++)
     {
         for(int j=0;j<100;j++)
@@ -477,10 +518,23 @@ public class Player implements spy.sim.Player {
     }
 
 
-    
+    if(unexplored.x>=0 && unexplored.y>=0 && visited[unexplored.x][unexplored.y]!=1)
+    {
+        Point next = getNextOnPath(loc,unexplored,false);
+            move = next;
+            int x  = move.x - loc.x;
+            int y = move.y - loc.y;
+            // System.out.println("moving to closest unexplored from " + loc + " moving to " + unexplored + "via "  + move );
+            // System.out.println("the cell condition for " + move +   " is  " + grid[move.x][move.y] );
+
+            if(x>=-1 && y>=-1)
+            return new Point(x,y);
+    }
     
 
     Point next_loc = getNearestUnExplored(loc);
+    unexplored = next_loc;
+
     for(int i=0;i<100;i++)
     {
         for(int j=0;j<100;j++)
@@ -502,22 +556,20 @@ public class Player implements spy.sim.Player {
         move = next;
         int x  = move.x - loc.x;
         int y = move.y - loc.y;
-        System.out.println("moving to closest unexplored from " + loc + " moving to " + next_loc + "via "  + move );
-        System.out.println("the cell condition for " + move +   " is  " + grid[move.x][move.y] );
-        return new Point(x,y);
+         if(x>=-1 && y>=-1)
+            return new Point(x,y);
     }
-
-
-    move = explore();
-    
-
-    if(move.x>=0 && move.y>=0)
-        {
-            System.out.println("current location is " + loc + " moving to unvisited location  " + move );
+    else
+    {
+        unexplored = getRandomUnexplored();
+        move = getNextOnPath(loc,unexplored,false);
             int x  = move.x - loc.x;
             int y = move.y - loc.y;
+
+            if(x>=-1 && y>=-1)
             return new Point(x,y);
-        }
+
+    }
 
         return move;
     }
