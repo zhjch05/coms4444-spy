@@ -4,7 +4,6 @@ import java.util.*;
 import spy.sim.*;
 
 
-
 public class Player implements spy.sim.Player {
     private class Pair implements Comparable<Pair>{
         public Point pt;
