@@ -23,7 +23,7 @@ public class Player implements spy.sim.Player {
     private int id;
     public Point loc;
     private List<Point> waterCells;
-    private List<Point> clearCells=new ArrayList<Point>();
+    private List<Point> clearCells;
     private List<Point> observed;
     private List<Point> notobserved;
     private Point destination;
@@ -54,6 +54,7 @@ public class Player implements spy.sim.Player {
         this.receivedRecords = new HashMap<Integer, List<Record>>();
         this.meetSoldiers = new ArrayList<Integer>();
         this.trySoldier = -1;
+        this.clearCells = new ArrayList<Point>();
 
         this.waitTime = new HashMap<Integer,Integer>();
         for(int i=0;i<n;i++) {
@@ -76,7 +77,7 @@ public class Player implements spy.sim.Player {
             }
             this.records.add(row);
         }
-        System.out.println("INIT"+records.get(loc.x).get(loc.y));
+        //System.out.println("INIT"+records.get(loc.x).get(loc.y));
         //System.out.println("CHECK" + notobserved.size());
     }
 
@@ -123,7 +124,7 @@ public class Player implements spy.sim.Player {
             see.remove(Integer.valueOf(this.id));
             // look at case when we observe the cell we are occupying
             if(see.size() > 0 && p.equals(loc)) { //do not count when it is ourselves
-                System.out.println("COLLABORATING");
+                System.out.println("AT SAME LOCATION");
                 for (int i =0;i<see.size();i++) {
                     if (waitTime.get(see.get(i)) == 0) {
                         meeting = true;
@@ -142,13 +143,13 @@ public class Player implements spy.sim.Player {
             for(int i=0;i<see.size();i++) {
                 if(see.get(i) != this.id) {
                     seeSoldiers.put(see.get(i),p);
-                    System.out.println("debug");
-                    System.out.println(see.get(i));
-                    System.out.println("wait"+waitTime.get(see.get(i)));
+                    //System.out.println("debug");
+                    System.out.println("Player " + this.id + " and Player " + see.get(i) + " waitTime left: "+waitTime.get(see.get(i)));
                 }
             }
+
             // record directly observed clear cells
-            if (status.getC()!=1) clearCells.add(p);
+            if (status.getC()!=1 && !waterCells.contains(p)) clearCells.add(p);
             if (status.getPT()==1) pack = p;
             if (status.getPT()!=0 && status.getPT()!=1) dest = p;
 
@@ -189,7 +190,7 @@ public class Player implements spy.sim.Player {
         for(int id:receivedRecords.keySet()){
             List<Record> rec = receivedRecords.get(id);
             for (Record r: rec){
-                if(r.getC() != 1 && !observed.contains(r.getLoc())){
+                if(!waterCells.contains(r.getLoc()) && r.getC() != 1 && !observed.contains(r.getLoc())){
                     clearCells.add(r.getLoc());
                 }
                 if (dest == null && r.getPT() != 0 && r.getPT() != 1){
@@ -229,7 +230,7 @@ public class Player implements spy.sim.Player {
                           new Point(currentPoint.x-1,currentPoint.y+1),
                           new Point(currentPoint.x-1,currentPoint.y-1)};
             for (Point p : ps){
-                if (isValidPoint(p)&&!settledPoints.contains(p)&&!nextPoints.contains(p)){
+                if (isValidPoint(p)&&!settledPoints.contains(p)&&!nextPoints.contains(p)&&clearCells.contains(p)){
                     if (!bfs.containsKey(p)){
                         bfs.put(p,currentPoint);
                     }
@@ -291,20 +292,20 @@ public class Player implements spy.sim.Player {
         for (int x=-3;x<=3;x++) {
             if (x == -3 || x == 3) {
                 Point temp = new Point(location.x+x, location.y+0);
-                if (temp.x >= 0 && temp.x <= 100 && temp.y >= 0 && temp.y <= 100) {
+                if (temp.x >= 0 && temp.x < 100 && temp.y >= 0 && temp.y < 100) {
                     neighbors.add(temp);
                 }
             } else if (x == -2 || x == 2 || x == -1 || x == 1) {
                 for(int y=-2;y<=2;y++) {
                     Point temp = new Point(location.x+x, location.y+y);
-                    if (temp.x >= 0 && temp.x <= 100 && temp.y >= 0 && temp.y <= 100) {
+                    if (temp.x >= 0 && temp.x < 100 && temp.y >= 0 && temp.y < 100) {
                         neighbors.add(temp);
                     }
                 }
             } else { //x == 0
                 for(int y=-3;y<=3;y++) {
                     Point temp = new Point(location.x+x, location.y+y);
-                    if (temp.x >= 0 && temp.x <= 100 && temp.y >= 0 && temp.y <= 100) {
+                    if (temp.x >= 0 && temp.x < 100 && temp.y >= 0 && temp.y < 100) {
                         neighbors.add(temp);
                     }
                 }
@@ -354,6 +355,9 @@ public class Player implements spy.sim.Player {
             if(waterCells.contains(n))
                 symbol = 'x';
 
+            //System.out.println(records.get(n.x));
+            System.out.println(n.x+","+n.y);
+            System.out.println(records.get(n.x).get(n.y));
             if(records.get(n.x).get(n.y) != null){
                 Record cur_record = records.get(n.x).get(n.y);
                 
@@ -396,19 +400,39 @@ public class Player implements spy.sim.Player {
         //System.out.println("GETMOVE"+records.get(loc.x).get(loc.y));
 
         // once target and packet both found, move to packet
+        List<Point> neighbors = getSurrounding(loc);
+        //whatISee(neighbors);
 
         if (pack != null && dest != null){
+            if (loc.x==pack.x && loc.y==pack.y){
+
+                // even at package, when both players together, reset waittime to help run simulator fast
+                for(int id:waitTime.keySet()){
+                    if (waitTime.get(id) == 0)
+                        waitTime.put(id, wait);
+                }
+
+                return new Point(loc.x + 0, loc.y + 0);
+            }
+
             List<Point> path = BFS(loc,pack);
             if (path.size() > 0){
+                //System.out.println(this.id + " found package at: " + pack.x + "," + pack.y + " and target at: " + dest.x + "," + dest.y);
+                //System.out.println(path);
                 Point next = path.get(1);
-                Point move = new Point(next.x-loc.x,next.y-loc.y);
+                // System.out.println("Currently at: " + loc.x+","+loc.y);
+                // System.out.println("Package at: " + pack.x+","+pack.y);
+                // System.out.println("Next Move: " + next.x+","+next.y);
+                // System.out.println("Is valid point?: " + clearCells.contains(next));
+                move = new Point(next.x-loc.x, next.y-loc.y);
+                loc = new Point(next.x, next.y);
                 return move;
             }
         }
 
         // DO observation stuff here
         //System.out.println("CURR LOC:"+loc.x + " " + loc.y);
-        List<Point> neighbors = getSurrounding(loc);
+        
         //whatISee(neighbors);
         //printRecords();
         for(Point n:neighbors) {
@@ -436,7 +460,7 @@ public class Player implements spy.sim.Player {
         if (meeting == true) {
             trymeeting = false;
             meeting = false;
-            System.out.println("MEETING MEETING MEETING");
+            // System.out.println("MEETING MEETING MEETING");
             for (int i=0;i<meetSoldiers.size();i++) {
                 //reset waittime
                 waitTime.put(meetSoldiers.get(i),wait);
@@ -444,7 +468,7 @@ public class Player implements spy.sim.Player {
         }
 
         if (seeSoldiers.size() > 0) { //we observe someone
-            System.out.println("We See Someone!");
+            // System.out.println("We See Someone!");
             for (Integer i:seeSoldiers.keySet()) { // map of solider id to their location that we see
                 //check if their waittime is 0
                 if (waitTime.get(i) == 0) {
@@ -468,40 +492,74 @@ public class Player implements spy.sim.Player {
             //if (trySoldier >= 0) {
             destination = seeSoldiers.get(trySoldier);
 
+            Random rand = new Random();
+            int x = rand.nextInt(2) * 2 - 1;
+            int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
+
+            //edge case where destination is also package, so other soldier *might not* move towards us
+            if (pack != null)
+                if (destination.x==pack.x && destination.y==pack.y){
+                    List<Point> path = BFS(loc,pack);
+                    if (path.size() > 1){
+                        Point next = path.get(1);
+                        move = new Point(next.x-loc.x, next.y-loc.y);
+                        loc = new Point(next.x, next.y);
+                        return move;
+                    } else {
+                        // well i dont think this should ever come
+                        System.out.println("WTF HOW DID THIS REACH HERE?!");
+                        move = new Point(x, y);
+                        loc = new Point(loc.x + move.x, loc.y + move.y);
+                        return move;
+                    }
+                }
+            
+
+            
+
+            if (destination.y > loc.y)
+                move = new Point(0, 0);
+            else if (destination.y==loc.y && destination.x>loc.x)
+                move = new Point(0, 0);
+            else if (destination.y < loc.y)
+                move = new Point(0, -1);
+            else if (destination.y==loc.y && destination.x<loc.x)
+                move = new Point(-1, 0);
+            else
+                move = new Point(x, y);
+
             //4 cases first
-            if (destination.x == loc.x +1 && destination.y == loc.y) {
-                move = new Point(0,0);
-            } else if (destination.x == loc.x-1 && destination.y == loc.y ) {
-                move = new Point(-1,0);
-            } else if (destination.x == loc.x && destination.y == loc.y+1) {
-                move = new Point(0,0);
-            } else if (destination.x == loc.x && destination.y == loc.y-1) {
-                move = new Point(0,1);
-            } else if (destination.x == loc.x+1 && destination.y == loc.y-1) {
-                move = new Point(1,-1);
-            } else if (destination.x == loc.x-1 && destination.y == loc.y+1) {
-                move = new Point(0,0);
-            } else if (destination.x == loc.x+1 && destination.y == loc.y+1) {
-                move = new Point(0,0);
-            } else if (destination.x == loc.x-1 && destination.y == loc.y-1) {
-                move = new Point(-1,-1);
-            } 
-            else if(destination.x > loc.x) { 
-                move = new Point(1,0);
-            } else if (destination.x < loc.x) {
-                move = new Point(-1,0);
-            } else {
-                if (destination.y > loc.y) {
-                    move = new Point(0,1);
-                } else {
-                    move = new Point(0,-1);
-                } 
-            }
+            // if (destination.x == loc.x +1 && destination.y == loc.y) {
+            //     move = new Point(0,0);
+            // } else if (destination.x == loc.x-1 && destination.y == loc.y ) {
+            //     move = new Point(-1,0);
+            // } else if (destination.x == loc.x && destination.y == loc.y+1) {
+            //     move = new Point(0,0);
+            // } else if (destination.x == loc.x && destination.y == loc.y-1) {
+            //     move = new Point(0,1);
+            // } else if (destination.x == loc.x+1 && destination.y == loc.y-1) {
+            //     move = new Point(1,-1);
+            // } else if (destination.x == loc.x-1 && destination.y == loc.y+1) {
+            //     move = new Point(0,0);
+            // } else if (destination.x == loc.x+1 && destination.y == loc.y+1) {
+            //     move = new Point(0,0);
+            // } else if (destination.x == loc.x-1 && destination.y == loc.y-1) {
+            //     move = new Point(-1,-1);
+            // } 
+            // else if(destination.x > loc.x) { 
+            //     move = new Point(1,0);
+            // } else if (destination.x < loc.x) {
+            //     move = new Point(-1,0);
+            // } else {
+            //     if (destination.y > loc.y) {
+            //         move = new Point(0,1);
+            //     } else {
+            //         move = new Point(0,-1);
+            //     } 
+            // }
+
             loc = new Point(loc.x + move.x, loc.y + move.y);
             if (waterCells.contains(loc)) {
-                Random rand = new Random();
-                int x = rand.nextInt(2) * 2 - 1;
-                int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
                 move = new Point(x, y);
                 loc = new Point(loc.x + move.x, loc.y + move.y);
             }
