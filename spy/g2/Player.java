@@ -2,7 +2,7 @@ package spy.g2;
 
 import java.util.*;
 import spy.sim.*;
-// import spy.g2.Pair;
+import spy.g2.Pair;
 
 
 
@@ -26,7 +26,9 @@ public class Player implements spy.sim.Player {
     private int id;
     private Point loc;
     private List<Point> water;
-    
+    private List<Point> path;
+    private Boolean path_found;
+
     private Boolean package_found;
     private Boolean target_found;
 
@@ -36,7 +38,6 @@ public class Player implements spy.sim.Player {
     private boolean[][] viewed;
     private int[][] graph;
 
-    private List<Point> Friend;
     private HashMap<Integer, Integer> Met;
     private List<Point> todo;
 
@@ -77,9 +78,11 @@ public class Player implements spy.sim.Player {
         this.target_found = false;
         this.target_loc = null;
 
+        this.path_found = false;
+        this.path = null;
+
         this.todo = new ArrayList<Point>();
         this.Met = new HashMap<Integer,Integer>();
-        this.Friend = new ArrayList<Point>();
         for (int i=0; i<n; i++){
             Met.put(i,0);
         }
@@ -112,24 +115,38 @@ public class Player implements spy.sim.Player {
             }
             
             if (status.getPT() == 1){
+                System.out.printf("%d Package Found\n",id);
                 this.package_found = true;
                 this.package_loc = p;
                 graph[p.x][p.y] = 1;
             }
             else if (status.getPT() == 2) {
+
+                System.out.printf("%d Target Found\n",id);
                 this.target_found = true;
                 this.target_loc = p; 
                 graph[p.x][p.y] = 1;
             }
-
-            if (status.getPresentSoldiers().size() != 0){
-                for (Integer i: status.getPresentSoldiers()){
-                    if (i == this.id){
-                        continue;
-                    }
-                    if (Met.get(i) < 15){
-                        Friend.add(p);
-                        break;
+            if (!path_found){
+                if (status.getPresentSoldiers().size() != 0){
+                    for (Integer i: status.getPresentSoldiers()){
+                        if (i == this.id){
+                            continue;
+                        }
+                        else if (i > this.id){
+                            // wait for five turns for it to get here
+                            todo.add(0,new Point(0,0));
+                            todo.add(0,new Point(0,0));
+                            todo.add(0,new Point(0,0));
+                            todo.add(0,new Point(0,0));
+                            todo.add(0,new Point(0,0));
+                        }
+                        else{
+                            if (Met.get(i) == 0){
+                                move_toward(p);
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -150,13 +167,22 @@ public class Player implements spy.sim.Player {
                 }
             }
         }
-        Met.put(id,15);
+        Met.put(id,30);
         return toSend;
     }
 
     public void receiveRecords(int id, List<Record> rec)
     {
-
+        /*
+        Iterator itr = todo.iterator(); 
+        while (itr.hasNext()) 
+        { 
+            Point p = (Point)itr.next(); 
+            if (p.x == 0 && p.y == 0){
+                itr.remove();
+            }
+        } 
+        */
         for (Record r : rec){
             Point p = r.getLoc();
 
@@ -187,14 +213,14 @@ public class Player implements spy.sim.Player {
     }
     
     public List<Point> proposePath(){
-        System.out.printf("%d is proposeing\n",id);
-        return find_path(package_loc, target_loc);
+        return path;
     }
     
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths){
         List<Integer> votes = new ArrayList<Integer>();
         for (Integer p: paths.keySet()){
             votes.add(p);
+            return votes;
         }
         return votes;
     }
@@ -207,7 +233,7 @@ public class Player implements spy.sim.Player {
         double max_reward = 0;
         Point best_move = new Point(-1000,-1000);
                 
-        System.out.printf("id: %d Current loc: %d %d todo: %d\n", this.id, loc.x, loc.y, todo.size());
+        //System.out.printf("id: %d Current loc: %d %d todo: %d\n", this.id, loc.x, loc.y, todo.size());
 
         /*
         int ct = 0;
@@ -219,91 +245,52 @@ public class Player implements spy.sim.Player {
             }
         }
         System.out.printf("remaining cells: %d \n", ct);
+        
+        */
         for (Integer i: Met.keySet()){
             if (Met.get(i) > 0){
                 Met.put(i, Met.get(i)-1);
             }
         }
-        */
+        
         if (todo.size() > 0){
             return move_to(todo.remove(todo.size()-1));
         }
 
-        if (package_found && target_found){
-            if (find_path(package_loc, target_loc) != null){
-                
-                System.out.printf("%d moving towards package at %d %d\n",id,package_loc.x,package_loc.y);
-
-                if (loc == package_loc){
-                    return new Point(0,0);
-                }
-                else{
-                    return move_toward(package_loc);
-                }
-            }
+        if (loc.x == 2 && loc.y == 2){
+            System.out.println(target_found);
+            System.out.println(package_found);
         }
-        /*
-        if (routeFound) {
-            System.out.println("route found");
-            if (!loc.equals(package_loc)) {
-                // System.out.println("moving towards package location");
-                return move_toward(package_loc);
-            }
-            else {
-                // stay at package loc
+
+        if (package_found && target_found){
+            if (path_found && loc.x == package_loc.x && loc.y == package_loc.y){
+                System.out.printf("%d is waiting \n",id);
                 return new Point(0,0);
             }
-        }
-        
-        if (Friend.size() != 0 && move_possible(Friend.get(0))){
-            System.out.println("Moving towards friend");
-            Point p = Friend.remove(0);
-            System.out.printf("at %d %d \n", p.x, p.y);
-            return move_toward(p, possible_move);
-        }
-        
-        if (!readyForRoute && (loc.equals(package_loc) || loc.equals(target_loc))) {
-            System.out.println("package or target found");
-            readyForRoute = true;
-            if (loc.equals(package_loc)) {
-                start = package_loc;
-                destination = target_loc;
+            else if (find_path(package_loc, target_loc) != null){
+                path = find_path(package_loc,target_loc);
+                path_found = true;
+                move_toward(package_loc);
+                System.out.printf("%d moving towards package at %d %d\n",id,package_loc.x,package_loc.y);
+                for (Point p: todo){
+                    System.out.printf("%d %d\n",p.x,p.y);
+                }
+                System.out.println("-----------------------");
             }
-            else {
-                start = target_loc;
-                destination = package_loc;
+            else{
+                explore();
             }
         }
-
-        if (readyForRoute) {
-            System.out.println("moving towards destination");
-            System.out.println("loc x = " + this.loc.x + ", y = " + this.loc.y);
-            Point next = findValidPathOneMove(loc);
-            // System.out.println("x = " + next.x + ", y = " + next.y);
-            // target found
-            if (next == null) {
-                return move_toward(package_loc);
-            }
-
-            // this.loc = next;
-            //System.out.println("x = " + next.x + ", y = " + next.y);
-            // System.out.println("x = " + this.loc.x + ", y = " + this.loc.y);
-            return next;
+        else{
+            explore();
+        }
+        if (todo.size()>0){
+            return move_to(todo.remove(todo.size()-1));
+        }
+        else{
+            return new Point(0,0);
         }
 
-        if (package_loc != null && !loc.equals(package_loc) && move_possible(package_loc)){
-            System.out.println("moving toward package");
-            // return move_toward(package_loc);
-            Point next = move_toward(package_loc);
-            System.out.println("x = " + next.x + ", y = " + next.y);
-            return next;
-        }
-
-        if (target_loc != null && !loc.equals(target_loc)) {
-            return move_toward(target_loc);
-        }
-        */
-        return explore();
     }
 
     // add all neighboring points to a list
@@ -344,7 +331,7 @@ public class Player implements spy.sim.Player {
         return reward;
     }
 
-    public Point explore(){
+    public void explore(){
         Map<Point, Point> par = new HashMap<Point, Point>();
         int[][] visited = new int[100][100];
         PriorityQueue<Pair> pQueue = new PriorityQueue<Pair>(); 
@@ -381,21 +368,13 @@ public class Player implements spy.sim.Player {
             todo.add(new Point(cur.x,cur.y));
             cur = par.get(cur);
         }
-
-        if (todo.size()>0){
-            return move_to(todo.remove(todo.size()-1));
-        }
-        else{
-            return new Point(0,0);
-        }
     }
 
     public Point move_to(Point dest){
         return new Point(dest.x-loc.x, dest.y-loc.y);
     }
 
-
-    public Point move_toward(Point dest){
+    public void move_toward(Point dest){
         Map<Point, Point> par = new HashMap<Point, Point>();
         int[][] visited = new int[100][100];
         PriorityQueue<Pair> pQueue = new PriorityQueue<Pair>(); 
@@ -404,28 +383,35 @@ public class Player implements spy.sim.Player {
             Pair pa = pQueue.poll();
             Point p = pa.pt;
             int dist = pa.dist;
+            /*
+            System.out.printf("%d %d\n",p.x, p.y);
+            for (int i=0; i<100;++i){
+                for (int j=0; j<100;++j){
+                    if (visited[i][j]==1)
+                        System.out.printf("%d %d\n",i,j);
+                }
+            }
+            System.out.printf("=============================\n");
+            */
             visited[p.x][p.y] = 1;
             for (Point n: neighbors(p)){
-                if (visited[n.x][n.y]==1 || graph[n.x][n.y] == -2){
+                if (visited[n.x][n.y] == 1 || graph[n.x][n.y] == -2){
                     continue;
                 }
                 if (n.x == dest.x && n.y == dest.y){
                     par.put(n,p);
+                    
                     Point cur = n;
                     while (par.containsKey(cur)){
                         todo.add(new Point(cur.x,cur.y));
                         cur = par.get(cur);
-                    }
-                    if (todo.size()>0){
-                        return move_to(todo.remove(todo.size()-1));
-                    }
-                    return new Point(-100,-100);
+                    }                
                 }
                 pQueue.add(new Pair(n, dist+cost(p,n)));
                 par.put(n,p);
+                visited[n.x][n.y] = 1;
             }
         }
-        return new Point(-100,-100);
     }
 
     public boolean move_possible(Point dest){
@@ -459,35 +445,43 @@ public class Player implements spy.sim.Player {
         pQueue.add(new Pair(start,0));
         Point cur = this.loc;
         boolean path_found = true;
-        
         while(pQueue.size() > 0 && path_found){
             Pair pa = pQueue.poll();
-
             Point p = pa.pt;
             int dist = pa.dist;
-
             visited[p.x][p.y] = 1;
-
+            /*
+            System.out.printf("%d %d\n",p.x, p.y);
+            for (int i=0; i<100; i++){
+                for (int h=0; h<100; h++){
+                    if (visited[i][h]==1){
+                        System.out.printf("%d %d\n",i,h);
+                    }
+                }
+            }
+            System.out.printf("=================================\n");
+            */
             for (Point n: neighbors(p)){
                 if (graph[n.x][n.y] < 0 || visited[n.x][n.y] == 1){
                     continue;
                 }
-                if (n == dest){
+                if (n.x == dest.x && n.y == dest.y){
                     cur = n;
                     path_found = false;
                 }
                 pQueue.add(new Pair(n, dist+cost(p,n)));
                 par.put(n,p);
+                visited[n.x][n.y] = 1;
             }
         }
-        System.out.printf("From %d %d to %d %d \n", package_loc.x, package_loc.y, target_loc.x, target_loc.y);
+        //System.out.printf("From %d %d to %d %d \n", package_loc.x, package_loc.y, target_loc.x, target_loc.y);
         while (par.containsKey(cur)){
             path.add(new Point(cur.x, cur.y));
             cur = par.get(cur);
         }
-        for (Point p: path){
-            System.out.printf("%d %d \n", p.x, p.y);
-        }
+        path.add(cur);
+        Collections.reverse(path);
+        
         return path;
     }
 
@@ -497,7 +491,7 @@ public class Player implements spy.sim.Player {
                 return 2;
             }
             else{
-                return 40000;
+                return 4;
             }
         }
         else if (Math.abs(n.x-p.x)+Math.abs(n.y-p.y)==2){
@@ -505,7 +499,7 @@ public class Player implements spy.sim.Player {
                 return 3;
             }
             else{
-                return 60000;
+                return 6;
             }   
         }
         return 10;    
@@ -522,81 +516,5 @@ public class Player implements spy.sim.Player {
         }
         dst += 2*(dx+dy);
         return dst;
-    }
-
-    private void dfs(Point s, Point t) {
-        // List<List<Integer>> record = new ArrayList<List<Integer>>();
-        // for (int i = 0; i < 100; i++) {
-        //     List<Integer> list = new ArrayList<Integer>(Collections.nCopies(100, 0));
-        //     record.add(list);
-        // }
-        Map<Point, Double> dist = new HashMap<Point, Double>();
-        TreeMap<Double, Point> queue = new TreeMap<Double, Point>();
-        Map<Point, Point> prev = new HashMap<Point, Point>();
-        boolean[][] v = new boolean[100][100];
-
-        for (int i = 0; i < 100; i++) {
-            for (int j = 0; j < 100; j++) {
-                Point p = new Point(i, j);
-                dist.put(p, Double.MAX_VALUE);
-                // prev.put(p, null);
-            }
-        }
-
-        dist.put(s, 0.);
-        queue.put(0., s);
-        Map.Entry<Double, Point> entry = queue.firstEntry();
-        Point next = entry.getValue();
-        queue.remove(entry.getKey());
-        v[next.x][next.y] = true;
-        System.out.println("preprocessing done, starting point: x = " + next.x + ", y = " + next.y);
-        while (!next.equals(t)) {
-            System.out.println("next: x = " + next.x + ", y = " + next.y);
-            for (int i = next.x - 1; i < next.x + 2; i++) {
-                for (int j = next.y - 1; j < next.y + 2; j++) {
-                    Point candidate = new Point(i, j);
-                    System.out.println("candidate: x = " + i + ", y = " + j);
-                    if (i < 0 || i > 99 || j < 0 || j > 99 || v[i][j] || water.contains(candidate) || records.get(i).get(j) == null || records.get(i).get(j).getC() == 1 /*|| record.get(i).get(j) != 0*/) {
-                        continue;
-                    }
-                    // double distance = Math.abs(next.x - i) + Math.abs(next.y - j);
-                    double distance = Math.sqrt((next.x - i) * (next.x - i) + (next.y - j) * (next.y - j));
-                    System.out.println("valid candidate: x = " + i + ", y = " + j + ", distance: " + distance);
-                    if (dist.get(next) + distance < dist.get(candidate)) {
-                        dist.put(candidate, dist.get(next) + distance);
-                        prev.put(candidate, next);
-                        queue.put(dist.get(next) + distance, candidate);
-                    }
-                }
-            }
-
-            if (queue.size() == 0) {
-                break;
-            }
-
-            entry = queue.firstEntry();
-            next = entry.getValue();
-            queue.remove(entry.getKey());
-            v[next.x][next.y] = true;
-        }
-
-        System.out.println("while loop ended");
-
-        if (!prev.containsKey(t)) {
-            return;
-        }
-
-        Point p = t;
-        proposal.add(p);
-        System.out.println("shortest path, point: x = " + p.x + ", y = " + p.y);
-        while (prev.containsKey(p)) {
-            p = prev.get(p);
-            proposal.add(p);
-            System.out.println("shortest path, point: x = " + p.x + ", y = " + p.y);
-        }
-
-        if (proposal.get(0).equals(target_loc)) {
-            Collections.reverse(proposal);
-        }
     }
 }
