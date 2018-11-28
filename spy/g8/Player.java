@@ -192,6 +192,9 @@ public class Player implements spy.sim.Player {
             for (Record r: rec){
                 if(!waterCells.contains(r.getLoc()) && r.getC() != 1 && !observed.contains(r.getLoc())){
                     clearCells.add(r.getLoc());
+
+                    // trust the other agent
+                    observed.add(r.getLoc());
                 }
                 if (dest == null && r.getPT() != 0 && r.getPT() != 1){
                     dest = r.getLoc();
