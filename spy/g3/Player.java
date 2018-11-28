@@ -477,39 +477,42 @@ public class Player implements spy.sim.Player {
 
 
     // Communication protocol, check if soldier is near
-    nearbySoldiers = new HashMap<Integer, Point>();
-    for (Point p: lastObservation.keySet()) {
-	CellStatus cs = lastObservation.get(p);
+ //    nearbySoldiers = new HashMap<Integer, Point>();
+ //    for (Point p: lastObservation.keySet()) {
+	// CellStatus cs = lastObservation.get(p);
 	
-	Point posToMove = new Point(0, 0);
-	if ((cs.getPresentSoldiers().size() > 0) && (!p.equals(this.loc))) {
+	// Point posToMove = new Point(0, 0);
+	// if ((cs.getPresentSoldiers().size() > 0) && (!p.equals(this.loc))) {
 		
-	    for (int peerID : cs.getPresentSoldiers()) {
-		nearbySoldiers.put(peerID, p);
+	//     for (int peerID : cs.getPresentSoldiers()) 
+ //        {
+	// 	  nearbySoldiers.put(peerID, p);
 
-		String myOrientation = getOrientation(this.loc, p);		
-		System.out.println(this.id + " Spotted soldier: " + peerID + " at location " + p + "=================================");
-	        System.out.println("We are " + myOrientation + " of :" + peerID);
+	// 	  String myOrientation = getOrientation(this.loc, p);		
+	// 	  System.out.println(this.id + " Spotted soldier: " + peerID + " at location " + p + "=================================");
+	//            System.out.println("We are " + myOrientation + " of :" + peerID);
 		
-		posToMove = p;
-		if (myOrientation.equals("nw") || myOrientation.equals("n") || myOrientation.equals("w") ) {
-		    stayStill = true;
-		} else {
-		    moveToSoldier = true;
-		}
-	    }
-        }
+	// 	  posToMove = p;
+	// 	  if (myOrientation.equals("nw") || myOrientation.equals("n") || myOrientation.equals("w") ) {
+	// 	      stayStill = true;
+	// 	  } 
+ //        else 
+ //            {
+	// 	      moveToSoldier = true;
+	// 	      }
+	//        }
+ //        }
 
-	if (moveToSoldier) {
-	    return getNextOnPath(this.loc, posToMove, false);
-	}
+	// if (moveToSoldier) {
+	//     return getNextOnPath(this.loc, posToMove, false);
+	// }
 	
-	if (stayStill && idleCount > 0) {
-	    idleCount--;
-	    return new Point(0, 0);		
-	}
+	// if (stayStill && idleCount > 0) {
+	//     idleCount--;
+	//     return new Point(0, 0);		
+	// }
 
-    }
+ //    }
 
     //
     // If target and package have been located, try to find a safe path between them. If found set found_path to true
