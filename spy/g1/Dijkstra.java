@@ -140,6 +140,7 @@ public class Dijkstra {
      for(Vertex v : vertexNames.values()){
        v.distance = Double.POSITIVE_INFINITY;
        v.known = false;
+       v.prev = null;
        unknownVertices.add(v);
      }
 
@@ -191,9 +192,9 @@ public class Dijkstra {
      for(Edge e : path){
        finalDistance += e.distance;
      }
-     System.out.print("Shortest path between "+s+ " and "+t+": ");
-     System.out.println(path);
-     System.out.println(finalDistance);
+     // System.out.print("Shortest path between "+s+ " and "+t+": ");
+     // System.out.println(path);
+     // System.out.println(finalDistance);
      return path; // Replace this
    }
 
@@ -202,6 +203,7 @@ public class Dijkstra {
      {
        Edge newEdge = new Edge(v.prev, v, v.distance - v.prev.distance);
        path.add(0, newEdge);
+       //System.err.println(v.name);
        recursivePath(v.prev);
      }
      return path;
@@ -212,6 +214,7 @@ public class Dijkstra {
     for(Vertex v : vertexNames.values()){
       v.distance = Double.POSITIVE_INFINITY;
       v.known = false;
+      v.prev = null;
       unknownVertices.add(v);
     }
 
@@ -235,7 +238,7 @@ public class Dijkstra {
       if(!closestVertex.explored) {
         double finalDistance = 0;
         path = new LinkedList<Edge>();
-        path = recursivePath(vertexNames.get(closestVertex.name));
+        path = recursivePath(closestVertex);
         for(Edge e : path){
           finalDistance += e.distance;
         }
