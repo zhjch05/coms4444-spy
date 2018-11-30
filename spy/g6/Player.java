@@ -1,15 +1,10 @@
 package spy.g6;
 
 import java.util.List;
-import java.util.Collections;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.PriorityQueue;
 
 import spy.sim.Point;
 import spy.sim.Record;
@@ -25,6 +20,8 @@ public class Player implements spy.sim.Player {
     private int id;
     private Point loc;
     private Point nextMoveTarget;
+
+    private Point[] nineMoves;
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
@@ -50,6 +47,17 @@ public class Player implements spy.sim.Player {
             knownCells.get(p.x).set(p.y, Boolean.TRUE);
             this.waterCells.get(p.x).set(p.y, Boolean.TRUE);
         }
+
+        nineMoves = new Point[9];
+        nineMoves[0] = new Point(-1, -1);
+        nineMoves[1] = new Point(-1, 0);
+        nineMoves[2] = new Point(-1, 1);
+        nineMoves[3] = new Point(0, 1);
+        nineMoves[4] = new Point(0, 0);
+        nineMoves[5] = new Point(0, 1);
+        nineMoves[6] = new Point(1, -1);
+        nineMoves[7] = new Point(1, 0);
+        nineMoves[8] = new Point(1, -1);
     }
 
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
@@ -122,8 +130,19 @@ public class Player implements spy.sim.Player {
         if(nextMoveTarget == null){
             nextMoveTarget = sampleUnknown();
         }
-        Point nextStep = stepFoward(this.loc, nextMoveTarget);
+        Point nextStep = stepForward(this.loc, nextMoveTarget);
         return nextStep;
+    }
+
+    private ArrayList<Point> getAvailableNextLocs() {
+        ArrayList<Point> ret = new ArrayList<>();
+        for(Point move: nineMoves) {
+            Point nextLoc = new Point(loc.x + move.x, loc.y + move.y);
+            if(!waterCells.get(nextLoc.x).get(nextLoc.y)){
+                ret.add(nextLoc);
+            }
+        }
+        return ret;
     }
 
     private Point sampleUnknown(){
@@ -139,14 +158,9 @@ public class Player implements spy.sim.Player {
         return candidates.get(random.nextInt(candidates.size()));
     }
 
-    private Point stepFoward(Point current, Point target){
-        int x = (target.x - current.x) / Math.abs(target.x - current.x);
-        int y = (target.y - current.y) / Math.abs(target.y - current.y);
-        Point nextStep = new Point(x, y);
-        if(waterCells.get(x).get(y)){
+    private Point stepForward(Point current, Point target){
+        ArrayList<Point> nextLocs = getAvailableNextLocs();
 
-        }
         return new Point(0, 0);
     }
-
 }
