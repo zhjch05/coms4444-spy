@@ -95,7 +95,7 @@ public class Player implements spy.sim.Player {
             this.explorationStrategy = 0;
         }
         else {
-            this.explorationStrategy = 0;
+            this.explorationStrategy = 1;
         }
         Random random = new Random();
         explorationDirection = random.nextInt(4)+4;
@@ -549,9 +549,27 @@ public class Player implements spy.sim.Player {
                         this.offsetStatus = 1;
                         if (this.explorationDirection == 5 || this.explorationDirection == 8) {
                             move = new Point(0,-1);
+                            if (this.waterCells.contains(move)) {
+                                move = new Point(0,1);
+                            }
+                            if (this.waterCells.contains(move)) {
+                                move = new Point(1,0);
+                            }
+                            if (this.waterCells.contains(move)) {
+                                move = new Point(-1,0);
+                            }
                         }
                         else if (this.explorationDirection == 6 || this.explorationDirection == 7) {
                             move = new Point(0, 1);
+                            if (this.waterCells.contains(move)) {
+                                move = new Point(0,-1);
+                            }
+                            if (this.waterCells.contains(move)) {
+                                move = new Point(1,0);
+                            }
+                            if (this.waterCells.contains(move)) {
+                                move = new Point(-1,0);
+                            }
                         }
                     }
                     // if we hit the edge, we want to move 3 away and go in the opposite direction
@@ -569,6 +587,59 @@ public class Player implements spy.sim.Player {
                 }
                 // if we're going horizontal/vertical
                 else {
+                    if (this.explorationDirection == 1) {
+                        move = new Point(0,-1);
+                    }
+                    else if (this.explorationDirection == 2){
+                        move = new Point(1, 0);
+                    }
+                    else if (this.explorationDirection == 3) {
+                        move = new Point(0, 1);
+                    }
+                    else {
+                        move = new Point(-1, 0);
+                    }
+                    loc = new Point(loc.x + move.x, loc.y + move.y);
+                    // check to see if the place we're going is a water cell
+                    if (this.waterCells.contains(loc)) {
+                        // offset by 3 and keep going
+                        this.offsetStatus = 1;
+                        if (this.explorationDirection == 2 || this.explorationDirection == 4) {
+                            move = new Point(0,1);
+                            if (this.waterCells.contains(move)) {
+                                move = new Point(0,-1);
+                            }
+                            if (this.waterCells.contains(move)) {
+                                move = new Point(1,0);
+                            }
+                            if (this.waterCells.contains(move)) {
+                                move = new Point(-1,0);
+                            }
+                        }
+                        else if (this.explorationDirection == 1 || this.explorationDirection == 3) {
+                            move = new Point(0, -1);
+                            if (this.waterCells.contains(move)) {
+                                move = new Point(0,1);
+                            }
+                            if (this.waterCells.contains(move)) {
+                                move = new Point(1,0);
+                            }
+                            if (this.waterCells.contains(move)) {
+                                move = new Point(-1,0);
+                            }
+                        }
+                    }
+                    // if we hit the edge, we want to move 3 away and go in the opposite direction
+                    if (loc.x >= 100 || loc.y >= 100 || loc.x == 0 || loc.y == 0) {
+                        this.offsetStatus = 1;
+                        if (this.explorationDirection == 1 || this.explorationDirection == 3) {
+                            move = new Point(0,-1);
+                        }
+                        else if (this.explorationDirection == 2 || this.explorationDirection == 4) {
+                            move = new Point(0, 1);
+                        }
+
+                    }
 
                 }
                 /*Collections.sort(notobserved, pointComparator);
