@@ -23,12 +23,12 @@ import spy.sim.Observation;
 public class Player implements spy.sim.Player {
 
     private ArrayList<ArrayList<Record>> records;
-    private ArrayList<ArrayList<Record>> map;
-    private HashMap<Point,Boolean> visited;
+    //private ArrayList<ArrayList<Record>> map;
+    //private HashMap<Point,Boolean> visited;
     private int id;
     private Point loc;
-    private HashSet water = new HashSet();
-    private HashSet existingEdges = new HashSet();
+    private HashMap<String,Point> water = new HashMap<String,Point>();
+    //private HashSet existingEdges = new HashSet();
     private Dijkstra djk = new Dijkstra();
 
     private Point packageLocation;
@@ -43,34 +43,35 @@ public class Player implements spy.sim.Player {
         for (Point w : waterCells){
           int x = w.x;
           int y = w.y;
-          int[] p = {x,y};
-          water.add(p);
+          String p = Integer.toString(x) + "," + Integer.toString(y);
+          water.put(p, w);
+          // System.out.print(water.containsKey(p));
+          // System.out.println(p);
         }
 
         // Construct Dijkstra graph of land cells
         this.id = id;
         this.records = new ArrayList<ArrayList<Record>>();
-        this.map = new ArrayList<ArrayList<Record>>();
-        this.visited = new HashMap<Point,Boolean>();
+        //this.map = new ArrayList<ArrayList<Record>>();
+        //this.visited = new HashMap<Point,Boolean>();
         for (int i = 0; i < 100; i++)
         {
             ArrayList<Record> row = new ArrayList<Record>();
-            ArrayList<Record> r = new ArrayList<Record>();
 
             for (int j = 0; j < 100; j++)
             {
-                int[] coords = {i,j};
-                if(!water.contains(coords)){
-                  String name = Integer.toString(i) + "," + Integer.toString(j);
-                  Vertex newVertex = new Vertex(name,i,j);
+            	//int[] coords = {i,j};
+                String name = Integer.toString(i) + "," + Integer.toString(j);
+                Vertex newVertex = new Vertex(name,i,j);
+                //System.out.print(water.contains(newVertex));
+                if(!water.containsKey(name)){
                   djk.addVertex(newVertex);
+                  // System.out.println(newVertex);
                 }
                 row.add(null);
-                r.add(null);
-                visited.put(new Point(i,j),false);
+                //visited.put(new Point(i,j),false);
             }
             this.records.add(row);
-            this.map.add(r);
         }
         for (Vertex source : djk.getVertices()){
             // construct edge weights -- assume muddy
@@ -105,9 +106,9 @@ public class Player implements spy.sim.Player {
 
         for (int k = 0; k < adjacent.length; ++k) {
             int i = adjacent[k][0], j = adjacent[k][1];
+            String name = Integer.toString(i) + "," + Integer.toString(j);
 
-            if(i>=0 && i<=99 && j>=0 && j<=99 && !water.contains(adjacent[k])) {
-                String name = Integer.toString(i) + "," + Integer.toString(j);
+            if(i>=0 && i<=99 && j>=0 && j<=99 && !water.containsKey(name)) {
                 Vertex target = djk.getVertex(name);
                 Vertex[] key = {target, source};
                 double weight = (k%2==0) ? 3 : 2;
@@ -140,7 +141,7 @@ public class Player implements spy.sim.Player {
                 record = new Record(p, status.getC(), status.getPT(), observations);
                 records.get(p.x).set(p.y, record);
             }
-            map.get(p.x).set(p.y, new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>()));
+            //map.get(p.x).set(p.y, new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>()));
             record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
 
             // check tile status
@@ -175,9 +176,20 @@ public class Player implements spy.sim.Player {
 
             // update the graph to reflect new information
             String name = Integer.toString(p.x) + "," + Integer.toString(p.y);
-            Vertex v = djk.getVertex(name);
-            v.explored = true;
-            setIncomingEdges(v, record.getC()==1);
+            if(!water.containsKey(name)) {
+            	Vertex v = djk.getVertex(name);
+            	v.explored = true;
+		        setIncomingEdges(v, record.getC()==1);
+            }
+		    
+            // try {	
+		        
+            // } catch(NullPointerException ex) {
+            // 	System.err.println(name);
+            // 	System.err.println();
+            // 	throw new NullPointerException();
+            // }
+            
 
             // check on location
             boolean atPackage = this.loc.equals(packageLocation);
@@ -204,14 +216,6 @@ public class Player implements spy.sim.Player {
                         break;
                 }
             }
-        }
-    }
-
-    private void updateMoveMode(int value) {
-        this.moveMode = value;
-        if (this.moveMode == 2) {
-            // set all muddy edges to infinite weight
-
         }
     }
 
@@ -259,6 +263,7 @@ public class Player implements spy.sim.Player {
     // runs algorithms to decide which move to make based on the current state
     public Point getMove()
     {
+    	//System.err.println(moveMode);
         List<Edge> curPath;
         String source = Integer.toString(loc.x) + "," + Integer.toString(loc.y);
         String target;
@@ -359,203 +364,203 @@ public class Player implements spy.sim.Player {
       // return nextLoc;
     }
 
-    public Point move(Point target)
-    {
-      int dx = 0;
-      int dy = 0;
-      Point start = this.loc;
-      if (target.x > start.x){
-          dx = 1;
-      }
-      else if (target.x == start.x){
-          dx = 0;
-      }
-      else{
-          dx = -1;
-      }
-      if (target.y > start.y){
-          dy = 1;
-      }
-      else if (target.y == start.y){
-          dy = 0;
-      }
-      else{
-          dy = -1;
-      }
-      return new Point (dx, dy);
-    }
+    // public Point move(Point target)
+    // {
+    //   int dx = 0;
+    //   int dy = 0;
+    //   Point start = this.loc;
+    //   if (target.x > start.x){
+    //       dx = 1;
+    //   }
+    //   else if (target.x == start.x){
+    //       dx = 0;
+    //   }
+    //   else{
+    //       dx = -1;
+    //   }
+    //   if (target.y > start.y){
+    //       dy = 1;
+    //   }
+    //   else if (target.y == start.y){
+    //       dy = 0;
+    //   }
+    //   else{
+    //       dy = -1;
+    //   }
+    //   return new Point (dx, dy);
+    // }
 
-    public Point findNext(Point start)
-    {
-      Record recordNext;
-      Point toReturn = start;
-      Map<Point, Integer> possible_move = new HashMap<Point, Integer>();
-      for(int i = 0;i<3;i++)
-      {
-        int dx = this.loc.x+i-1;
-        if (dx > 99 || dx < 0){
-          continue;
-        }
-        for(int j = 0;j<3;j++){
-          int dy = this.loc.y+j-1;
-          if (i==1 && j==1){
-              continue;
-          }
-          if(dy>99||dy<0){
-            continue;
-          }
-          if(this.water.contains(new Point(dx,dy))){
-            continue;
-          }
+  //   public Point findNext(Point start)
+  //   {
+  //     Record recordNext;
+  //     Point toReturn = start;
+  //     Map<Point, Integer> possible_move = new HashMap<Point, Integer>();
+  //     for(int i = 0;i<3;i++)
+  //     {
+  //       int dx = this.loc.x+i-1;
+  //       if (dx > 99 || dx < 0){
+  //         continue;
+  //       }
+  //       for(int j = 0;j<3;j++){
+  //         int dy = this.loc.y+j-1;
+  //         if (i==1 && j==1){
+  //             continue;
+  //         }
+  //         if(dy>99||dy<0){
+  //           continue;
+  //         }
+  //         if(this.water.contains(new Point(dx,dy))){
+  //           continue;
+  //         }
 
-          else{
-            if (visited.get(new Point(dx, dy))){
-              if (Math.abs(i)+Math.abs(j)>1){
-                if (map.get(dx).get(dy).getC() == 1){
-                    possible_move.put(new Point(i-1,j-1),0);
-                }
-                else{
-                    possible_move.put(new Point(i-1,j-1),2);
-                }
-            }
-              else{
-                if (map.get(dx).get(dy).getC() == 1){
-                    possible_move.put(new Point(i-1,j-1),0);
-                }
-                else{
-                    possible_move.put(new Point(i-1,j-1),2);
-                }
-              }
-            }
-            else{
-              if (Math.abs(i)+Math.abs(j)>1){
-                if (map.get(dx).get(dy).getC() == 1){
-                    possible_move.put(new Point(i-1,j-1),1);
-                }
-                else{
-                    possible_move.put(new Point(i-1,j-1),4);
-                }
-            }
-            else{
-                if (map.get(dx).get(dy).getC() == 1){
-                    possible_move.put(new Point(i-1,j-1),1);
-                }
-                else{
-                    possible_move.put(new Point(i-1,j-1),5);
-                }
-              }
-            }
+  //         else{
+  //           if (visited.get(new Point(dx, dy))){
+  //             if (Math.abs(i)+Math.abs(j)>1){
+  //               if (map.get(dx).get(dy).getC() == 1){
+  //                   possible_move.put(new Point(i-1,j-1),0);
+  //               }
+  //               else{
+  //                   possible_move.put(new Point(i-1,j-1),2);
+  //               }
+  //           }
+  //             else{
+  //               if (map.get(dx).get(dy).getC() == 1){
+  //                   possible_move.put(new Point(i-1,j-1),0);
+  //               }
+  //               else{
+  //                   possible_move.put(new Point(i-1,j-1),2);
+  //               }
+  //             }
+  //           }
+  //           else{
+  //             if (Math.abs(i)+Math.abs(j)>1){
+  //               if (map.get(dx).get(dy).getC() == 1){
+  //                   possible_move.put(new Point(i-1,j-1),1);
+  //               }
+  //               else{
+  //                   possible_move.put(new Point(i-1,j-1),4);
+  //               }
+  //           }
+  //           else{
+  //               if (map.get(dx).get(dy).getC() == 1){
+  //                   possible_move.put(new Point(i-1,j-1),1);
+  //               }
+  //               else{
+  //                   possible_move.put(new Point(i-1,j-1),5);
+  //               }
+  //             }
+  //           }
             
-            }
-          }
-      }
-      double max_reward = 0;
-      for (Point p: possible_move.keySet()){
-        Point next = new Point(start.x+p.x,start.y+p.y);
-        if (possible_move.get(p)>max_reward){
-            max_reward = possible_move.get(p);
-            toReturn = p;
-        }
-        if (max_reward == 0){
-            toReturn = find_unknown(start);
-        }
-      }
-      return toReturn;
-    }
+  //           }
+  //         }
+  //     }
+  //     double max_reward = 0;
+  //     for (Point p: possible_move.keySet()){
+  //       Point next = new Point(start.x+p.x,start.y+p.y);
+  //       if (possible_move.get(p)>max_reward){
+  //           max_reward = possible_move.get(p);
+  //           toReturn = p;
+  //       }
+  //       if (max_reward == 0){
+  //           toReturn = find_unknown(start);
+  //       }
+  //     }
+  //     return toReturn;
+  //   }
 
-    public Point findNextAvoid(Point start)
-    {
-      Record recordNext;
-      Point toReturn = start;
-      Map<Point, Integer> possible_move = new HashMap<Point, Integer>();
-      for(int i = 0;i<3;i++)
-      {
-        for(int j = 0;j<3;j++){
-          int dx = this.loc.x+i-1;
-          int dy = this.loc.y+j-1;
-          if (i==1 && j==1){
-              continue;
-          }
-          if(dx>100||dx<0||dy>100||dy<0){
-            continue;
-          }
-          // next step is muddy cell
-          // Point(i-1,j-1) is next step
-          if(this.water.contains(new Point(dx,dy))){
-            continue;
-          }
-          else{
-              if (visited.get(new Point(dx,dy)) == true){
-                if (Math.abs(i)+Math.abs(j)>1){
-                  // System.out.println("trueeeeeeeeee");
-                  if (map.get(dx).get(dy).getC() == 1){
-                    possible_move.put(new Point(i-1,j-1),-2);
-                  }
-                  else{
-                    possible_move.put(new Point(i-1,j-1),0);
-                    }
-                }
+  //   public Point findNextAvoid(Point start)
+  //   {
+  //     Record recordNext;
+  //     Point toReturn = start;
+  //     Map<Point, Integer> possible_move = new HashMap<Point, Integer>();
+  //     for(int i = 0;i<3;i++)
+  //     {
+  //       for(int j = 0;j<3;j++){
+  //         int dx = this.loc.x+i-1;
+  //         int dy = this.loc.y+j-1;
+  //         if (i==1 && j==1){
+  //             continue;
+  //         }
+  //         if(dx>100||dx<0||dy>100||dy<0){
+  //           continue;
+  //         }
+  //         // next step is muddy cell
+  //         // Point(i-1,j-1) is next step
+  //         if(this.water.contains(new Point(dx,dy))){
+  //           continue;
+  //         }
+  //         else{
+  //             if (visited.get(new Point(dx,dy)) == true){
+  //               if (Math.abs(i)+Math.abs(j)>1){
+  //                 // System.out.println("trueeeeeeeeee");
+  //                 if (map.get(dx).get(dy).getC() == 1){
+  //                   possible_move.put(new Point(i-1,j-1),-2);
+  //                 }
+  //                 else{
+  //                   possible_move.put(new Point(i-1,j-1),0);
+  //                   }
+  //               }
 
-                  else{
-                    if (Math.abs(i)+Math.abs(j)>1){
-                      if (map.get(dx).get(dy).getC() == 1){
-                        possible_move.put(new Point(i-1,j-1),-1);
-                      }
-                      else {
-                        possible_move.put(new Point(i-1,j-1),0);
-                      }
-                    }
-                    else{
-                      if (map.get(dx).get(dy).getC() == 1){
-                        possible_move.put(new Point(i-1,j-1),-1);
-                      }
-                      else{
-                        possible_move.put(new Point(i-1,j-1),3);
-                      }
-                    }
-                }
-            }
-            else{
-                if (map.get(dx).get(dy).getC() == 1){
-                    possible_move.put(new Point(i-1,j-1),-1);
-                }
-                else{
-                    possible_move.put(new Point(i-1,j-1),5);
-                }
-              }
-            }
-          }
-      }
-      double max_reward = 0;
-      for (Point p: possible_move.keySet()){
-        Point next = new Point(start.x+p.x,start.y+p.y);
-        if (possible_move.get(p)>max_reward){
-            max_reward = possible_move.get(p);
-            toReturn = p;
-        }
-        if (max_reward == 0){
-            toReturn = find_unknown(start);
-        }
-      }
-      return toReturn;
-    }
+  //                 else{
+  //                   if (Math.abs(i)+Math.abs(j)>1){
+  //                     if (map.get(dx).get(dy).getC() == 1){
+  //                       possible_move.put(new Point(i-1,j-1),-1);
+  //                     }
+  //                     else {
+  //                       possible_move.put(new Point(i-1,j-1),0);
+  //                     }
+  //                   }
+  //                   else{
+  //                     if (map.get(dx).get(dy).getC() == 1){
+  //                       possible_move.put(new Point(i-1,j-1),-1);
+  //                     }
+  //                     else{
+  //                       possible_move.put(new Point(i-1,j-1),3);
+  //                     }
+  //                   }
+  //               }
+  //           }
+  //           else{
+  //               if (map.get(dx).get(dy).getC() == 1){
+  //                   possible_move.put(new Point(i-1,j-1),-1);
+  //               }
+  //               else{
+  //                   possible_move.put(new Point(i-1,j-1),5);
+  //               }
+  //             }
+  //           }
+  //         }
+  //     }
+  //     double max_reward = 0;
+  //     for (Point p: possible_move.keySet()){
+  //       Point next = new Point(start.x+p.x,start.y+p.y);
+  //       if (possible_move.get(p)>max_reward){
+  //           max_reward = possible_move.get(p);
+  //           toReturn = p;
+  //       }
+  //       if (max_reward == 0){
+  //           toReturn = find_unknown(start);
+  //       }
+  //     }
+  //     return toReturn;
+  //   }
   
-  public Point find_unknown(Point loc){
-      int minimum = 200;
-      int tx = 0;
-      int ty = 0;
-      for (int i=0; i<map.size();++i){
-          for (int j=0; j<map.get(i).size();++j){
-              if (map.get(i).get(j)==null){
-                  if (Math.abs(i-loc.x)+Math.abs(j-loc.y)< minimum){
-                      minimum = Math.abs(i-loc.x)+Math.abs(j-loc.y);
-                      tx = i;
-                      ty = j;
-                  }
-              }
-          }
-      }
-      return move(new Point(tx, ty));
-  }
+  // public Point find_unknown(Point loc){
+  //     int minimum = 200;
+  //     int tx = 0;
+  //     int ty = 0;
+  //     for (int i=0; i<map.size();++i){
+  //         for (int j=0; j<map.get(i).size();++j){
+  //             if (map.get(i).get(j)==null){
+  //                 if (Math.abs(i-loc.x)+Math.abs(j-loc.y)< minimum){
+  //                     minimum = Math.abs(i-loc.x)+Math.abs(j-loc.y);
+  //                     tx = i;
+  //                     ty = j;
+  //                 }
+  //             }
+  //         }
+  //     }
+  //     return move(new Point(tx, ty));
+  // }
 
 }
