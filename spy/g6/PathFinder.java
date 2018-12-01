@@ -2,6 +2,7 @@ package spy.g6;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import spy.sim.Point;
 
@@ -74,10 +75,20 @@ public class PathFinder {
 		}
 	}
 	
-	public boolean startSearch(){
+	public LinkedList<Point> startSearch(){
 		addToOpenList(new Node(start));
+		LinkedList<Point> path = new LinkedList<Point>();
 		// Find path
-		return search();
+		if (search()) {
+			path.addLast(new Point(end.x, end.y));
+			while (path.getFirst().x != start.x || path.getFirst().y != start.y) {
+				Point prev = path.getFirst();
+				Node current = nodes.get(prev.x).get(prev.y).parent;
+				path.addFirst(new Point(current.x, current.y));
+			}
+		}
+		
+		return path;
 	}
 	
 	protected boolean search(){
