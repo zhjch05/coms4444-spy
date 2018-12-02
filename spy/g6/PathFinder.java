@@ -3,6 +3,7 @@ package spy.g6;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 
 import spy.sim.Point;
 
@@ -56,12 +57,15 @@ public class PathFinder {
 	 * 0 for unknown, -1 for water, 1 for normal and 2 for muddy
 	 * @param map
 	 */
-	public PathFinder(int[][] map) {
-		// TODO dynamic
-		this.map = map;
+	public PathFinder(List<Point> waterCells) {
+		// TODO dynamic 
+		map = new int[100][100];
+		for (Point p: waterCells)
+			map[p.x][p.y] = -1;
 	}
 	
-	public void setObjective(Point start, Point end) {
+	public LinkedList<Point> startSearch(Point start, Point end){
+		// Initialization
 		this.start = start;
 		this.end = end;
 		openList = new ArrayList<Node>();
@@ -73,9 +77,7 @@ public class PathFinder {
 				row.add(new Node(i, j));
 			nodes.add(row);
 		}
-	}
-	
-	public LinkedList<Point> startSearch(){
+		
 		addToOpenList(new Node(start));
 		LinkedList<Point> path = new LinkedList<Point>();
 		// Find path
@@ -157,7 +159,7 @@ public class PathFinder {
 				adjNode.g = node.g + cost;
 				adjNode.parent = node;
 				adjNode.h = findH(adjNode);
-				openList.add(adjNode);
+				//openList.add(adjNode);
 				addToOpenList(adjNode);
 			}
 		}
@@ -174,6 +176,64 @@ public class PathFinder {
 				return;
 			}
 		openList.add(openList.size(), node);
+	}
+	
+	public void updateMap(int x, int y, boolean c) {
+		map[x][y] = c ? 2 : 1;
+	}
+	
+	/**
+	 * Find a path to the nearest unexplored node.
+	 */
+	public LinkedList<Point> explore(Point start){
+		// Initialization
+		this.start = start;
+		openList = new ArrayList<Node>();
+		closedList = new ArrayList<Node>();
+		nodes = new ArrayList<ArrayList<Node>>(map.length);
+		for (int i = 0; i < map.length; ++i) {
+			ArrayList<Node> row = new ArrayList<Node>(map[0].length);
+			for (int j = 0; j < map[0].length; ++j)
+				row.add(new Node(i, j));
+			nodes.add(row);
+		}
+				
+		
+		addToOpenList(new Node(start));
+		Node node;
+		LinkedList<Point> path = new LinkedList<Point>();
+		
+		while (!openList.isEmpty()){
+			// Get best node from Open list (least f(n))
+			node = openList.get(0);
+			
+			// Place parent on the closed List
+			openList.remove(node); closedList.add(node);
+			
+			if (map[node.x][node.y] == 0){
+				path.addLast(new Point(node.x, node.y));
+				break;
+			}
+			
+			// Expand parent to all adjacent nodes
+			if (isValid(node.x, node.y - 1)) updateAdjNode(nodes.get(node.x).get(node.y - 1), node, false);
+			if (isValid(node.x, node.y + 1)) updateAdjNode(nodes.get(node.x).get(node.y + 1), node, false);
+			if (isValid(node.x + 1, node.y)) updateAdjNode(nodes.get(node.x - 1).get(node.y), node, false);
+			if (isValid(node.x - 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y), node, false);
+			
+			if (isValid(node.x, node.y - 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y - 1), node, true);
+			if (isValid(node.x, node.y + 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y + 1), node, true);
+			if (isValid(node.x + 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y - 1), node, true);
+			if (isValid(node.x - 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y + 1), node, true);
+		}
+		
+		if (path.size() != 0)
+			while (path.getFirst() != start) {
+				Point prev = path.getFirst();
+				Node current = nodes.get(prev.x).get(prev.y).parent;
+				path.addFirst(new Point(current.x, current.y));
+			}
+		return path;
 	}
 	
 	/**
