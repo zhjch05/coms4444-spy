@@ -1,8 +1,9 @@
 package spy.g1;
 
-import java.util.List;
 import java.util.Collections;
 import java.util.List;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -36,6 +37,7 @@ public class Player implements spy.sim.Player {
     private int moveMode;
     private boolean findPackage, findTarget;
     private List<Point> ourPath;
+    private Queue<Vertex> moves = new LinkedList<>();
 
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
@@ -184,15 +186,15 @@ public class Player implements spy.sim.Player {
             	v.explored = true;
 		        setIncomingEdges(v, record.getC()==1);
             }
-		    
-            // try {	
-		        
+
+            // try {
+
             // } catch(NullPointerException ex) {
             // 	System.err.println(name);
             // 	System.err.println();
             // 	throw new NullPointerException();
             // }
-            
+
 
             // check on location
             boolean atPackage = this.loc.equals(packageLocation);
@@ -278,7 +280,7 @@ public class Player implements spy.sim.Player {
             Point nextPoint = new Point(nextVertex.x,nextVertex.y);
             System.out.println("step"+i+nextPoint);
             this.ourPath.add(nextPoint);
-        }     
+        }
         if(ourPath.size()>1){
             return ourPath;
         }
@@ -311,42 +313,47 @@ public class Player implements spy.sim.Player {
         // moveMode = 3, saw the other one -- trying to reach target
         // moveMode = 4, saw the other one -- go to package to propose path
         // moveMode = 5, done -- just stay put
-        List<Edge> curPath;
-        String source = Integer.toString(loc.x) + "," + Integer.toString(loc.y);
-        String target;
-        switch(moveMode) {
-            case 0:
-                curPath = djk.getShortestPathToUnexplored(source);
-                break;
+        if(this.moves.isEmpty()){
+          List<Edge> curPath;
+          String source = Integer.toString(loc.x) + "," + Integer.toString(loc.y);
+          String target;
+          switch(moveMode) {
+              case 0:
+                  curPath = djk.getShortestPathToUnexplored(source);
+                  break;
 
-            case 1:
-                if(findPackage) {
-                    target = Integer.toString(packageLocation.x) + "," + Integer.toString(packageLocation.y);
-                } else {
-                    target = Integer.toString(targetLocation.x) + "," + Integer.toString(targetLocation.y);
-                }
-                curPath = djk.getDijkstraPath(source, target);
-                break;
+              case 1:
+                  if(findPackage) {
+                      target = Integer.toString(packageLocation.x) + "," + Integer.toString(packageLocation.y);
+                  } else {
+                      target = Integer.toString(targetLocation.x) + "," + Integer.toString(targetLocation.y);
+                  }
+                  curPath = djk.getDijkstraPath(source, target);
+                  break;
 
-            case 2:
-                curPath = djk.getShortestPathToUnexplored(source);
-                break;
+              case 2:
+                  curPath = djk.getShortestPathToUnexplored(source);
+                  break;
 
-            case 3:
-                target = Integer.toString(targetLocation.x) + "," + Integer.toString(targetLocation.y);
-                curPath = djk.getDijkstraPath(source, target);
-                break;
+              case 3:
+                  target = Integer.toString(targetLocation.x) + "," + Integer.toString(targetLocation.y);
+                  curPath = djk.getDijkstraPath(source, target);
+                  break;
 
-            case 4:
-                target = Integer.toString(packageLocation.x) + "," + Integer.toString(packageLocation.y);
-                curPath = djk.getDijkstraPath(source, target);                                            
-                break;
+              case 4:
+                  target = Integer.toString(packageLocation.x) + "," + Integer.toString(packageLocation.y);
+                  curPath = djk.getDijkstraPath(source, target);
+                  break;
 
-            default:
-                return new Point(0,0);
+              default:
+                  return new Point(0,0);
+          }
+          for(Edge e : curPath){
+            Vertex next = e.target;
+            moves.add(next);
+          }
         }
-
-        Vertex nextMove = curPath.get(0).target;
+        Vertex nextMove = moves.poll();
 
         return new Point(nextMove.x - loc.x, nextMove.y - loc.y);
 
@@ -373,13 +380,13 @@ public class Player implements spy.sim.Player {
       //   packageLoc = "packageX,packageY";
       //   targetLoc = "targetX,targetY";
       //   // String targetLoc = {targetX,targetY};
-        
+
       //   List<Edge> path = djk.getDijkstraPath(packageLoc, targetLoc);
       //   if(!path.isEmpty()){
       //     return move(packageLocation);
       //   }
       // }
-      
+
       // if (findPackage == true || findTarget == true){
       //   // know packageLocation from communication
       //   if ((findPackage == true) && (this.moveMode == 1)){
@@ -498,7 +505,7 @@ public class Player implements spy.sim.Player {
   //               }
   //             }
   //           }
-            
+
   //           }
   //         }
   //     }
@@ -592,7 +599,7 @@ public class Player implements spy.sim.Player {
   //     }
   //     return toReturn;
   //   }
-  
+
   // public Point find_unknown(Point loc){
   //     int minimum = 200;
   //     int tx = 0;
