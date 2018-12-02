@@ -115,8 +115,8 @@ public class Player implements spy.sim.Player {
                 Vertex[] key = {target, source};
                 double weight = (k%2==0) ? 3 : 2;
                 if (isMuddy) {
-                  if (moveMode<2) {weight *= 2;}
-                  if (moveMode>=2) {weight = Double.POSITIVE_INFINITY;}
+                  if (moveMode<2 || moveMode>3) {weight *= 2;}
+                  if (moveMode>=2 && moveMode<=3) {weight = Double.POSITIVE_INFINITY;}
                 }
                 djk.setEdge(target.name, source.name, weight);
                 //existingEdges.add(key);
@@ -184,15 +184,6 @@ public class Player implements spy.sim.Player {
             	v.explored = true;
 		        setIncomingEdges(v, record.getC()==1);
             }
-		    
-            // try {	
-		        
-            // } catch(NullPointerException ex) {
-            // 	System.err.println(name);
-            // 	System.err.println();
-            // 	throw new NullPointerException();
-            // }
-            
 
             // check on location
             boolean atPackage = this.loc.equals(packageLocation);
@@ -246,13 +237,11 @@ public class Player implements spy.sim.Player {
             Record preRecord = this.records.get(curPoint.x).get(curPoint.y);
 
             if(newRecord.getPT()==1){
-                packageLocation.x = curPoint.x;
-                packageLocation.y = curPoint.y;
+                packageLocation = curPoint;
                 findPackage = true;
             }
             else if(newRecord.getPT()==2){
-                targetLocation.x = curPoint.x;
-                targetLocation.y = curPoint.y;
+                targetLocation = curPoint;
                 findTarget = true;
             }
             else{
