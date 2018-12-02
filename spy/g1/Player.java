@@ -35,6 +35,7 @@ public class Player implements spy.sim.Player {
     private Point targetLocation;
     private int moveMode;
     private boolean findPackage, findTarget;
+    private List<Point> ourPath;
 
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
@@ -52,6 +53,7 @@ public class Player implements spy.sim.Player {
         // Construct Dijkstra graph of land cells
         this.id = id;
         this.records = new ArrayList<ArrayList<Record>>();
+        this.ourPath = new ArrayList<Point>();
         //this.map = new ArrayList<ArrayList<Record>>();
         //this.visited = new HashMap<Point,Boolean>();
         for (int i = 0; i < 100; i++)
@@ -127,6 +129,7 @@ public class Player implements spy.sim.Player {
     {
         // update location
         this.loc = loc;
+
 
         for (Map.Entry<Point, CellStatus> entry : statuses.entrySet())
         {
@@ -237,11 +240,48 @@ public class Player implements spy.sim.Player {
 
     public void receiveRecords(int id, List<Record> records)
     {
+        for(int i=0;i<records.size();i++){
+            Record newRecord = records.get(i);
+            Point curPoint = newRecord.getLoc();
+            Record preRecord = this.records.get(curPoint.x).get(curPoint.y);
 
+            if(newRecord.getPT()==1){
+                packageLocation.x = curPoint.x;
+                packageLocation.y = curPoint.y;
+                findPackage = true;
+            }
+            else if(newRecord.getPT()==2){
+                targetLocation.x = curPoint.x;
+                targetLocation.y = curPoint.y;
+                findTarget = true;
+            }
+            else{
+                if(preRecord == null){
+                    this.records.get(curPoint.x).set(curPoint.y,newRecord);
+                }
+                else{
+                    continue;
+                }
+            }
+        }
     }
 
     public List<Point> proposePath()
     {
+        String packageLoc;
+        String targetLoc;
+        packageLoc = Integer.toString(packageLocation.x) + "," + Integer.toString(packageLocation.y);
+        targetLoc = Integer.toString(targetLocation.x) + "," + Integer.toString(targetLocation.y);
+        List<Edge> validPath = djk.getDijkstraPath(packageLoc,targetLoc);
+        for(int i=0;i<validPath.size();i++){
+            Vertex nextVertex = validPath.get(i).target;
+            Point nextPoint = new Point(nextVertex.x,nextVertex.y);
+            System.out.println("step"+i+nextPoint);
+            this.ourPath.add(nextPoint);
+        }     
+        if(ourPath.size()>1){
+            return ourPath;
+        }
         return null;
     }
 
@@ -263,7 +303,14 @@ public class Player implements spy.sim.Player {
     // runs algorithms to decide which move to make based on the current state
     public Point getMove()
     {
-    	//System.err.println(moveMode);
+        //System.err.println(moveMode);
+
+        // moveMode = 0, initial exploration
+        // moveMode = 1, saw package or target
+        // moveMode = 2, reached package or target -- looking for other one
+        // moveMode = 3, saw the other one -- trying to reach target
+        // moveMode = 4, saw the other one -- go to package to propose path
+        // moveMode = 5, done -- just stay put
         List<Edge> curPath;
         String source = Integer.toString(loc.x) + "," + Integer.toString(loc.y);
         String target;
@@ -292,7 +339,7 @@ public class Player implements spy.sim.Player {
 
             case 4:
                 target = Integer.toString(packageLocation.x) + "," + Integer.toString(packageLocation.y);
-                curPath = djk.getDijkstraPath(source, target);
+                curPath = djk.getDijkstraPath(source, target);                                            
                 break;
 
             default:
@@ -300,6 +347,7 @@ public class Player implements spy.sim.Player {
         }
 
         Vertex nextMove = curPath.get(0).target;
+
         return new Point(nextMove.x - loc.x, nextMove.y - loc.y);
 
       // Point currentLoc = this.loc;
