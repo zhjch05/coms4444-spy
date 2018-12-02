@@ -131,7 +131,7 @@ public class Player implements spy.sim.Player {
         }
     }
     
-    //Observes the vicinity, upfates grid & visited for all visible cells
+    //Observes the vicinity, updates grid & visited for all visible cells
     // Adds observations to record
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
@@ -496,94 +496,97 @@ public class Player implements spy.sim.Player {
 
     // Communication protocol, check if soldier is near (HashMap cleared every round)
     // Add soldiers in range to this HashMap
-    nearbySoldiers = new HashMap<Integer, Point>();
+  //   nearbySoldiers = new HashMap<Integer, Point>();
 
-    // Iterate through recent observation radius points and get nearby peers
-    for (Point p: lastObservation.keySet()) {
-		CellStatus cs = lastObservation.get(p);
+  //   // Iterate through recent observation radius points and get nearby peers
+  //   for (Point p: lastObservation.keySet()) {
+		// CellStatus cs = lastObservation.get(p);
 		
-		if ((cs.getPresentSoldiers().size() > 0) && (!p.equals(this.loc))) {
+		// if ((cs.getPresentSoldiers().size() > 0) && (!p.equals(this.loc))) {
 			
-			// Add all in-range players to nearbySoldiers HashMap
-		    for (int peerID : cs.getPresentSoldiers()) 
-	        {
-			    // Only consider eligible soldiers (Have not been recently contacted)
-				if (notSeenCount.get(peerID) > minGraceTime) {
-					nearbySoldiers.put(peerID, p);
-				}
-				System.out.println(this.id + " Spotted soldier: " + peerID + " at location " + p + "=================================");
-	        }
-    	}
-    }
+		// 	// Add all in-range players to nearbySoldiers HashMap
+		//     for (int peerID : cs.getPresentSoldiers()) 
+	 //        {
+		// 	    // Only consider eligible soldiers (Have not been recently contacted)
+		// 		if (notSeenCount.get(peerID) > minGraceTime) {
+		// 			nearbySoldiers.put(peerID, p);
+		// 		}
+		// 		System.out.println(this.id + " Spotted soldier: " + peerID + " at location " + p + "=================================");
+	 //        }
+  //   	}
+  //   }
 
-    // Discern lowest ID player in vicinity
-    int minID = 99999;
-    for (int peerID : nearbySoldiers.keySet()) {
-    	if ( peerID < minID ) {
-    		minID = peerID;
-    	}
-    }
+  //   // Discern lowest ID player in vicinity
+  //   int minID = 99999;
+  //   for (int peerID : nearbySoldiers.keySet()) {
+  //   	if ( peerID < minID ) {
+  //   		minID = peerID;
+  //   	}
+  //   }
 
-    // No soldier in range
-    if (minID == 99999) {
-    	idleCount = 0;
-    	followCount = 0;
-   	// Soldiers near, use communication protocol
-    } else {
-		// Detect new targetPeer
-	    if (targetPeer == -1) {
-	    	targetPeer = minID;
-	   		idleCount = 0; 
-	   		followCount = 0;
-	    // Detect if targetPeer remained the same as last round
-	    } else if (targetPeer == minID) {
-	    	followCount++;
-	    	idleCount++;
-	    // Update to new move/wait target 
-	    } else {
-	    	targetPeer = minID;
-	    	// Allow idle time for player to approach/be contacted
-	    	idleCount = 0;
-	    	followCount = 0;
-	    }
+  //   // No soldier in range
+  //   if (minID == 99999) {
+  //   	idleCount = 0;
+  //   	followCount = 0;
+  //   	targetPeer = -1;
+  //   	stayStill = false;
+  //   	moveToSoldier = false;
+  //  	// Soldiers near, use communication protocol
+  //   } else {
+		// // Detect new targetPeer
+	 //    if (targetPeer == -1) {
+	 //    	targetPeer = minID;
+	 //   		idleCount = 0; 
+	 //   		followCount = 0;
+	 //    // Detect if targetPeer remained the same as last round
+	 //    } else if (targetPeer == minID) {
+	 //    	followCount++;
+	 //    	idleCount++;
+	 //    // Update to new move/wait target 
+	 //    } else {
+	 //    	targetPeer = minID;
+	 //    	// Allow idle time for player to approach/be contacted
+	 //    	idleCount = 0;
+	 //    	followCount = 0;
+	 //    }
 
-	    Point posToMove = new Point(0, 0);
+	 //    Point posToMove = new Point(0, 0);
 
-	    if (targetPeer < this.id) {
-	    	moveToSoldier = true;
-	    	posToMove = nearbySoldiers.get(minID);
+	 //    if (targetPeer < this.id) {
+	 //    	moveToSoldier = true;
+	 //    	posToMove = nearbySoldiers.get(minID);
 
-	    	stayStill = false;
-	    } else {
-	    	stayStill = true;
-	    	moveToSoldier = false;
-	    }
+	 //    	stayStill = false;
+	 //    } else {
+	 //    	stayStill = true;
+	 //    	moveToSoldier = false;
+	 //    }
 
-	    // Move towards lowest ID player in range
-		if (moveToSoldier && (followCount < maxCount) ) {
-			followCount++;
-	    	return getNextOnPath(this.loc, posToMove, false);
-		} else if (followCount >= maxCount) {
-			followCount = 0;
-			targetPeer = -1;
-			// May want to add following line if constantly chasing same player
-			// (Other player is not following protocol)
-			// this.notSeenCount.put(targetPeer, 0);
-		}
+	 //    // Move towards lowest ID player in range
+		// if (moveToSoldier && (followCount < maxCount) ) {
+		// 	followCount++;
+	 //    	return getNextOnPath(this.loc, posToMove, false);
+		// } else if (moveToSoldier && (followCount >= maxCount) ) {
+		// 	followCount = 0;
+		// 	targetPeer = -1;
+		// 	// May want to add following line if constantly chasing same player
+		// 	// (Other player is not following protocol)
+		// 	this.notSeenCount.put(targetPeer, 0);
+		// }
 
-		// Wait to be contacted for maxCount turns 
-		if (stayStill && (idleCount < maxCount) ) {
-		    idleCount++;
-		    return new Point(0, 0);		
-		} else if (idleCount >= maxCount) {
-			idleCount = 0;
-			targetPeer = -1;
-			// May want to add following line if constantly chasing same player
-			// (Other player is not following protocol)
-			// this.notSeenCount.put(targetPeer, 0);
-		}
+		// // Wait to be contacted for maxCount turns 
+		// if (stayStill && (idleCount < maxCount) ) {
+		//     idleCount++;
+		//     return new Point(0, 0);		
+		// } else if (stayStill && (idleCount >= maxCount) ) {
+		// 	idleCount = 0;
+		// 	targetPeer = -1;
+		// 	// May want to add following line if constantly chasing same player
+		// 	// (Other player is not following protocol)
+		// 	this.notSeenCount.put(targetPeer, 0);
+		// }
     	
-    }
+  //   }
 
     //
     // If target and package have been located, try to find a safe path between them. If found set found_path to true
