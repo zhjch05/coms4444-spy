@@ -62,6 +62,7 @@ public class PathFinder {
 		map = new int[100][100];
 		for (Point p: waterCells)
 			map[p.x][p.y] = -1;
+		
 	}
 	
 	public LinkedList<Point> startSearch(Point start, Point end){
@@ -83,7 +84,7 @@ public class PathFinder {
 		// Find path
 		if (search()) {
 			path.addLast(end);
-			while (path.getFirst() != start) {
+			while (!path.getFirst().equals(start)) {
 				Point prev = path.getFirst();
 				Node current = nodes.get(prev.x).get(prev.y).parent;
 				path.addFirst(new Point(current.x, current.y));
@@ -109,13 +110,13 @@ public class PathFinder {
 			// Expand parent to all adjacent nodes
 			if (isValid(node.x, node.y - 1)) updateAdjNode(nodes.get(node.x).get(node.y - 1), node, false);
 			if (isValid(node.x, node.y + 1)) updateAdjNode(nodes.get(node.x).get(node.y + 1), node, false);
-			if (isValid(node.x + 1, node.y)) updateAdjNode(nodes.get(node.x - 1).get(node.y), node, false);
-			if (isValid(node.x - 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y), node, false);
+			if (isValid(node.x - 1, node.y)) updateAdjNode(nodes.get(node.x - 1).get(node.y), node, false);
+			if (isValid(node.x + 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y), node, false);
 			
-			if (isValid(node.x, node.y - 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y - 1), node, true);
-			if (isValid(node.x, node.y + 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y + 1), node, true);
-			if (isValid(node.x + 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y - 1), node, true);
-			if (isValid(node.x - 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y + 1), node, true);
+			if (isValid(node.x - 1, node.y - 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y - 1), node, true);
+			if (isValid(node.x - 1, node.y + 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y + 1), node, true);
+			if (isValid(node.x + 1, node.y - 1)) updateAdjNode(nodes.get(node.x + 1).get(node.y - 1), node, true);
+			if (isValid(node.x + 1, node.y + 1)) updateAdjNode(nodes.get(node.x + 1).get(node.y + 1), node, true);
 		}
 		return false;
 	}
@@ -179,7 +180,8 @@ public class PathFinder {
 	}
 	
 	public void updateMap(int x, int y, boolean c) {
-		map[x][y] = c ? 2 : 1;
+		if (map[x][y] != -1)
+			map[x][y] = c ? 2 : 1;
 	}
 	
 	/**
@@ -188,6 +190,7 @@ public class PathFinder {
 	public LinkedList<Point> explore(Point start){
 		// Initialization
 		this.start = start;
+		end = null;
 		openList = new ArrayList<Node>();
 		closedList = new ArrayList<Node>();
 		nodes = new ArrayList<ArrayList<Node>>(map.length);
@@ -218,18 +221,19 @@ public class PathFinder {
 			// Expand parent to all adjacent nodes
 			if (isValid(node.x, node.y - 1)) updateAdjNode(nodes.get(node.x).get(node.y - 1), node, false);
 			if (isValid(node.x, node.y + 1)) updateAdjNode(nodes.get(node.x).get(node.y + 1), node, false);
-			if (isValid(node.x + 1, node.y)) updateAdjNode(nodes.get(node.x - 1).get(node.y), node, false);
-			if (isValid(node.x - 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y), node, false);
-			
-			if (isValid(node.x, node.y - 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y - 1), node, true);
-			if (isValid(node.x, node.y + 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y + 1), node, true);
-			if (isValid(node.x + 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y - 1), node, true);
-			if (isValid(node.x - 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y + 1), node, true);
+			if (isValid(node.x - 1, node.y)) updateAdjNode(nodes.get(node.x - 1).get(node.y), node, false);
+			if (isValid(node.x + 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y), node, false);
+
+			if (isValid(node.x - 1, node.y - 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y - 1), node, true);
+			if (isValid(node.x - 1, node.y + 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y + 1), node, true);
+			if (isValid(node.x + 1, node.y - 1)) updateAdjNode(nodes.get(node.x + 1).get(node.y - 1), node, true);
+			if (isValid(node.x + 1, node.y + 1)) updateAdjNode(nodes.get(node.x + 1).get(node.y + 1), node, true);
 		}
 		
 		if (path.size() != 0)
-			while (path.getFirst() != start) {
+			while (!path.getFirst().equals(start)) {
 				Point prev = path.getFirst();
+				System.err.println(prev);
 				Node current = nodes.get(prev.x).get(prev.y).parent;
 				path.addFirst(new Point(current.x, current.y));
 			}
@@ -242,7 +246,10 @@ public class PathFinder {
 	 * @return the Manhattan distance between that node and the goal
 	 */
 	protected int findH(Node node){
-		return Math.abs(node.x - end.x) + Math.abs(node.y - end.y);
+		if (end != null)
+			return Math.abs(node.x - end.x) + Math.abs(node.y - end.y);
+		else
+			return 0;
 	}
 	
 }

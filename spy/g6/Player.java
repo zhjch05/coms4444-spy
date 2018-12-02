@@ -29,6 +29,7 @@ public class Player implements spy.sim.Player {
     private Boolean pathFound;
     private Boolean packageFound;
     private Boolean targetFound;
+    private PathFinder pathFinder;
     
     private static final int EVANS_CONVENTION = 15;
     
@@ -49,6 +50,7 @@ public class Player implements spy.sim.Player {
         this.pathFound = false;
         this.packageFound = false;
         this.targetFound = false;
+        pathFinder = new PathFinder(waterCells);
         
         for (int i = 0; i < 100; i++){
         	ArrayList<Record> row = new ArrayList<Record>(100);
@@ -78,6 +80,7 @@ public class Player implements spy.sim.Player {
             Record record = new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>());
             record.getObservations().add(new Observation(this.id, time));
             observations.get(p.x).set(p.y, record);
+            pathFinder.updateMap(p.x, p.y, status.getC() == 1);
             
             for (Integer player: status.getPresentSoldiers()) {
             	if (lastPlayerSeen[player] + EVANS_CONVENTION < time) {
@@ -195,7 +198,10 @@ public class Player implements spy.sim.Player {
     	while (tasks.peek().isCompleted()) {
     		tasks.removeFirst();
     	}
-        return tasks.peek().nextMove();
+    	
+        Point delta = tasks.peek().nextMove();
+        loc = new Point(delta.x + loc.x, delta.y + loc.y);
+        return delta;
     }
     
     public class BasicMovement extends MovementTask {
@@ -273,22 +279,35 @@ public class Player implements spy.sim.Player {
     	
     	@Override
     	public Point nextMove(){
+    		if (moves != null && !moves.isEmpty()) {
+				Point p = new Point(moves.getFirst().x - loc.x, moves.getFirst().y - loc.y);
+				moves.removeFirst();
+				return p;
+			}
+    		
     		int bestMoveX = 0, bestMoveY = 0;
     		double bestScore = -1.0D;
 			for (int deltax = -1; deltax <= 1; ++deltax)
 				for (int deltay = -1; deltay <= 1; ++deltay) {
 					double localScore = getScore(deltax, deltay);
-					// TODO Temporary hack for not turning back
+					/*// TODO Temporary hack for not turning back
 					if ((deltax + lastMove.x == 0) && (deltay + lastMove.y == 0)){
 						localScore -= 0.5D;
-					}
+					}*/
 					if (localScore > bestScore) {
 						bestMoveX = deltax;
 						bestMoveY = deltay;
 						bestScore = localScore;
 					}
 				}
-			lastMove = new Point(bestMoveX, bestMoveY);
+			if (bestScore <= 0.0D) {
+				moves = pathFinder.explore(loc);
+				moves.removeFirst();
+				Point p = new Point(moves.getFirst().x - loc.x, moves.getFirst().y - loc.y);
+				moves.removeFirst();
+				return p;
+			}
+			//lastMove = new Point(bestMoveX, bestMoveY);
 			return new Point(bestMoveX, bestMoveY);
     	}
     }
