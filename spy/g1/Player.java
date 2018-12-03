@@ -251,7 +251,7 @@ public class Player implements spy.sim.Player {
                     this.records.get(curPoint.x).set(curPoint.y,newRecord);
                 }
                 else{
-                    continue;
+                    newRecord.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
                 }
             }
         }
