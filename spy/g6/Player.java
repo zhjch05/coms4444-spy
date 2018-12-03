@@ -24,6 +24,7 @@ public class Player implements spy.sim.Player {
     private PathFinder pathFinder;
     private Point packageLoc;
     private Point targetLoc;
+    private Boolean movingToPackage;
     
     private static final int EVANS_CONVENTION = 15;
     
@@ -44,6 +45,7 @@ public class Player implements spy.sim.Player {
         this.pathFound = false;
         this.packageFound = false;
         this.targetFound = false;
+        this.movingToPackage = false;
         pathFinder = new PathFinder(waterCells);
         
         for (int i = 0; i < 100; i++){
@@ -84,6 +86,11 @@ public class Player implements spy.sim.Player {
                 this.targetLoc = new Point(p);
                 System.out.println("Found Target");
                 System.out.println(this.targetLoc);
+            }
+
+            if (this.packageFound && this.targetFound && !this.movingToPackage){
+                tasks.addFirst(new GoToPackageTask(pathFinder, this.loc, this.packageLoc));
+                this.movingToPackage = true;
             }
 
 
@@ -144,6 +151,21 @@ public class Player implements spy.sim.Player {
                 ArrayList<Record> list = pointsToldBy.getOrDefault(p, new ArrayList<Record>());
                 list.add(record);
                 pointsToldBy.putIfAbsent(p, list);
+                pathFinder.updateMap(p.x, p.y, record.getC() == 1);
+                if (record.getPT() == 1){
+                    // System.out.println("Found Package");
+                    this.packageFound = true;
+                    this.packageLoc = new Point(p);
+                    System.out.println("Found Package");
+                    System.out.println(this.packageLoc);
+                }
+                else if (record.getPT() == 2){
+                    // System.out.println("Found Target");
+                    this.targetFound = true;
+                    this.targetLoc = new Point(p);
+                    System.out.println("Found Target");
+                    System.out.println(this.targetLoc);
+                }
             }
         }
 
@@ -171,8 +193,14 @@ public class Player implements spy.sim.Player {
                 System.out.println("Looking for path");
                 // Point s = new Point(0,0);
                 // Point t = new Point(99,99);
-                path = pathFinder.startSearch(this.packageLoc,this.targetLoc);
-                return path;
+                path = pathFinder.startSearch(this.packageLoc,this.targetLoc,true);
+
+                if (path != null && path.size() >= 1){
+                    return path;
+                }
+                else{
+                    return null;
+                }
             } 
             else{
                 //find shortest path
