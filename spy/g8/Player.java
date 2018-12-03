@@ -556,6 +556,17 @@ public class Player implements spy.sim.Player {
         if (dest != null)
             System.out.println(this.id + " Target Located at: " + dest);
 
+        List<Point> neighbors = getSurrounding(loc);
+        for(Point n:neighbors) {
+            // check if any neighbors contain mud, pacakge, target, or any players
+            // if other player detected, move towards that player
+            if(notobserved.contains(n)) {
+                int i = notobserved.indexOf(n);
+                notobserved.remove(i);
+                observed.add(n);
+            }
+        }  
+
         // update waitTime at ever second
         for (Map.Entry<Integer, Integer> entry : waitTime.entrySet()) {
             Integer player = entry.getKey();
@@ -566,6 +577,15 @@ public class Player implements spy.sim.Player {
             }
         }
 
+        if (meeting == true) {
+            trymeeting = false;
+            meeting = false;
+            // System.out.println("MEETING MEETING MEETING");
+            for (int i=0;i<meetSoldiers.size();i++) {
+                //reset waittime
+                waitTime.put(meetSoldiers.get(i),wait);
+            }
+        }
 
         //whatISee(neighbors);
         if (pathFound){
@@ -578,9 +598,14 @@ public class Player implements spy.sim.Player {
             if (loc.x==pack.x && loc.y==pack.y){
 
                 // even at package, when both players together, reset wait time to help run simulator fast
-                for(int id:waitTime.keySet()){
+                /*for(int id:waitTime.keySet()){
                     if (waitTime.get(id) == 0)
                         waitTime.put(id, wait*wait); 
+                }*/
+                for (int i=0;i<meetSoldiers.size();i++) {
+                    if (waitTime.get(meetSoldiers.get(i)) == 0) {
+                        waitTime.put(meetSoldiers.get(i), wait*wait); 
+                    }
                 }
 
                 // if (pathFound){
@@ -650,32 +675,7 @@ public class Player implements spy.sim.Player {
             //     System.out.println(this.id + " is moving to " + move.x + "," + move.y);
             //     return move;
             // }
-        }
-
-
-        List<Point> neighbors = getSurrounding(loc);
-        for(Point n:neighbors) {
-            // check if any neighbors contain mud, pacakge, target, or any players
-            // if other player detected, move towards that player
-
-            if(notobserved.contains(n)) {
-                int i = notobserved.indexOf(n);
-                notobserved.remove(i);
-                observed.add(n);
-            }
-        }
-
-
-        //we are meeting someone right now
-        if (meeting == true) {
-            trymeeting = false;
-            meeting = false;
-            // System.out.println("MEETING MEETING MEETING");
-            for (int i=0;i<meetSoldiers.size();i++) {
-                //reset waittime
-                waitTime.put(meetSoldiers.get(i),wait);
-            }
-        }
+        }   
 
         if (seeSoldiers.size() > 0) { //we observe someone
             // System.out.println("We See Someone!");
@@ -706,7 +706,7 @@ public class Player implements spy.sim.Player {
             int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
 
             //edge case where destination is also package, so other soldier *might not* move towards us
-            if (pack != null)
+            if (pack != null) {
                 if (destination.x==pack.x && destination.y==pack.y){
                     List<Point> path = BFS(loc,pack);
                     if (path.size() > 1){
@@ -722,13 +722,18 @@ public class Player implements spy.sim.Player {
                         return move;
                     }
                 }
-            
+            }
 
             // new collaboration
-            if (this.id < trySoldier){
-                return new Point(0, 0);
+            if (distance(loc, destination) < 2 ) {
+                if (this.id < trySoldier){
+                    return new Point(0, 0);
+                }
+                else {
+                    return new Point (destination.x - loc.x, destination.y - loc.y);
+                }
             }
-            else if (destination.x!=loc.x || destination.y!=loc.y){
+            else {//if (destination.x!=loc.x || destination.y!=loc.y){
                 // move towards the player
 
                 List<Point> path = BFS_Naive(loc, destination);
@@ -819,10 +824,8 @@ public class Player implements spy.sim.Player {
             }
 
             //destination = notobserved.get(0);
-
-
             //System.out.println("DEST:"+destination.x + " " + destination.y);
-            if(destination.x > loc.x) { 
+            /*if(destination.x > loc.x) { 
                 move = new Point(1,0);
             } else if (destination.x < loc.x) {
                 move = new Point(-1,0);
@@ -832,9 +835,9 @@ public class Player implements spy.sim.Player {
                 } else {
                     move = new Point(0,-1);
                 } 
-            }
+            }*/
         }
-        else { // when we have finished observing
+        else { // when we have finished observing, should not be called 
             int x = rand.nextInt(2) * 2 - 1;
             int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
             move = new Point(x, y);
