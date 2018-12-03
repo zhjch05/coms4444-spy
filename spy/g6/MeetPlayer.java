@@ -3,7 +3,6 @@ package spy.g6;
 import java.util.*;
 
 import spy.sim.Point;
-import spy.sim.Record;
 
 public class MeetPlayer extends MovementTask {
 
@@ -16,9 +15,9 @@ public class MeetPlayer extends MovementTask {
     private int roundCount = 0;
 
     private static final int EXPIRATION = 10;
-    private static final boolean QUINCY_PRTCL = true;
+    private static final boolean QUINCY_PROTOCOL = true;
 
-    public MeetPlayer(int targetPlayerID, int myPlayerID, Point myPlayerLoc, List<Point> waterCells) {
+    MeetPlayer(int targetPlayerID, int myPlayerID, Point myPlayerLoc, Point targetLoc, List<Point> waterCells) {
         super();
         this.targetPlayerID = targetPlayerID;
         this.myPlayerID = myPlayerID;
@@ -26,16 +25,7 @@ public class MeetPlayer extends MovementTask {
         this.waterSet = new HashSet<>();
         waterSet.addAll(waterCells);
         this.moves = new LinkedList<>();
-        targetLoc = findTargetLoc();
-    }
-
-    public Point findTargetLoc() {
-        List<Point> myObs = withinObservationRadius(myPlayerLoc);
-        if (myObs == null) return null;
-        for (Point p : myObs) {
-            if (targetLoc.equals(p)) return p;
-        }
-        return null;
+        this.targetLoc = targetLoc;
     }
 
     private boolean inMap(Point p) {
@@ -47,47 +37,28 @@ public class MeetPlayer extends MovementTask {
     }
 
     private List<Point> withinObservationRadius(Point center) {
-        ArrayList<Point> candidates = new ArrayList<>();
-        if (inMap(center)) {
-            candidates.add(new Point(center.x, center.y));
+        ArrayList<Point> ret = new ArrayList<>();
+        Point[] candidates = {
+                new Point(center.x, center.y),
+                new Point(center.x - 1, center.y),
+                new Point(center.x - 2, center.y),
+                new Point(center.x - 1, center.y + 1),
+                new Point(center.x - 1, center.y - 1),
+                new Point(center.x, center.y + 1),
+                new Point(center.x, center.y + 2),
+                new Point(center.x, center.y - 1),
+                new Point(center.x, center.y - 2),
+                new Point(center.x + 1, center.y),
+                new Point(center.x + 1, center.y + 1),
+                new Point(center.x + 1, center.y - 1),
+                new Point(center.x + 2, center.y),
+        };
+        for (Point c : candidates) {
+            if (inMap(c)) {
+                ret.add(c);
+            }
         }
-        if (inMap(center.x - 1, center.y)) {
-            candidates.add(new Point(center.x - 1, center.y));
-        }
-        if (inMap(center.x - 2, center.y)) {
-            candidates.add(new Point(center.x - 2, center.y));
-        }
-        if (inMap(center.x - 1, center.y + 1)) {
-            candidates.add(new Point(center.x - 1, center.y));
-        }
-        if (inMap(center.x - 1, center.y - 1)) {
-            candidates.add(new Point(center.x - 1, center.y));
-        }
-        if (inMap(center.x, center.y + 1)) {
-            candidates.add(new Point(center.x - 1, center.y));
-        }
-        if (inMap(center.x, center.y + 2)) {
-            candidates.add(new Point(center.x - 1, center.y));
-        }
-        if (inMap(center.x, center.y - 1)) {
-            candidates.add(new Point(center.x - 1, center.y));
-        }
-        if (inMap(center.x, center.y - 2)) {
-            candidates.add(new Point(center.x - 1, center.y));
-        }
-        if (inMap(center.x + 1, center.y)) {
-            candidates.add(new Point(center.x - 1, center.y));
-        }
-        if (inMap(center.x + 1, center.y + 1)) {
-            candidates.add(new Point(center.x - 1, center.y));
-        }
-        if (inMap(center.x + 1, center.y - 1)) {
-            candidates.add(new Point(center.x - 1, center.y));
-        }
-        if (inMap(center.x + 2, center.y)) {
-            candidates.add(new Point(center.x - 1, center.y));
-        }
-        return candidates;
+        return ret;
     }
 
     private List<Point> intersectionOfPoints(List<Point> A, List<Point> B) {
@@ -99,17 +70,32 @@ public class MeetPlayer extends MovementTask {
 
     private List<Point> filterToAvailablePoints(List<Point> cells) {
         List<Point> ret = new ArrayList<>();
-        for(Point p: cells){
-            if(!waterSet.contains(p)){
+        for (Point p : cells) {
+            if (!waterSet.contains(p)) {
                 ret.add(p);
             }
         }
         return ret;
     }
 
-    private List<Point> getMoves(Point cur){
-        //TODO
-        return null;
+    private List<Point> getMoves(Point cur, List<Point> availableCells) {
+        ArrayList<Point> ret = new ArrayList<>();
+        Point[] candidates = {
+                new Point(cur.x - 1, cur.y),
+                new Point(cur.x - 1, cur.y + 1),
+                new Point(cur.x - 1, cur.y - 1),
+                new Point(cur.x, cur.y + 1),
+                new Point(cur.x, cur.y - 1),
+                new Point(cur.x + 1, cur.y),
+                new Point(cur.x + 1, cur.y + 1),
+                new Point(cur.x + 1, cur.y + 1)
+        };
+        for (Point c : candidates) {
+            if (inMap(c) && availableCells.contains(c)) {
+                ret.add(c);
+            }
+        }
+        return ret;
     }
 
     //from myLoc to targetLoc
@@ -120,24 +106,26 @@ public class MeetPlayer extends MovementTask {
         List<Point> ret = new ArrayList<>();
         q.add(myPlayerLoc);
         parent.put(myPlayerLoc, myPlayerLoc);
-        while(!q.isEmpty()){
+        while (!q.isEmpty()) {
             Point cur = q.poll();
-            if(cur.equals(targetLoc)){
+            if (cur.equals(targetLoc)) {
                 break;
             }
-            for(Point p: getMoves(cur)){
+            List<Point> availableMoves = getMoves(cur, availableCells);
+            if (availableMoves == null || availableMoves.isEmpty()) return null;
+            for (Point p : availableMoves) {
                 q.add(p);
                 parent.put(p, cur);
             }
         }
-        Point itr = targetLoc;
+        Point itr = new Point(targetLoc.x, targetLoc.y);
         Stack<Point> stk = new Stack<>();
-        while(!itr.equals(myPlayerLoc)){
+        while (!itr.equals(myPlayerLoc)) {
             stk.push(itr);
             itr = parent.get(itr);
         }
         stk.push(myPlayerLoc);
-        while(!stk.isEmpty()){
+        while (!stk.isEmpty()) {
             ret.add(stk.pop());
         }
         return ret;
@@ -164,7 +152,7 @@ public class MeetPlayer extends MovementTask {
     }
 
     private boolean shouldWait() {
-        if (!QUINCY_PRTCL) return false;
+        if (!QUINCY_PROTOCOL) return false;
         if (roundCount > EXPIRATION) return false;
         if (myPlayerID < targetPlayerID) {
             moves.clear();
