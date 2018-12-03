@@ -149,69 +149,71 @@ public class Player implements spy.sim.Player {
             //map.get(p.x).set(p.y, new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>()));
             record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
 
-            // check tile status
-            if(record.getPT() != 0) {
-                switch(moveMode) {
-                    case 0:
-                        moveMode = 1; // reach the first special tile
-                        break;
-                    case 2:
-                        if(findPackage && record.getPT()==2) {
-                            moveMode = 3;
-                            // found package first and just discorvered target
-                            // move to target
-                        } else if(findTarget && record.getPT()==1) {
-                            moveMode = 4;
-                            // found target first and just discovered package
-                            // just go to package and we're done
-                        }
-                        break;
-                    default:
-                        break;
-                }
+            update(record);
 
-                if(record.getPT()==1) {
-                    this.findPackage = true;
-                    this.packageLocation = p;
-                } else {
-                    this.findTarget = true;
-                    this.targetLocation = p;
-                }
-            }
+          //   // check tile status
+          //   if(record.getPT() != 0) {
+          //       switch(moveMode) {
+          //           case 0:
+          //               moveMode = 1; // reach the first special tile
+          //               break;
+          //           case 2:
+          //               if(findPackage && record.getPT()==2) {
+          //                   moveMode = 3;
+          //                   // found package first and just discorvered target
+          //                   // move to target
+          //               } else if(findTarget && record.getPT()==1) {
+          //                   moveMode = 4;
+          //                   // found target first and just discovered package
+          //                   // just go to package and we're done
+          //               }
+          //               break;
+          //           default:
+          //               break;
+          //       }
 
-            // update the graph to reflect new information
-            String name = Integer.toString(p.x) + "," + Integer.toString(p.y);
-            if(!water.containsKey(name)) {
-            	Vertex v = djk.getVertex(name);
-            	v.explored = true;
-		        setIncomingEdges(v, record.getC()==1);
-            }
+          //       if(record.getPT()==1) {
+          //           this.findPackage = true;
+          //           this.packageLocation = p;
+          //       } else {
+          //           this.findTarget = true;
+          //           this.targetLocation = p;
+          //       }
+          //   }
 
-            // check on location
-            boolean atPackage = this.loc.equals(packageLocation);
-            boolean atTarget = this.loc.equals(targetLocation);
-            if(atPackage || atTarget) {
-                switch(moveMode) {
-                    case 1:
-                        moveMode = 2;
-                        // update graph so all muddy edges are infinite
-                        for (Vertex source : djk.getVertices()){
-                            Record r = records.get(source.x).get(source.y);
-                            if(r!=null && r.getC()==1) {
-                                setIncomingEdges(source, true);
-                            }
-                        }
-                        break;
-                    case 3:
-                        if(atTarget) {moveMode = 4;}
-                        break;
-                    case 4:
-                        if(atPackage) {moveMode = 5;}
-                        break;
-                    default:
-                        break;
-                }
-            }
+          //   // update the graph to reflect new information
+          //   String name = Integer.toString(p.x) + "," + Integer.toString(p.y);
+          //   if(!water.containsKey(name)) {
+          //   	Vertex v = djk.getVertex(name);
+          //   	v.explored = true;
+		        // setIncomingEdges(v, record.getC()==1);
+          //   }
+
+          //   // check on location
+          //   boolean atPackage = this.loc.equals(packageLocation);
+          //   boolean atTarget = this.loc.equals(targetLocation);
+          //   if(atPackage || atTarget) {
+          //       switch(moveMode) {
+          //           case 1:
+          //               moveMode = 2;
+          //               // update graph so all muddy edges are infinite
+          //               for (Vertex source : djk.getVertices()){
+          //                   Record r = records.get(source.x).get(source.y);
+          //                   if(r!=null && r.getC()==1) {
+          //                       setIncomingEdges(source, true);
+          //                   }
+          //               }
+          //               break;
+          //           case 3:
+          //               if(atTarget) {moveMode = 4;}
+          //               break;
+          //           case 4:
+          //               if(atPackage) {moveMode = 5;}
+          //               break;
+          //           default:
+          //               break;
+          //       }
+          //   }
         }
     }
 
@@ -233,26 +235,110 @@ public class Player implements spy.sim.Player {
 
     public void receiveRecords(int id, List<Record> records)
     {
-        for(int i=0;i<records.size();i++){
-            Record newRecord = records.get(i);
-            Point curPoint = newRecord.getLoc();
-            Record preRecord = this.records.get(curPoint.x).get(curPoint.y);
+        // for(int i=0;i<records.size();i++){
+        //     Record newRecord = records.get(i);
+        //     Point curPoint = newRecord.getLoc();
+        //     Record preRecord = this.records.get(curPoint.x).get(curPoint.y);
 
-            if(newRecord.getPT()==1){
-                packageLocation = curPoint;
-                findPackage = true;
+        //     if(newRecord.getPT()==1){
+        //         packageLocation = curPoint;
+        //         findPackage = true;
+        //     }
+        //     else if(newRecord.getPT()==2){
+        //         targetLocation = curPoint;
+        //         findTarget = true;
+        //     }
+        //     else{
+        //         if(preRecord == null){
+        //             this.records.get(curPoint.x).set(curPoint.y,newRecord);
+        //         }
+        //         else{
+        //             newRecord.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
+        //         }
+        //     }
+        // }
+
+        for(Record rec: records) {
+        	// record the data learned
+        	Point p = rec.getLoc();
+            Record record = this.records.get(p.x).get(p.y);
+            if (record == null || record.getC() != rec.getC() || record.getPT() != rec.getPT())
+            {
+                ArrayList<Observation> observations = new ArrayList<Observation>();
+                record = new Record(rec);
+                this.records.get(p.x).set(p.y, record);
             }
-            else if(newRecord.getPT()==2){
-                targetLocation = curPoint;
-                findTarget = true;
+            //map.get(p.x).set(p.y, new Record(p, status.getC(), status.getPT(), new ArrayList<Observation>()));
+            record.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
+
+            update(rec);
+        }
+    }
+
+    private void update(Record record) {
+    	Point p = record.getLoc();
+
+    	// check tile status
+        if(record.getPT() != 0) {
+            switch(moveMode) {
+                case 0:
+                    moveMode = 1; // reach the first special tile
+                    break;
+                case 2:
+                    if(findPackage && record.getPT()==2) {
+                        moveMode = 3;
+                        // found package first and just discorvered target
+                        // move to target
+                    } else if(findTarget && record.getPT()==1) {
+                        moveMode = 4;
+                        // found target first and just discovered package
+                        // just go to package and we're done
+                    }
+                    break;
+                default:
+                    break;
             }
-            else{
-                if(preRecord == null){
-                    this.records.get(curPoint.x).set(curPoint.y,newRecord);
-                }
-                else{
-                    newRecord.getObservations().add(new Observation(this.id, Simulator.getElapsedT()));
-                }
+
+            if(record.getPT()==1) {
+                this.findPackage = true;
+                this.packageLocation = p;
+            } else {
+                this.findTarget = true;
+                this.targetLocation = p;
+            }
+        }
+
+        // update the graph to reflect new information
+        String name = Integer.toString(p.x) + "," + Integer.toString(p.y);
+        if(!water.containsKey(name)) {
+        	Vertex v = djk.getVertex(name);
+        	v.explored = true;
+	        setIncomingEdges(v, record.getC()==1);
+        }
+
+        // check on location
+        boolean atPackage = this.loc.equals(packageLocation);
+        boolean atTarget = this.loc.equals(targetLocation);
+        if(atPackage || atTarget) {
+            switch(moveMode) {
+                case 1:
+                    moveMode = 2;
+                    // update graph so all muddy edges are infinite
+                    for (Vertex source : djk.getVertices()){
+                        Record r = records.get(source.x).get(source.y);
+                        if(r!=null && r.getC()==1) {
+                            setIncomingEdges(source, true);
+                        }
+                    }
+                    break;
+                case 3:
+                    if(atTarget) {moveMode = 4;}
+                    break;
+                case 4:
+                    if(atPackage) {moveMode = 5;}
+                    break;
+                default:
+                    break;
             }
         }
     }
