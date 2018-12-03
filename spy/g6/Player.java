@@ -102,11 +102,7 @@ public class Player implements spy.sim.Player {
             
             for (Integer player: status.getPresentSoldiers()) {
             	if (lastPlayerSeen[player] + EVANS_CONVENTION < time) {
-<<<<<<< HEAD
-            		tasks.add(new MeetPlayer(player,this.id,this.loc,p, waterCells));
-=======
             		tasks.add(new MeetPlayer(player, this.id, this.loc, p, waterCells));
->>>>>>> 76e0d0ef436b95a00c8a110ef801e76009c59073
             		//tasks.addFirst(new MeetPlayer(player));
             		lastPlayerSeen[player] = time;
             	}
