@@ -26,6 +26,7 @@ public class Player implements spy.sim.Player {
     private HashMap<Point, List<Record>> trustRecords;
     private HashMap<Point, List<Record>> tempRecords;
     private Point package_loc;
+    private int overallStrategy = 0;
     private Point target_loc;
     private boolean package_found;
     private boolean target_found;
@@ -507,7 +508,7 @@ public class Player implements spy.sim.Player {
             if (this.offsetStatus > 0 && this.offsetStatus < 3){
                 System.out.println("in the midst of an offset traversal");
                 if (this.explorationDirection == 5 || this.explorationDirection == 8) {
-                    move = new Point(0,-1);
+                    move = new Point(0,1);
                 }
                 else if (this.explorationDirection == 6 || this.explorationDirection == 7) {
                     move = new Point(0, 1);
@@ -574,19 +575,38 @@ public class Player implements spy.sim.Player {
                     }
                     // if we hit the edge, we want to move 3 away and go in the opposite direction
                     if (loc.x >= 100 || loc.y >= 100 || loc.x == 0 || loc.y == 0) {
-                        System.out.println("GUESS WHERE I AM");
                         this.offsetStatus = 1;
-                        if (this.explorationDirection == 5 || this.explorationDirection == 8) {
-                            move = new Point(0,-1);
+                        // hit the far right wall
+                        if (loc.x >= 100 && this.explorationDirection == 5) {
+                            // go up
+                            move = new Point(0, -1);
                         }
-                        else if (this.explorationDirection == 6 || this.explorationDirection == 7) {
+                        else if (loc.x >=100 && this.explorationDirection == 6) {
                             move = new Point(0, 1);
                         }
-
+                        else if (loc.x == 0 && this.explorationDirection == 7) {
+                            move = new Point(0, -1);
+                        }
+                        else if (loc.x == 0 && this.explorationDirection == 8) {
+                            move = new Point(0, 1);
+                        }
+                        else if (loc.y >= 100 && this.explorationDirection == 6) {
+                            move = new Point(-1,0);
+                        }
+                        else if (loc.y >= 100 && this.explorationDirection == 7) {
+                            move = new Point(1,0);
+                        }
+                        else if (loc.y == 0 && this.explorationDirection == 8) {
+                            move = new Point(-1,0);
+                        }
+                        else {
+                            move = new Point(1, 0);
+                        }
                     }
                 }
                 // if we're going horizontal/vertical
                 else {
+                    System.out.println("Going vertical");
                     if (this.explorationDirection == 1) {
                         move = new Point(0,-1);
                     }
