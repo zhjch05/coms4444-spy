@@ -65,7 +65,7 @@ public class PathFinder {
 		
 	}
 	
-	public LinkedList<Point> startSearch(Point start, Point end){
+	public LinkedList<Point> startSearch(Point start, Point end, boolean avoidMud){
 		// Initialization
 		this.start = start;
 		this.end = end;
@@ -82,7 +82,7 @@ public class PathFinder {
 		addToOpenList(new Node(start));
 		LinkedList<Point> path = new LinkedList<Point>();
 		// Find path
-		if (search()) {
+		if (search(avoidMud)) {
 			path.addLast(end);
 			while (!path.getFirst().equals(start)) {
 				Point prev = path.getFirst();
@@ -94,7 +94,7 @@ public class PathFinder {
 		return path;
 	}
 	
-	protected boolean search(){
+	protected boolean search(boolean avoidMud){
 		Node node;	// Searching one node at a time
 		while (!openList.isEmpty()){
 			// Get best node from Open list (least f(n))
@@ -108,15 +108,15 @@ public class PathFinder {
 			}
 			
 			// Expand parent to all adjacent nodes
-			if (isValid(node.x, node.y - 1, true)) updateAdjNode(nodes.get(node.x).get(node.y - 1), node, false);
-			if (isValid(node.x, node.y + 1, true)) updateAdjNode(nodes.get(node.x).get(node.y + 1), node, false);
-			if (isValid(node.x - 1, node.y, true)) updateAdjNode(nodes.get(node.x - 1).get(node.y), node, false);
-			if (isValid(node.x + 1, node.y, true)) updateAdjNode(nodes.get(node.x + 1).get(node.y), node, false);
+			if (isValid(node.x, node.y - 1, avoidMud)) updateAdjNode(nodes.get(node.x).get(node.y - 1), node, false);
+			if (isValid(node.x, node.y + 1, avoidMud)) updateAdjNode(nodes.get(node.x).get(node.y + 1), node, false);
+			if (isValid(node.x - 1, node.y, avoidMud)) updateAdjNode(nodes.get(node.x - 1).get(node.y), node, false);
+			if (isValid(node.x + 1, node.y, avoidMud)) updateAdjNode(nodes.get(node.x + 1).get(node.y), node, false);
 			
-			if (isValid(node.x - 1, node.y - 1, true)) updateAdjNode(nodes.get(node.x - 1).get(node.y - 1), node, true);
-			if (isValid(node.x - 1, node.y + 1, true)) updateAdjNode(nodes.get(node.x - 1).get(node.y + 1), node, true);
-			if (isValid(node.x + 1, node.y - 1, true)) updateAdjNode(nodes.get(node.x + 1).get(node.y - 1), node, true);
-			if (isValid(node.x + 1, node.y + 1, true)) updateAdjNode(nodes.get(node.x + 1).get(node.y + 1), node, true);
+			if (isValid(node.x - 1, node.y - 1, avoidMud)) updateAdjNode(nodes.get(node.x - 1).get(node.y - 1), node, true);
+			if (isValid(node.x - 1, node.y + 1, avoidMud)) updateAdjNode(nodes.get(node.x - 1).get(node.y + 1), node, true);
+			if (isValid(node.x + 1, node.y - 1, avoidMud)) updateAdjNode(nodes.get(node.x + 1).get(node.y - 1), node, true);
+			if (isValid(node.x + 1, node.y + 1, avoidMud)) updateAdjNode(nodes.get(node.x + 1).get(node.y + 1), node, true);
 		}
 		return false;
 	}
