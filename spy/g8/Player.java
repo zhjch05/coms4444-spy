@@ -27,6 +27,8 @@ public class Player implements spy.sim.Player {
     private List<Point> clearCells;
     private List<Point> observed;
     private List<Point> notobserved;
+    private List<Point> pTodPath;
+    private List<Point> currentPath;
     private Point destination;
     private Point move;
     private Map<Integer,Integer> waitTime;
@@ -41,6 +43,9 @@ public class Player implements spy.sim.Player {
     private Point pack = null;
     private HashMap<Integer, List<Record>> receivedRecords;
     private Random rand;
+    private boolean pathFound;
+    private int step = 0;
+    private int n;
 
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
@@ -58,7 +63,9 @@ public class Player implements spy.sim.Player {
         this.trySoldier = -1;
         this.clearCells = new ArrayList<Point>();
         this.rand = new Random();
-
+        this.pTodPath = new ArrayList<Point>();
+        this.currentPath = new ArrayList<Point>();
+        this.n = n;
 
         this.waitTime = new HashMap<Integer,Integer>();
         for(int i=0;i<n;i++) {
@@ -273,6 +280,9 @@ public class Player implements spy.sim.Player {
             Point temp = bfs.get(currentPoint);
             toReturn.add(0,temp);
             currentPoint = temp;
+            if (currentPoint==null){
+                return null;
+            }
             count +=1;
         }
         return toReturn;
@@ -480,30 +490,67 @@ public class Player implements spy.sim.Player {
         // once target and packet both found, move to packet
         List<Point> neighbors = getSurrounding(loc);
         //whatISee(neighbors);
+        if (pathFound){
+            step +=1;
+        }
 
         if (pack != null && dest != null){
             if (loc.x==pack.x && loc.y==pack.y){
 
-                // even at package, when both players together, reset waittime to help run simulator fast
+                // even at package, when both players together, reset wait time to help run simulator fast
                 for(int id:waitTime.keySet()){
                     if (waitTime.get(id) == 0)
                         waitTime.put(id, wait);
                 }
 
-                return new Point(loc.x + 0, loc.y + 0);
+                if (pathFound){
+                    return new Point(0, 0);
+                }
             }
 
-            List<Point> path = BFS(loc,pack);
-            if (path.size() > 0){
+            if (pTodPath.size()==0){
+                System.out.println("Compute new path");
+                List<Point> path = BFS(pack,dest);
+                /* Move Back and Forth
+                if (loc.x==pack.x && loc.y==pack.y){
+                    path = BFS(loc,dest);
+                }
+                else{
+                    path = BFS(loc,pack);
+                }
+                */
+                if (path != null && step > 100){
+                    List<Point> toPack = BFS_Naive(loc,pack);
+                    pTodPath = toPack;
+                    pTodPath.remove(0);
+                    pathFound = true;
+                }
+                // if no clear path, keep exploring
+                else{
+                    Collections.sort(notobserved, pointComparator);
+
+                    int total_unobserved = Math.min(notobserved.size(), 3);
+
+                    destination = notobserved.get(rand.nextInt(this.n));
+
+                    path = BFS_Naive(loc,destination);
+
+                    pTodPath = path;
+                    pTodPath.remove(0);
+
+                }
+            }
+            if (pTodPath.size() > 0){
                 //System.out.println(this.id + " found package at: " + pack.x + "," + pack.y + " and target at: " + dest.x + "," + dest.y);
                 //System.out.println(path);
-                Point next = path.get(1);
+                Point next = pTodPath.remove(0);
                 // System.out.println("Currently at: " + loc.x+","+loc.y);
                 // System.out.println("Package at: " + pack.x+","+pack.y);
                 // System.out.println("Next Move: " + next.x+","+next.y);
                 // System.out.println("Is valid point?: " + clearCells.contains(next));
                 move = new Point(next.x-loc.x, next.y-loc.y);
                 loc = new Point(next.x, next.y);
+                System.out.println(this.id+" is moving"+loc);
                 return move;
             }
         }
@@ -656,7 +703,10 @@ public class Player implements spy.sim.Player {
                 trySoldier = -1;
             }*/
         }
-
+        if (currentPath.size()>0){
+            Point dest = currentPath.remove(0);
+            return new Point(dest.x-loc.x,dest.y-loc.y);
+        }
         //System.out.println("curr n_obs size: "+notobserved.size());
         if(notobserved.size() > 0) {
             Collections.sort(notobserved, pointComparator);
@@ -667,7 +717,9 @@ public class Player implements spy.sim.Player {
 
             List<Point> path = BFS_Naive(loc,destination);
             if (path.size() > 1){
-                Point next = path.get(1);
+                currentPath=path;
+                currentPath.remove(0);
+                Point next = currentPath.get(0);
                 move = new Point(next.x-loc.x, next.y-loc.y);
                 loc = new Point(next.x, next.y);
                 return move;
