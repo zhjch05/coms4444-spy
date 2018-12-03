@@ -1,15 +1,7 @@
 package spy.g6;
 
+import java.util.*;
 import java.util.List;
-import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.PriorityQueue;
 
 import spy.sim.Point;
 import spy.sim.Record;
@@ -102,11 +94,14 @@ public class Player implements spy.sim.Player {
             
             for (Integer player: status.getPresentSoldiers()) {
             	if (lastPlayerSeen[player] + EVANS_CONVENTION < time) {
-<<<<<<< HEAD
-            		tasks.add(new MeetPlayer(player,this.id,this.loc,p, waterCells));
-=======
-            		tasks.add(new MeetPlayer(player, this.id, this.loc, p, waterCells));
->>>>>>> 76e0d0ef436b95a00c8a110ef801e76009c59073
+            	    if(player != this.id){
+                        for(MovementTask task: tasks){
+                            if(task instanceof MeetPlayer){
+                                tasks.remove(task);
+                            }
+                        }
+//                        tasks.addFirst(new MeetPlayer(player, this.id, this.loc, p, waterCells));
+                    }
             		//tasks.addFirst(new MeetPlayer(player));
             		lastPlayerSeen[player] = time;
             	}

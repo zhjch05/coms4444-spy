@@ -11,7 +11,7 @@ public class MeetPlayer extends MovementTask {
     private Point myPlayerLoc;
     private Point targetLoc;
     private Set<Point> waterSet;
-    private boolean abort = true;
+    private boolean abort = false;
     private int roundCount = 0;
 
     private static final int EXPIRATION = 10;
@@ -26,6 +26,10 @@ public class MeetPlayer extends MovementTask {
         waterSet.addAll(waterCells);
         this.moves = new LinkedList<>();
         this.targetLoc = targetLoc;
+        if(targetPlayerID != myPlayerID){
+            updateMoves();
+        }
+        System.out.println("meetplayer");
     }
 
     private boolean inMap(Point p) {
@@ -62,10 +66,10 @@ public class MeetPlayer extends MovementTask {
     }
 
     private List<Point> intersectionOfPoints(List<Point> A, List<Point> B) {
-        ArrayList<Point> T = new ArrayList<>();
-        Collections.copy(T, A);
-        T.retainAll(B);
-        return T;
+//        ArrayList<Point> T = new ArrayList<>();
+//        Collections.copy(T, A);
+        A.retainAll(B);
+        return A;
     }
 
     private List<Point> filterToAvailablePoints(List<Point> cells) {
@@ -131,19 +135,29 @@ public class MeetPlayer extends MovementTask {
         return ret;
     }
 
+    private List<Point> deltaFromPath(List<Point> path) {
+        ArrayList<Point> ret = new ArrayList<>();
+        for (int i = 1; i < path.size(); i++) {
+            Point cur = path.get(i);
+            Point prv = path.get(i - 1);
+            ret.add(new Point(cur.x - prv.x, cur.y - prv.y));
+        }
+        return ret;
+    }
+
     @Override
     public boolean isCompleted() {
         // TODO
-
+        if (moves.isEmpty()) {
+            return true;
+        }
         return false;
     }
 
     @Override
     public Point nextMove() {
         if (moves.isEmpty()) {
-            if (updateMoves()) {
-                return super.nextMove();
-            } else return null;
+           return null;
         } else return super.nextMove();
     }
 
@@ -156,7 +170,8 @@ public class MeetPlayer extends MovementTask {
         if (roundCount > EXPIRATION) return false;
         if (myPlayerID < targetPlayerID) {
             moves.clear();
-            moves.add(myPlayerLoc);
+            moves.add(new Point(0, 0));
+            System.out.println(myPlayerID + " wait " + targetPlayerID);
             roundCount++;
             return true;
         }
@@ -164,6 +179,10 @@ public class MeetPlayer extends MovementTask {
     }
 
     private boolean updateMoves() {
+        if(targetLoc.equals(myPlayerLoc)) {
+            moves.clear();
+            return false;
+        }
         if (abort) return false;
         if (!shouldMeet()) return false;
         if (shouldWait()) return true;
@@ -176,7 +195,7 @@ public class MeetPlayer extends MovementTask {
             List<Point> path = findPath(availableCells);
             if (path == null) return false;
             moves.clear();
-            moves.addAll(path);
+            moves.addAll(deltaFromPath(path));
         }
         return true;
     }
