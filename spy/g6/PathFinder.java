@@ -108,15 +108,15 @@ public class PathFinder {
 			}
 			
 			// Expand parent to all adjacent nodes
-			if (isValid(node.x, node.y - 1)) updateAdjNode(nodes.get(node.x).get(node.y - 1), node, false);
-			if (isValid(node.x, node.y + 1)) updateAdjNode(nodes.get(node.x).get(node.y + 1), node, false);
-			if (isValid(node.x - 1, node.y)) updateAdjNode(nodes.get(node.x - 1).get(node.y), node, false);
-			if (isValid(node.x + 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y), node, false);
+			if (isValid(node.x, node.y - 1, true)) updateAdjNode(nodes.get(node.x).get(node.y - 1), node, false);
+			if (isValid(node.x, node.y + 1, true)) updateAdjNode(nodes.get(node.x).get(node.y + 1), node, false);
+			if (isValid(node.x - 1, node.y, true)) updateAdjNode(nodes.get(node.x - 1).get(node.y), node, false);
+			if (isValid(node.x + 1, node.y, true)) updateAdjNode(nodes.get(node.x + 1).get(node.y), node, false);
 			
-			if (isValid(node.x - 1, node.y - 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y - 1), node, true);
-			if (isValid(node.x - 1, node.y + 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y + 1), node, true);
-			if (isValid(node.x + 1, node.y - 1)) updateAdjNode(nodes.get(node.x + 1).get(node.y - 1), node, true);
-			if (isValid(node.x + 1, node.y + 1)) updateAdjNode(nodes.get(node.x + 1).get(node.y + 1), node, true);
+			if (isValid(node.x - 1, node.y - 1, true)) updateAdjNode(nodes.get(node.x - 1).get(node.y - 1), node, true);
+			if (isValid(node.x - 1, node.y + 1, true)) updateAdjNode(nodes.get(node.x - 1).get(node.y + 1), node, true);
+			if (isValid(node.x + 1, node.y - 1, true)) updateAdjNode(nodes.get(node.x + 1).get(node.y - 1), node, true);
+			if (isValid(node.x + 1, node.y + 1, true)) updateAdjNode(nodes.get(node.x + 1).get(node.y + 1), node, true);
 		}
 		return false;
 	}
@@ -128,8 +128,9 @@ public class PathFinder {
 	 * @return <b>TRUE</b> if the node is accessible <br>
 	 * 		   <b>FALSE</b> if the node does not exist or it represents a barrier
 	 */
-	protected boolean isValid(int x, int y){
-		return ((x >= 0) && (x < map.length) && (y >= 0) && (y < map[0].length) && (map[x][y] != -1));
+	protected boolean isValid(int x, int y, boolean hasPackage){
+		return ((x >= 0) && (x < map.length) && (y >= 0) && (y < map[0].length) 
+				&& (map[x][y] != -1) && !(hasPackage && map[x][y] == 2));
 	}
 	
 	/**
@@ -219,15 +220,15 @@ public class PathFinder {
 			}
 			
 			// Expand parent to all adjacent nodes
-			if (isValid(node.x, node.y - 1)) updateAdjNode(nodes.get(node.x).get(node.y - 1), node, false);
-			if (isValid(node.x, node.y + 1)) updateAdjNode(nodes.get(node.x).get(node.y + 1), node, false);
-			if (isValid(node.x - 1, node.y)) updateAdjNode(nodes.get(node.x - 1).get(node.y), node, false);
-			if (isValid(node.x + 1, node.y)) updateAdjNode(nodes.get(node.x + 1).get(node.y), node, false);
+			if (isValid(node.x, node.y - 1, false)) updateAdjNode(nodes.get(node.x).get(node.y - 1), node, false);
+			if (isValid(node.x, node.y + 1, false)) updateAdjNode(nodes.get(node.x).get(node.y + 1), node, false);
+			if (isValid(node.x - 1, node.y, false)) updateAdjNode(nodes.get(node.x - 1).get(node.y), node, false);
+			if (isValid(node.x + 1, node.y, false)) updateAdjNode(nodes.get(node.x + 1).get(node.y), node, false);
 
-			if (isValid(node.x - 1, node.y - 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y - 1), node, true);
-			if (isValid(node.x - 1, node.y + 1)) updateAdjNode(nodes.get(node.x - 1).get(node.y + 1), node, true);
-			if (isValid(node.x + 1, node.y - 1)) updateAdjNode(nodes.get(node.x + 1).get(node.y - 1), node, true);
-			if (isValid(node.x + 1, node.y + 1)) updateAdjNode(nodes.get(node.x + 1).get(node.y + 1), node, true);
+			if (isValid(node.x - 1, node.y - 1, false)) updateAdjNode(nodes.get(node.x - 1).get(node.y - 1), node, true);
+			if (isValid(node.x - 1, node.y + 1, false)) updateAdjNode(nodes.get(node.x - 1).get(node.y + 1), node, true);
+			if (isValid(node.x + 1, node.y - 1, false)) updateAdjNode(nodes.get(node.x + 1).get(node.y - 1), node, true);
+			if (isValid(node.x + 1, node.y + 1, false)) updateAdjNode(nodes.get(node.x + 1).get(node.y + 1), node, true);
 		}
 		
 		if (path.size() != 0)
