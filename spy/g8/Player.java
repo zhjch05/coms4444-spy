@@ -733,7 +733,7 @@ public class Player implements spy.sim.Player {
                     return new Point (destination.x - loc.x, destination.y - loc.y);
                 }
             }
-            else if (destination.x!=loc.x || destination.y!=loc.y){
+            else {//if (destination.x!=loc.x || destination.y!=loc.y){
                 // move towards the player
 
                 List<Point> path = BFS_Naive(loc, destination);
@@ -824,10 +824,8 @@ public class Player implements spy.sim.Player {
             }
 
             //destination = notobserved.get(0);
-
-
             //System.out.println("DEST:"+destination.x + " " + destination.y);
-            if(destination.x > loc.x) { 
+            /*if(destination.x > loc.x) { 
                 move = new Point(1,0);
             } else if (destination.x < loc.x) {
                 move = new Point(-1,0);
@@ -837,9 +835,9 @@ public class Player implements spy.sim.Player {
                 } else {
                     move = new Point(0,-1);
                 } 
-            }
+            }*/
         }
-        else { // when we have finished observing
+        else { // when we have finished observing, should not be called 
             int x = rand.nextInt(2) * 2 - 1;
             int y = rand.nextInt(2 + Math.abs(x)) * (2 - Math.abs(x)) - 1;
             move = new Point(x, y);
