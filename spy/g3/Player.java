@@ -63,6 +63,7 @@ public class Player implements spy.sim.Player {
     private int followCount = 0; // Counter to track rounds following same communication target
     private int maxCount = 4; // Only approach/wait for target peer for maxCount turns before disregarding communication
     private int minGraceTime = 25; // Minimum count needed to allow communication protocol
+    private Boolean send_rec;
 
     private int sendCount = 0;
     private int recCount = 0;
@@ -92,6 +93,7 @@ public class Player implements spy.sim.Player {
 
         // Keep reference of recent obeservation (referenced during getMove call)
         this.lastObservation = new HashMap<Point, CellStatus>();
+        this.send_rec = false;
 
         // Initialize notSeenCount to minGraceTime to initially allow communication with any player
         this.notSeenCount = new HashMap<Integer, Integer>();
@@ -191,17 +193,31 @@ public class Player implements spy.sim.Player {
         this.notSeenCount.put(id, 0);
         // System.out.println("Called sendRecords ======");   
         ArrayList<Record> toSend = new ArrayList<Record>();
-        if(time%50==0)
-        for (ArrayList<Record> row : records)
+
+        if(loc!=null)
         {
-            for (Record record : row)
+            CellStatus cs = lastObservation.get(loc);
+            if(cs.getPresentSoldiers().size() > 1 && this.send_rec)
             {
-                if (record != null)
+                for (ArrayList<Record> row : records)
                 {
-                    toSend.add(record);
-                }
+                    for (Record record : row)
+                    {
+                        if (record != null)
+                        {
+                            toSend.add(record);
+                        }
+                    }
+                 }
+
+                 unexplored = getRandomUnexplored();
+                 this.send_rec = false;
+
             }
+            
+
         }
+        
         return toSend;
     }
     
@@ -521,6 +537,7 @@ public class Player implements spy.sim.Player {
     for (int peerID : nearbySoldiers.keySet()) {
         if ( peerID < minID ) {
             minID = peerID;
+            this.send_rec = true;
         }
     }
 
@@ -528,6 +545,7 @@ public class Player implements spy.sim.Player {
     if (minID == 99999) {
         idleCount = 0;
         followCount = 0;
+        this.send_rec = false;
     // Soldiers near, use communication protocol
     } else {
         // Detect new targetPeer
@@ -560,7 +578,7 @@ public class Player implements spy.sim.Player {
         }
 
         // Move towards lowest ID player in range
-        if (moveToSoldier && (followCount < maxCount) ) {
+        if (moveToSoldier && (followCount < maxCount) && !found_path ) {
             return getNextOnPath(this.loc, posToMove, false);
         } else if (moveToSoldier && (followCount >= maxCount) )  {
             followCount = 0;
@@ -571,7 +589,7 @@ public class Player implements spy.sim.Player {
         }
 
         // Wait to be contacted for maxCount turns 
-        if (stayStill && (idleCount < maxCount) ) {
+        if (stayStill && (idleCount < maxCount) && !found_path) {
             return new Point(0, 0);     
         } else if (stayStill && (idleCount >= maxCount) ) {
             idleCount = 0;
@@ -596,17 +614,27 @@ public class Player implements spy.sim.Player {
             Point start = package_Location;
             getNextOnPath(start,target_Location,true);
 
+            if(proposedPath.size()>1)
+
+            {
+                Point reach_pt = proposedPath.get(proposedPath.size()-1);
+            Point next_pt = proposedPath.get(0);
+
             proposedPath.add(0,start);
 
-            Point reach_pt = proposedPath.get(proposedPath.size()-1);
+            int diff = Math.abs(Math.abs(start.x - next_pt.x) - Math.abs(start.y - next_pt.y));
 
-            if(reach_pt.x==target_Location.x && reach_pt.y == target_Location.y)
+            if(reach_pt.x==target_Location.x && reach_pt.y == target_Location.y && diff<=1)
+               { 
                 found_path = true;
+                System.out.println("--------------------------------package at location:" + package_Location + " target at location " + target_Location + " proposed path is ----------------------------------------");
+                    for(int i=0;i<proposedPath.size();i++)
+                    {
+                        System.out.println(proposedPath.get(i));
+                    }
+               }
+        }
             
-            for(int i=0;i<proposedPath.size();i++)
-            {
-                System.out.println(proposedPath.get(i));
-            }
         }
         //announce shortest path
     }
