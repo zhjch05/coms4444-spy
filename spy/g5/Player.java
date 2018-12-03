@@ -106,6 +106,20 @@ public class Player implements spy.sim.Player
 	}
     }
     
+    public boolean checkLoc(List<Integer> players, Point soilder, Point us){
+    	Integer player = players.get(0);
+		if(player>this.id){
+			return false;
+		}
+		else if (player==this.id){
+			return checkLoc(soilder,us);
+		}
+		else{
+			return true;
+		}
+	}
+
+
     public boolean checkLoc(Point soilder, Point us){
         if(soilder.y>us.y) return true;
         else if (soilder.y==us.y){
@@ -137,6 +151,7 @@ public class Player implements spy.sim.Player
     // Like do I really need to check if Package mismatched? Or Condition?
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
+    	System.out.println("YO");
     	// Update current solider location
         current = loc;
         playerDetect = false;
@@ -155,6 +170,7 @@ public class Player implements spy.sim.Player
                 }
                 else{
                     flag = 0;
+                    break;
                 }
             }
 
@@ -164,7 +180,7 @@ public class Player implements spy.sim.Player
                 }
                 else{
                     playerDetect = true;
-                    if(checkLoc(p,loc)){
+                    if(checkLoc(players,p,current)){
                         stay = true;
                         moveToPlayer = false;
                         movePosition.x = p.x - current.x;
