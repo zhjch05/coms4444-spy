@@ -112,7 +112,10 @@ public class Simulator {
         }
         Collections.shuffle(shuffle);
 
-        spyID = shuffle.get(spyID);
+        if (noSpy == false)
+        {
+            spyID = shuffle.get(spyID);
+        }
         ArrayList<String> playerNamesClone = new ArrayList<String>(playerNames);
         for (int i = 0; i < num_players; i++)
         {
