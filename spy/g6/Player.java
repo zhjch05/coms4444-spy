@@ -26,7 +26,7 @@ public class Player implements spy.sim.Player {
     private Point targetLoc;
     private Boolean movingToPackage;
     
-    private static final int EVANS_CONVENTION = 15;
+    private static final int EVANS_CONVENTION = 25;
     
     // Keeping track of when was a specific player last seen by us.
     private int[] lastPlayerSeen;
@@ -130,6 +130,7 @@ public class Player implements spy.sim.Player {
     
     public List<Record> sendRecords(int id)
     {
+        System.out.println("" + this.id + "send records to " + id);
         ArrayList<Record> toSend = new ArrayList<Record>();
         for (ArrayList<Record> row : observations)
         	for (Record record : row)
