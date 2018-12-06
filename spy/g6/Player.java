@@ -12,9 +12,10 @@ import spy.sim.Observation;
 public class Player implements spy.sim.Player {
     
     private ArrayList<ArrayList<Record>> observations;
+    private int n;
     private int id;
     private Point loc;
-    private HashMap<Integer,ArrayList<Record>> recordsToldBy;
+    //private HashMap<Integer,ArrayList<Record>> recordsToldBy;
     private HashMap<Point,ArrayList<Record>> pointsToldBy;
     private List<Point> waterCells;
     private List<Point> path;
@@ -25,7 +26,7 @@ public class Player implements spy.sim.Player {
     private Point packageLoc;
     private Point targetLoc;
     private Boolean movingToPackage;
-    
+    private Set<Integer> trustworthyPlayers;
     private static final int EVANS_CONVENTION = 15;
     
     // Keeping track of when was a specific player last seen by us.
@@ -36,9 +37,10 @@ public class Player implements spy.sim.Player {
     
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
+    	this.n = n;
         this.id = id;
         this.observations = new ArrayList<ArrayList<Record>>(100);
-        this.recordsToldBy = new HashMap<>();
+        //this.recordsToldBy = new HashMap<>();
         this.pointsToldBy = new HashMap<>();
         this.waterCells = waterCells;
         this.path = new ArrayList<Point>();
@@ -47,6 +49,10 @@ public class Player implements spy.sim.Player {
         this.targetFound = false;
         this.movingToPackage = false;
         pathFinder = new PathFinder(waterCells);
+        
+        if (!isSpy) {
+        	trustworthyPlayers = new HashSet<Integer>();
+        }
         
         for (int i = 0; i < 100; i++){
         	ArrayList<Record> row = new ArrayList<Record>(100);
@@ -141,42 +147,54 @@ public class Player implements spy.sim.Player {
     
     public void receiveRecords(int id, List<Record> records){
         ArrayList<Record> receivedRecs = new ArrayList<Record>();
-
+        boolean updateWhitelist = false;
         for (Record record : records){
             //only add the record if not null
             if (record != null){
                 receivedRecs.add(record);
                 Point p = record.getLoc();
+                HashSet<Integer> source = retrievePlayerSet(record);
                 //keep track of all the points
                 ArrayList<Record> list = pointsToldBy.getOrDefault(p, new ArrayList<Record>());
+                for (Record r : list) {
+                	if (r.getC() == record.getC() && r.getPT() == record.getPT()) { // Agrees
+                		HashSet<Integer> src = retrievePlayerSet(r);
+                		src.retainAll(source); // Intersection
+                		if (src.isEmpty()){
+                			updateCell(record); // Trust if two sources are independent
+                		}
+                	}
+                	else { // Disagrees
+                		HashSet<Integer> src = retrievePlayerSet(r);
+                		src.addAll(source); // Union
+                		for (int i = 0; i < n; ++i) {
+                			if (!src.contains(i)) // Add all players not in the union to trust list
+                				updateWhitelist = trustworthyPlayers.add(i) ? true : updateWhitelist;
+                		}
+                	}
+                }
                 list.add(record);
                 pointsToldBy.putIfAbsent(p, list);
-                pathFinder.updateMap(p.x, p.y, record.getC() == 1);
-                if (record.getPT() == 1){
-                    // System.out.println("Found Package");
-                    this.packageFound = true;
-                    this.packageLoc = new Point(p);
-                    System.out.println("Found Package");
-                    System.out.println(this.packageLoc);
-                }
-                else if (record.getPT() == 2){
-                    // System.out.println("Found Target");
-                    this.targetFound = true;
-                    this.targetLoc = new Point(p);
-                    System.out.println("Found Target");
-                    System.out.println(this.targetLoc);
-                }
             }
         }
-
+        if (updateWhitelist) {
+        	for (ArrayList<Record> rs: pointsToldBy.values()) {
+        		for (Record r: rs) {
+        			HashSet<Integer> src = retrievePlayerSet(r);
+        			// if intersection is the source (a subset of trustworthy players)
+        			if (!src.retainAll(trustworthyPlayers))
+        				updateCell(r);
+        		}
+        	}
+        }
+        /*
         //keep track of records told by a specific player
         if (recordsToldBy.containsKey(id)){
             // concatenate receivedRecs
             recordsToldBy.get(id).addAll(receivedRecs);
         }else{
             recordsToldBy.put(id,receivedRecs);
-
-        }
+        }*/
 
         lastPlayerSeen[id] = Simulator.getElapsedT();
     }
@@ -215,11 +233,40 @@ public class Player implements spy.sim.Player {
         }
     }
     
+    // If a record is trustworthy, then take it as ground truth.
+    private void updateCell(Record record) {
+    	Point p = record.getLoc();
+    	pathFinder.updateMap(p.x, p.y, record.getC() == 1);
+        if (record.getPT() == 1){
+            // System.out.println("Found Package");
+            this.packageFound = true;
+            this.packageLoc = new Point(p);
+            System.out.println("Found Package");
+            System.out.println(this.packageLoc);
+        }
+        else if (record.getPT() == 2){
+            // System.out.println("Found Target");
+            this.targetFound = true;
+            this.targetLoc = new Point(p);
+            System.out.println("Found Target");
+            System.out.println(this.targetLoc);
+        }
+    }
+    
+    private HashSet<Integer> retrievePlayerSet(Record record){
+    	List<Observation> obs = record.getObservations();
+    	HashSet<Integer> playerSet = new HashSet<Integer>();
+    	for (Observation o: obs) {
+    		playerSet.add(o.getID());
+    	}
+    	return playerSet;
+    }
+    
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
     {
-        for (Map.Entry<Integer, List<Point>> entry : paths.entrySet())
+        ArrayList<Integer> toReturn = new ArrayList<Integer>();
+    	for (Map.Entry<Integer, List<Point>> entry : paths.entrySet())
         {
-            ArrayList<Integer> toReturn = new ArrayList<Integer>();
             toReturn.add(entry.getKey());
             // return entry.getKey();
             return toReturn;
@@ -259,8 +306,14 @@ public class Player implements spy.sim.Player {
     	private double exploreFactor = 1.0D;
     	private double verifyFactor = 0.0D;
     	private double proximityFactor = 0.00D; // TODO
+    	private int xbias, ybias;
     	
-    	private Point lastMove = new Point(0, 0);
+    	public BasicMovement() {
+    		super();
+    		Random random = new Random();
+    		xbias = random.nextBoolean() ? 1 : -1;
+    		ybias = random.nextBoolean() ? 1 : -1;
+    	}
     	
     	@Override
     	public boolean isCompleted() {
@@ -339,14 +392,14 @@ public class Player implements spy.sim.Player {
     		double bestScore = -1.0D;
 			for (int deltax = -1; deltax <= 1; ++deltax)
 				for (int deltay = -1; deltay <= 1; ++deltay) {
-					double localScore = getScore(deltax, deltay);
+					double localScore = getScore(deltax * xbias, deltay * ybias);
 					/*// TODO Temporary hack for not turning back
 					if ((deltax + lastMove.x == 0) && (deltay + lastMove.y == 0)){
 						localScore -= 0.5D;
 					}*/
 					if (localScore > bestScore) {
-						bestMoveX = deltax;
-						bestMoveY = deltay;
+						bestMoveX = deltax * xbias;
+						bestMoveY = deltay * ybias;
 						bestScore = localScore;
 					}
 				}
