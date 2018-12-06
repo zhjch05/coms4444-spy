@@ -6,12 +6,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Arrays;
 
 import spy.sim.Point;
 
 public class MapGenerator implements spy.sim.MapGenerator {
 	
-	public static final String PATH = "spy/g4/map.txt";
+	//public static final String PATH = "spy/g4/map.txt";
+	public static String PATH;
 	
 	protected List<Point> waterCells;
 	protected List<Point> muddyCells;
@@ -19,6 +21,15 @@ public class MapGenerator implements spy.sim.MapGenerator {
 	protected Point targetCell;
 
 	public MapGenerator() {
+
+		String path_p = "spy/g4/";
+		ArrayList<String> paths = new ArrayList<String>(Arrays.asList("map1.txt", "map2.txt", "map3.txt"));
+		Random rand = new Random();
+		int p = rand.nextInt(3);
+		PATH = path_p + paths.get(p);
+		//PATH = "spy/g4/smallmap.txt";
+		//System.out.println("map path: " + PATH);
+
 		
 		waterCells = new ArrayList<Point>();
 		muddyCells = new ArrayList<Point>();
@@ -70,13 +81,23 @@ public class MapGenerator implements spy.sim.MapGenerator {
         Random rand = new Random();
         for (int i = 0; i < 30; i++)
         {
-            Point p = new Point(rand.nextInt(100), rand.nextInt(100));
+            Point p = new Point(15 + rand.nextInt(70), 10 + rand.nextInt(80));
             while (waterCells.contains(p))
             {
-                p = new Point(rand.nextInt(100), rand.nextInt(100));
+                p = new Point(15 + rand.nextInt(70), 10 + rand.nextInt(80));
             }
             startingLocations.add(p);
         }
         return startingLocations;
+        /*for (int i = 0; i < 10; i++)
+        {
+            Point p = new Point(rand.nextInt(10), rand.nextInt(10));
+            while (waterCells.contains(p))
+            {
+                p = new Point(rand.nextInt(10), rand.nextInt(10));
+            }
+            startingLocations.add(p);
+        }
+        return startingLocations;*/
     }
 }
