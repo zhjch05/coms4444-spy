@@ -55,6 +55,8 @@ public class PlayerWrapper {
     
     public void observe(Point loc, HashMap<Point, CellStatus> statuses)
     {
+        Log.record("Player " + this.id + " observing from " + loc);
+        
         try {
             timer.call_start(new Callable<Void>() {
                 @Override
@@ -79,6 +81,8 @@ public class PlayerWrapper {
     
     public List<Record> sendRecords(int id)
     {
+        Log.record("Player " + this.id + " sending records to " + id);
+        
         List<Record> records = null;
         try {
             timer.call_start(new Callable<List<Record>>() {
@@ -104,6 +108,8 @@ public class PlayerWrapper {
     
     public void receiveRecords(int id, List<Record> records)
     {
+        Log.record("Player " + this.id + " receiving from " + id);
+        
         try {
             timer.call_start(new Callable<Void>() {
                 @Override
@@ -128,6 +134,8 @@ public class PlayerWrapper {
     
     public List<Point> proposePath()
     {
+        Log.record("Player " + id + " proposing path");
+        
         List<Point> path = null;
         try {
             timer.call_start(new Callable<List<Point>>() {
@@ -148,11 +156,23 @@ public class PlayerWrapper {
             System.out.println("Player " + this.id + " threw exception: " + ex);
             ex.printStackTrace();
         }
+        
+        if (path != null)
+        {
+            Log.record("\tPath proposed: " + path);
+        }
+        else
+        {
+            Log.record("\tNo path proposed");
+        }
+        
         return path;
     }
     
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
     {
+        Log.record("Player " + id + " sending votes");
+        
         List<Integer> votes = null;
         
         try {
@@ -203,6 +223,8 @@ public class PlayerWrapper {
     
     public Point getMove()
     {
+        Log.record("Player " + id + " sending move");
+        
         Point p = null;
         try {
             timer.call_start(new Callable<Point>() {
@@ -223,6 +245,16 @@ public class PlayerWrapper {
             System.out.println("Player " + this.id + " threw exception: " + ex);
             ex.printStackTrace();
         }
+        
+        if (p != null)
+        {
+            Log.record("\tMove: " + p);
+        }
+        else
+        {
+            Log.record("\tNo move");
+        }
+        
         return p;
     }
 
