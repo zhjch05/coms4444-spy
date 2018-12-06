@@ -112,10 +112,6 @@ public class Simulator {
         }
         Collections.shuffle(shuffle);
 
-        if (noSpy == false)
-        {
-            spyID = shuffle.get(spyID);
-        }
         ArrayList<String> playerNamesClone = new ArrayList<String>(playerNames);
         for (int i = 0; i < num_players; i++)
         {
@@ -139,6 +135,7 @@ public class Simulator {
             if (spyID == -1) {
                 spyID = rand.nextInt(num_players);
             }
+            spyID = shuffle.get(spyID);
             System.out.println("Player " + spyID + " is spy");
         } else
         {
