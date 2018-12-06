@@ -107,13 +107,13 @@ public class Player implements spy.sim.Player {
             
             for (Integer player: status.getPresentSoldiers()) {
             	if (lastPlayerSeen[player] + EVANS_CONVENTION < time) {
+//                    for(MovementTask task: tasks){
+//                        if(task instanceof MeetPlayer){
+//                            tasks.remove(task);
+//                        }
+//                    }
             	    if(player != this.id){
-                        for(MovementTask task: tasks){
-                            if(task instanceof MeetPlayer){
-                                tasks.remove(task);
-                            }
-                        }
-//                        tasks.addFirst(new MeetPlayer(player, this.id, this.loc, p, waterCells));
+                        tasks.addFirst(new MeetPlayer(player, this.id, this.loc, p, waterCells));
                     }
             		//tasks.addFirst(new MeetPlayer(player));
             		lastPlayerSeen[player] = time;
@@ -136,6 +136,7 @@ public class Player implements spy.sim.Player {
     
     public List<Record> sendRecords(int id)
     {
+        System.out.println("" + this.id + "send records to " + id);
         ArrayList<Record> toSend = new ArrayList<Record>();
         for (ArrayList<Record> row : observations)
         	for (Record record : row)
