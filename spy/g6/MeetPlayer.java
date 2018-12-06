@@ -29,6 +29,9 @@ public class MeetPlayer extends MovementTask {
         if(targetPlayerID != myPlayerID){
             updateMoves();
         }
+        else {
+            abort = true;
+        }
         System.out.println("meetplayer");
     }
 
@@ -148,6 +151,7 @@ public class MeetPlayer extends MovementTask {
     @Override
     public boolean isCompleted() {
         // TODO
+        if(abort) return true;
         if (moves.isEmpty()) {
             return true;
         }
@@ -196,6 +200,7 @@ public class MeetPlayer extends MovementTask {
             if (path == null) return false;
             moves.clear();
             moves.addAll(deltaFromPath(path));
+            System.out.println("deltaFromPath");
         }
         return true;
     }
