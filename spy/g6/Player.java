@@ -82,9 +82,11 @@ public class Player implements spy.sim.Player {
         {
             Point p = entry.getKey();
             CellStatus status = entry.getValue();
+            boolean ptUpdate = false;
             
             if (status.getPT() == 1){
                 // System.out.println("Found Package");
+            	if (!packageFound) ptUpdate = true;
                 this.packageFound = true;
                 this.packageLoc = new Point(p);
                 System.out.println("Found Package");
@@ -92,13 +94,14 @@ public class Player implements spy.sim.Player {
             }
             else if (status.getPT() == 2){
                 // System.out.println("Found Target");
+            	if (!targetFound) ptUpdate = true;
                 this.targetFound = true;
                 this.targetLoc = new Point(p);
                 System.out.println("Found Target");
                 System.out.println(this.targetLoc);
             }
 
-            if (this.packageFound && this.targetFound && !this.movingToPackage){
+            if (this.packageFound && this.targetFound && ptUpdate){
                 tasks.addFirst(new GoToPackageTask(pathFinder, this.loc, this.packageLoc));
                 this.movingToPackage = true;
             }
@@ -223,7 +226,7 @@ public class Player implements spy.sim.Player {
                 System.out.println("Looking for path");
                 // Point s = new Point(0,0);
                 // Point t = new Point(99,99);
-                path = pathFinder.startSearch(this.packageLoc,this.targetLoc,true);
+                path = pathFinder.startSearch(this.packageLoc, this.targetLoc, true , true);
 
                 if (path != null && path.size() >= 1){
                     return path;

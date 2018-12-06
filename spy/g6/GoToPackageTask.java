@@ -25,10 +25,12 @@ public class GoToPackageTask extends MovementTask {
 	// 	this.moves = moves;
 	// }
 	
+	@Override
 	public boolean isCompleted() {
 	    return false;
 	}
 	
+	@Override
 	public Point nextMove(){
 		if (moves.isEmpty())
 			return new Point(0, 0);
