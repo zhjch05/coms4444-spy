@@ -57,11 +57,9 @@ public class PathFinder {
 	 * 0 for unknown, -1 for water, 1 for normal and 2 for muddy
 	 * @param map
 	 */
-	public PathFinder(List<Point> waterCells) {
-		// TODO dynamic 
-		map = new int[100][100];
-		for (Point p: waterCells)
-			map[p.x][p.y] = -1;
+	public PathFinder(List<Point> waterCells, int[][] map) {
+		this.map = map;
+
 		
 	}
 	

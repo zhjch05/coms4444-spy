@@ -12,12 +12,13 @@ public class GoToPackageTask extends MovementTask {
 		LinkedList<Point> points = pathFinder.startSearch(loc, packageLoc, false);
 		moves = new LinkedList<Point>();
 		Point prev = null;
-		for (Point p: points)
-			if (prev != null)
+		for (Point p: points) {
+			if (prev != null) {
+				//System.err.print(new Point(p.x - prev.x, p.y - prev.y));
 				moves.addLast(new Point(p.x - prev.x, p.y - prev.y));
-			else
-				prev = p;
-		
+			}
+			prev = p;
+		}
 	}
 	
 	// public GoToPackageTask(LinkedList<Point> moves) {

@@ -28,6 +28,7 @@ public class Player implements spy.sim.Player {
     private Boolean movingToPackage;
     private Set<Integer> trustworthyPlayers;
     private static final int EVANS_CONVENTION = 15;
+    private int[][] validMap;
     
     // Keeping track of when was a specific player last seen by us.
     private int[] lastPlayerSeen;
@@ -37,6 +38,9 @@ public class Player implements spy.sim.Player {
     
     public void init(int n, int id, int t, Point startingPos, List<Point> waterCells, boolean isSpy)
     {
+		validMap = new int[100][100];
+		for (Point p: waterCells)
+			validMap[p.x][p.y] = -1;
     	this.n = n;
         this.id = id;
         this.observations = new ArrayList<ArrayList<Record>>(100);
@@ -48,7 +52,7 @@ public class Player implements spy.sim.Player {
         this.packageFound = false;
         this.targetFound = false;
         this.movingToPackage = false;
-        pathFinder = new PathFinder(waterCells);
+        pathFinder = new PathFinder(waterCells, validMap);
         
         if (!isSpy) {
         	trustworthyPlayers = new HashSet<Integer>();
@@ -136,14 +140,23 @@ public class Player implements spy.sim.Player {
     
     public List<Record> sendRecords(int id)
     {
-        System.out.println("" + this.id + "send records to " + id);
-        ArrayList<Record> toSend = new ArrayList<Record>();
-        for (ArrayList<Record> row : observations)
-        	for (Record record : row)
-        		if (record != null){
-        			toSend.add(record);
-        		}
-        return toSend;
+    	if (lastPlayerSeen[id] + EVANS_CONVENTION < Simulator.getElapsedT()) {
+	        System.err.println("" + this.id + "send records to " + id);
+	        ArrayList<Record> toSend = new ArrayList<Record>();
+	        for (ArrayList<Record> row : observations)
+	        	for (Record record : row)
+	        		if (record != null){
+	        			toSend.add(record);
+	        		}
+	        for (ArrayList<Record> row : observations)
+	        	for (Record record : row)
+	        		if (record != null) {
+	        			toSend.add(record);
+	        		}
+	        lastPlayerSeen[id] = Simulator.getElapsedT();
+	        return toSend;
+    	}
+    	return null;
     }
     
     public void receiveRecords(int id, List<Record> records){
@@ -196,8 +209,6 @@ public class Player implements spy.sim.Player {
         }else{
             recordsToldBy.put(id,receivedRecs);
         }*/
-
-        lastPlayerSeen[id] = Simulator.getElapsedT();
     }
     
     public List<Point> proposePath()
@@ -305,7 +316,7 @@ public class Player implements spy.sim.Player {
     public class BasicMovement extends MovementTask {
     	private double moveFactor = 1.0D;
     	private double exploreFactor = 1.0D;
-    	private double verifyFactor = 0.0D;
+    	private double verifyFactor = 0.5D;
     	private double proximityFactor = 0.00D; // TODO
     	private int xbias, ybias;
     	
@@ -358,7 +369,7 @@ public class Player implements spy.sim.Player {
     		int exploreCount = 0, verifyCount = 0;
     		for (Point p : points) {
     			try {
-    				if (!waterCells.contains(p) && observations.get(p.x).get(p.y) == null) {
+    				if (!waterCells.contains(p) && validMap[p.x][p.y] == 0) {
     					if (pointsToldBy.containsKey(new Point(p.x, p.y)))
     						++verifyCount;
     					else
@@ -394,7 +405,7 @@ public class Player implements spy.sim.Player {
 			for (int deltax = -1; deltax <= 1; ++deltax)
 				for (int deltay = -1; deltay <= 1; ++deltay) {
 					double localScore = getScore(deltax * xbias, deltay * ybias);
-					/*// TODO Temporary hack for not turning back
+					/*// Temporary hack for not turning back
 					if ((deltax + lastMove.x == 0) && (deltay + lastMove.y == 0)){
 						localScore -= 0.5D;
 					}*/
