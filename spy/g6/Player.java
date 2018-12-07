@@ -115,6 +115,7 @@ public class Player implements spy.sim.Player {
 
             if (this.packageFound && this.targetFound && ptUpdate){
                 System.out.println("Found both target and package!");
+                tasks.addFirst(new WaitTask(-1));
                 tasks.addFirst(new GoToPackageTask(pathFinder, this.loc, this.packageLoc));
                 this.movingToPackage = true;
             }
@@ -321,6 +322,10 @@ public class Player implements spy.sim.Player {
     
     public Point getMove(){
     	while (tasks.peek().isCompleted()) {
+    		if (tasks.peek() instanceof MeetPlayer && movingToPackage) {
+    			tasks.removeFirst();
+    			tasks.addFirst(new GoToPackageTask(pathFinder, loc, packageLoc));
+    		}
     		tasks.removeFirst();
     	}
     	
