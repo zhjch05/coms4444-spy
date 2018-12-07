@@ -27,7 +27,9 @@ public class Player implements spy.sim.Player {
     private Point targetLoc;
     private Boolean movingToPackage;
     private Set<Integer> trustworthyPlayers;
-    private static final int EVANS_CONVENTION = 15;
+    private Set<Integer> agreePlayers;
+
+    private static final int EVANS_CONVENTION = 25;
     private int[][] validMap;
     
     // Keeping track of when was a specific player last seen by us.
@@ -54,9 +56,14 @@ public class Player implements spy.sim.Player {
         this.movingToPackage = false;
         pathFinder = new PathFinder(waterCells, validMap);
         
+        trustworthyPlayers = new HashSet<Integer>();
         if (!isSpy) {
-        	trustworthyPlayers = new HashSet<Integer>();
+        	for (int i = 0; i < n; ++i){
+                trustworthyPlayers.add(i);
+            }
         }
+        agreePlayers = new HashSet<Integer>();
+
         
         for (int i = 0; i < 100; i++){
         	ArrayList<Record> row = new ArrayList<Record>(100);
@@ -90,8 +97,8 @@ public class Player implements spy.sim.Player {
                     ptUpdate = true;
                     this.packageFound = true;
                     this.packageLoc = new Point(p);
-                    System.out.println("Found Package");
-                    System.out.println(this.packageLoc);
+                    // System.out.println("Found Package");
+                    // System.out.println(this.packageLoc);
                 }
                 else{
                      ptUpdate = false;
@@ -104,8 +111,8 @@ public class Player implements spy.sim.Player {
                     ptUpdate = true;
                     this.targetFound = true;
                     this.targetLoc = new Point(p);
-                    System.out.println("Found Target");
-                    System.out.println(this.targetLoc);
+                    // System.out.println("Found Target");
+                    // System.out.println(this.targetLoc);
                 }
                 else{
                      ptUpdate = false;
@@ -114,10 +121,23 @@ public class Player implements spy.sim.Player {
             }
 
             if (this.packageFound && this.targetFound && ptUpdate){
-                System.out.println("Found both target and package!");
-                tasks.addFirst(new WaitTask(-1));
-                tasks.addFirst(new GoToPackageTask(pathFinder, this.loc, this.packageLoc));
-                this.movingToPackage = true;
+                // System.out.println("Found both target and package!");
+                path = pathFinder.startSearch(packageLoc, targetLoc, true, true);
+
+                if (!path.isEmpty()){
+                    tasks.addFirst(new WaitTask(-1));
+                    tasks.addFirst(new GoToPackageTask(pathFinder, this.loc, this.packageLoc));
+                    this.movingToPackage = true;
+                }
+                else{
+
+                    tasks.addFirst(new WaitTask(-1));
+                    tasks.addFirst(new FindPath(pathFinder,targetLoc,packageLoc));
+                    tasks.addFirst(new GoToPackageTask(pathFinder,loc,targetLoc));
+
+
+
+                }
             }
 
 
@@ -158,7 +178,7 @@ public class Player implements spy.sim.Player {
     public List<Record> sendRecords(int id)
     {
     	if (lastPlayerSeen[id] + EVANS_CONVENTION < Simulator.getElapsedT()) {
-	        System.err.println("" + this.id + "send records to " + id);
+	        // System.err.println("" + this.id + "send records to " + id);
 	        ArrayList<Record> toSend = new ArrayList<Record>();
 	        for (ArrayList<Record> row : observations)
 	        	for (Record record : row)
@@ -227,17 +247,76 @@ public class Player implements spy.sim.Player {
             recordsToldBy.put(id,receivedRecs);
         }*/
     }
-    
+    public boolean validPath(List<Point> proposedPath, int id)
+    {
+
+        // System.err.println("validating");
+        Point start = new Point(proposedPath.get(0));
+        Point end = new Point(proposedPath.get(proposedPath.size()-1));
+
+        // if (start != this.packageLoc && end != this.targetLoc){
+        //     return false;
+        // }
+
+        boolean agreeable = true;
+        Point prev = null;
+        //check for continuity and non muddy cells
+        for (Point p : proposedPath){
+
+            if (prev != null){
+
+                //checks for valid movement/continuity
+                if (Math.abs(prev.x - p.x) >1 || Math.abs(prev.y - p.y) > 1){
+                    // System.err.println("check 1");
+                    return false;
+                }
+
+                // checks for non stationary
+                if (p.equals(prev)){
+                    // System.err.println("check 2");
+                    return false;
+                }
+
+                //checks for muddy cell
+                if (validMap[p.x][p.y] == 2){
+                    // System.err.println("check 3");
+                    return false;
+                }
+
+                // undiscovered
+                // if (validMap[p.x][p.y] == 0){
+                //     System.err.println("check 4");
+                //     agreeable = false;
+                // }
+            }
+            prev = p;
+        }
+
+        if (agreeable){
+            agreePlayers.add(id);
+        }
+        else{
+            //exploring proposed path by player id
+            // System.err.println("verifying");
+            tasks.addFirst(new VerifyPathTask(pathFinder, proposedPath,id));
+
+
+        }
+        // System.err.println("VALID");
+
+        return true;
+
+    }
     public List<Point> proposePath()
     {
 
         // targetFound =true;
         // packageFound = true;
-        System.out.println("proposePath");
+        // System.out.println("proposePath");
         if (this.targetFound && this.packageFound){
             pathFound =true;
             if (pathFound){
-                System.out.println("Looking for path");
+                // System.out.println("Looking for path");
                 // Point s = new Point(0,0);
                 // Point t = new Point(99,99);
                 path = pathFinder.startSearch(this.packageLoc, this.targetLoc, true , true);
@@ -270,15 +349,15 @@ public class Player implements spy.sim.Player {
             // System.out.println("Found Package");
             this.packageFound = true;
             this.packageLoc = new Point(p);
-            System.out.println("Found Package");
-            System.out.println(this.packageLoc);
+            // System.out.println("Found Package");
+            // System.out.println(this.packageLoc);
         }
         else if (record.getPT() == 2){
             // System.out.println("Found Target");
             this.targetFound = true;
             this.targetLoc = new Point(p);
-            System.out.println("Found Target");
-            System.out.println(this.targetLoc);
+            // System.out.println("Found Target");
+            // System.out.println(this.targetLoc);
         }
     }
     
@@ -294,12 +373,19 @@ public class Player implements spy.sim.Player {
     public List<Integer> getVotes(HashMap<Integer, List<Point>> paths)
     {
         ArrayList<Integer> toReturn = new ArrayList<Integer>();
+
+
     	for (Map.Entry<Integer, List<Point>> entry : paths.entrySet())
         {
-            toReturn.add(entry.getKey());
-            // return entry.getKey();
-            return toReturn;
-        }
+
+            if (validPath(entry.getValue(), entry.getKey())){
+                if (agreePlayers.contains(entry.getKey())){
+                    toReturn.add(entry.getKey());
+                    return toReturn;
+                }
+            }
+
+        } 
         return null;
     }
     
@@ -326,7 +412,22 @@ public class Player implements spy.sim.Player {
     			tasks.removeFirst();
     			tasks.addFirst(new GoToPackageTask(pathFinder, loc, packageLoc));
     		}
-    		tasks.removeFirst();
+            else if (tasks.peek() instanceof VerifyPathTask){
+                if (loc.equals(packageLoc)){
+                    //valid
+                    agreePlayers.add(((VerifyPathTask)tasks.peek()).id);
+
+
+                }
+                else{
+                    //invalid
+                }
+                tasks.removeFirst();
+                tasks.addFirst(new GoToPackageTask(pathFinder, loc, packageLoc));
+            }
+            else{
+    		  tasks.removeFirst();
+            }
     	}
     	
         Point delta = tasks.peek().nextMove();
@@ -406,8 +507,8 @@ public class Player implements spy.sim.Player {
     		}
     		
     		int cost = (Math.abs(deltax) + Math.abs(deltay) == 2) ? 3 : 2;
-    		if (observations.get(loc.x).get(loc.y).getC() != 1 &&
-    				observations.get(loc.x + deltax).get(loc.y + deltay).getC() == 1)
+    		//observations.get(loc.x).get(loc.y).getC() != 1 &&
+            if (observations.get(loc.x + deltax).get(loc.y + deltay).getC() == 1)
     			cost *= 2;
     		return (exploreFactor * exploreCount + verifyFactor * verifyCount) / cost / moveFactor;
             // return (exploreFactor * exploreCount ) / cost;

@@ -237,7 +237,7 @@ public class PathFinder {
 		if (path.size() != 0)
 			while (!path.getFirst().equals(start)) {
 				Point prev = path.getFirst();
-				System.err.println(prev);
+				// System.err.println(prev);
 				Node current = nodes.get(prev.x).get(prev.y).parent;
 				path.addFirst(new Point(current.x, current.y));
 			}
