@@ -211,7 +211,7 @@ public class MeetPlayer extends MovementTask {
                 System.out.println(e.getMessage());
             }
 
-            System.out.println("deltaFromPath");
+//            System.out.println("deltaFromPath");
         }
         return true;
     }

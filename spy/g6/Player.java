@@ -27,7 +27,7 @@ public class Player implements spy.sim.Player {
     private Point targetLoc;
     private Boolean movingToPackage;
     private Set<Integer> trustworthyPlayers;
-    private static final int EVANS_CONVENTION = 15;
+    private static final int EVANS_CONVENTION = 40;
     private int[][] validMap;
     
     // Keeping track of when was a specific player last seen by us.
