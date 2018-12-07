@@ -25,13 +25,21 @@ public class GoToPackageTask extends MovementTask {
 	// 	this.moves = moves;
 	// }
 	
+	// @Override
+	// public boolean isCompleted() {
+	//     return false;
+	// }
+
+	
+	@Override
 	public boolean isCompleted() {
-	    return false;
+		return moves.isEmpty();
 	}
 	
+	@Override
 	public Point nextMove(){
-		if (moves.isEmpty())
-			return new Point(0, 0);
+		//if (moves.isEmpty())
+		//	return new Point(0, 0);
 	 	return moves.removeFirst();
 	}
 }
