@@ -11,8 +11,16 @@ public class MovementTask {
 		
 	}
 	
-	public MovementTask(LinkedList<Point> moves) {
-		this.moves = moves;
+	public MovementTask(LinkedList<Point> points) {
+		moves = new LinkedList<Point>();
+		Point prev = null;
+		for (Point p: points) {
+			if (prev != null) {
+				//System.err.print(new Point(p.x - prev.x, p.y - prev.y));
+				moves.addLast(new Point(p.x - prev.x, p.y - prev.y));
+			}
+			prev = p;
+		}
 	}
 	
 	public boolean isCompleted() {
@@ -23,3 +31,4 @@ public class MovementTask {
 		return moves.removeFirst();
 	}
 }
+
