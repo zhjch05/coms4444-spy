@@ -4,10 +4,12 @@ import java.util.LinkedList;
 
 import spy.sim.Point;
 
-public class GoToPackageTask extends MovementTask {
+public class WaitTask extends MovementTask {
 	// protected LinkedList<Point> moves;
 	
-	public GoToPackageTask(PathFinder pathFinder, Point loc, Point packageLoc) {
+
+	//wait at point and avoid communication
+	public WaitTask(PathFinder pathFinder, Point loc, Point packageLoc) {
 		super();
 		LinkedList<Point> points = pathFinder.startSearch(loc, packageLoc, false);
 		moves = new LinkedList<Point>();
@@ -20,18 +22,10 @@ public class GoToPackageTask extends MovementTask {
 			prev = p;
 		}
 	}
-	
-	// public GoToPackageTask(LinkedList<Point> moves) {
-	// 	this.moves = moves;
-	// }
-	
-	// @Override
-	// public boolean isCompleted() {
-	//     return false;
-	// }
 
 	public boolean isCompleted() {
 		return moves.isEmpty();
+		// return false;
 	}
 	
 	@Override
